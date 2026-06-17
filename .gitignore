@@ -12,3 +12,6 @@ imaoka-lifeplan-backup*.json
 # エディタ
 .vscode/
 .idea/
+
+# ローカル設定(端末固有のため公開しない)
+.claude/settings.local.json
