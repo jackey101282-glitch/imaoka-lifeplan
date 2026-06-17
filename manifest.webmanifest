@@ -1,0 +1,19 @@
+{
+  "name": "今岡家ライフプラン管理",
+  "short_name": "今岡家ライフ",
+  "description": "夫婦で共有する家計・タスク・夢・カレンダーの管理アプリ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF8",
+  "theme_color": "#E86A35",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect width='512' height='512' rx='112' fill='%23E86A35'/%3E%3Ctext x='256' y='340' font-size='280' text-anchor='middle' fill='white' font-family='sans-serif'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

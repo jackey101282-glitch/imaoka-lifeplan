@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# logs / temp
+*.log
+*.tmp
+
+# ローカルのバックアップ書き出し(個人データが含まれるためコミットしない)
+imaoka-lifeplan-backup*.json
+
+# エディタ
+.vscode/
+.idea/

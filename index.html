@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#E86A35" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>今岡家ライフプラン</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<style>
+:root{
+  --color-primary-50:#FFF4EF;--color-primary-100:#FFE4D6;--color-primary-200:#FFCAAD;
+  --color-primary-300:#FFA880;--color-primary-400:#FF8050;--color-primary-500:#E86A35;
+  --color-primary-600:#C4521F;--color-primary-700:#9E3E10;
+  --color-secondary-50:#EEF1F8;--color-secondary-100:#D5DCEE;--color-secondary-200:#A8B7DC;
+  --color-secondary-300:#6E89C4;--color-secondary-400:#3B5FAB;--color-secondary-500:#1E3F8A;
+  --color-secondary-600:#162E66;--color-secondary-700:#0E1E44;
+  --color-accent-400:#5DAE8B;--color-accent-500:#3D9170;--color-accent-600:#2B7358;
+  --color-success:#3D9170;--color-warning:#F0A030;--color-danger:#D94F4F;--color-info:#3B5FAB;
+  --color-bg-base:#FAFAF8;--color-bg-surface:#FFFFFF;--color-bg-muted:#F2F0ED;
+  --color-border:#E4E0DA;--color-border-strong:#C8C2B8;
+  --color-text-primary:#1A1714;--color-text-secondary:#6B6560;--color-text-disabled:#ADA8A2;
+  --color-text-on-primary:#FFFFFF;
+  --font-family-base:'Hiragino Sans','Hiragino Kaku Gothic ProN','BIZ UDGothic','Noto Sans JP',sans-serif;
+  --font-family-number:'DIN Alternate','SF Mono','Noto Sans JP',sans-serif;
+  --text-xs:0.625rem;--text-sm:0.75rem;--text-base:0.875rem;--text-md:1rem;--text-lg:1.125rem;
+  --text-xl:1.375rem;--text-2xl:1.75rem;--text-3xl:2.25rem;
+  --fw-r:400;--fw-m:500;--fw-b:700;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;
+  --space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--screen-px:16px;
+  --radius-sm:6px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.06);--shadow-sm:0 2px 8px rgba(0,0,0,.08);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  --shadow-primary:0 4px 12px rgba(232,106,53,.30);
+}
+html[data-theme="dark"]{
+  --color-bg-base:#141210;--color-bg-surface:#1E1C1A;--color-bg-muted:#2A2724;
+  --color-border:#3A3632;--color-border-strong:#504C48;
+  --color-text-primary:#F0EDE8;--color-text-secondary:#A09890;--color-text-disabled:#5C5854;
+  --color-primary-50:#2A211C;--color-primary-500:#F07A48;--color-primary-600:#E86A35;
+  --color-secondary-300:#8AAAD8;--color-secondary-500:#4A72C4;--color-accent-500:#52B88E;
+  --color-success:#52B88E;--color-warning:#F5B040;--color-danger:#E86060;--color-info:#4A72C4;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-family-base);background:var(--color-bg-base);
+  color:var(--color-text-primary);font-size:var(--text-base);line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding-bottom:calc(64px + env(safe-area-inset-bottom));
+}
+.num{font-family:var(--font-family-number);letter-spacing:-.01em}
+/* ===== Header ===== */
+.app-header{
+  position:sticky;top:0;z-index:30;background:var(--color-bg-surface);
+  border-bottom:1px solid var(--color-border);
+  padding:calc(env(safe-area-inset-top) + 10px) var(--screen-px) 10px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.app-header h1{font-size:var(--text-lg);font-weight:var(--fw-b);margin:0}
+.app-header .sub{font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-m)}
+.month-nav{display:flex;align-items:center;gap:4px}
+.month-nav button{
+  border:none;background:var(--color-bg-muted);color:var(--color-text-primary);
+  width:32px;height:32px;border-radius:var(--radius-full);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.month-nav .cur{font-weight:var(--fw-b);font-size:var(--text-base);min-width:74px;text-align:center}
+.sync-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-left:2px;vertical-align:middle}
+.sync-on{background:var(--color-accent-500)}.sync-off{background:var(--color-text-disabled)}
+.sync-err{background:var(--color-danger)}
+/* ===== Layout ===== */
+main{padding:var(--space-4) var(--screen-px) 24px;max-width:560px;margin:0 auto;animation:fade .2s ease-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.card{
+  background:var(--color-bg-surface);border-radius:var(--radius-lg);padding:var(--space-5);
+  box-shadow:var(--shadow-sm);border:1px solid var(--color-border);margin-bottom:var(--space-3);
+}
+.card-title{font-size:var(--text-base);font-weight:var(--fw-b);color:var(--color-text-secondary);margin:0 0 var(--space-3)}
+.section-title{font-size:var(--text-lg);font-weight:var(--fw-b);margin:var(--space-6) 0 var(--space-3);display:flex;justify-content:space-between;align-items:center}
+.section-title .link{font-size:var(--text-sm);color:var(--color-secondary-500);font-weight:var(--fw-m);cursor:pointer}
+.big-num{font-family:var(--font-family-number);font-size:var(--text-3xl);font-weight:var(--fw-b);line-height:1.1}
+.mid-num{font-family:var(--font-family-number);font-size:var(--text-2xl);font-weight:var(--fw-b)}
+.muted{color:var(--color-text-secondary)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.row + .row{margin-top:var(--space-3)}
+.divider{height:1px;background:var(--color-border);margin:var(--space-3) 0}
+/* progress */
+.prog{background:var(--color-bg-muted);border-radius:var(--radius-full);height:8px;overflow:hidden;margin-top:6px}
+.prog.lg{height:12px}
+.prog > span{display:block;height:100%;border-radius:var(--radius-full);transition:width .6s cubic-bezier(.4,0,.2,1)}
+.fill-primary{background:var(--color-primary-500)}.fill-accent{background:var(--color-accent-500)}
+.fill-danger{background:var(--color-danger)}.fill-warning{background:var(--color-warning)}.fill-sec{background:var(--color-secondary-400)}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:var(--radius-sm);padding:3px 9px;font-size:var(--text-sm);font-weight:var(--fw-m);white-space:nowrap}
+.chip-full{border-radius:var(--radius-full);padding:3px 11px}
+.chip-fixed{background:var(--color-secondary-50);color:var(--color-secondary-500)}
+.chip-var{background:var(--color-primary-50);color:var(--color-primary-600)}
+.chip-done{background:#E8F5EF;color:var(--color-accent-600)}
+.chip-over{background:#FDECEC;color:var(--color-danger)}
+.chip-todo{background:var(--color-bg-muted);color:var(--color-text-secondary)}
+.chip-h{background:var(--color-secondary-50);color:var(--color-secondary-500)}
+.chip-w{background:var(--color-primary-50);color:var(--color-primary-600)}
+.chip-both{background:#E8F5EF;color:var(--color-accent-600)}
+html[data-theme="dark"] .chip-done,html[data-theme="dark"] .chip-both{background:#1d3329}
+html[data-theme="dark"] .chip-over{background:#3a2020}
+.badge{background:var(--color-danger);color:#fff;font-size:var(--text-xs);font-weight:var(--fw-b);border-radius:var(--radius-full);min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center}
+.pill{font-size:var(--text-xs);font-weight:var(--fw-b);padding:2px 8px;border-radius:var(--radius-full)}
+.pill-ok{background:#E8F5EF;color:var(--color-accent-600)}
+.pill-warn{background:#FCEFD9;color:var(--color-warning)}
+.pill-bad{background:#FDECEC;color:var(--color-danger)}
+/* list item */
+.li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border)}
+.li:last-child{border-bottom:none}
+.li .ic{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.li .main{flex:1;min-width:0}
+.li .ttl{font-weight:var(--fw-m);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .meta{font-size:var(--text-sm);color:var(--color-text-secondary)}
+.li .amt{font-family:var(--font-family-number);font-weight:var(--fw-b);white-space:nowrap}
+.li.done .ttl{text-decoration:line-through;color:var(--color-text-disabled)}
+.li.done{opacity:.6}
+.check{width:24px;height:24px;border-radius:50%;border:2px solid var(--color-border-strong);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.check.on{background:var(--color-accent-500);border-color:var(--color-accent-500)}
+.empty{text-align:center;color:var(--color-text-secondary);padding:24px 8px;font-size:var(--text-base)}
+.empty .e-ic{font-size:34px;display:block;margin-bottom:8px}
+/* buttons */
+.btn{border:none;border-radius:var(--radius-md);padding:12px 20px;font-size:var(--text-md);font-weight:var(--fw-b);min-height:48px;cursor:pointer;font-family:inherit;transition:all .12s ease-out;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--color-primary-500);color:var(--color-text-on-primary);box-shadow:var(--shadow-primary)}
+.btn-sec{background:transparent;color:var(--color-primary-500);border:1.5px solid var(--color-primary-500)}
+.btn-ghost{background:var(--color-bg-muted);color:var(--color-text-primary)}
+.btn-danger{background:var(--color-danger);color:#fff}
+.btn-block{width:100%}
+.btn-sm{min-height:38px;padding:8px 14px;font-size:var(--text-base)}
+/* FAB */
+.fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:28px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center}
+.fab:active{transform:scale(.94)}
+/* filters */
+.filters{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.fchip{border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text-secondary);border-radius:var(--radius-full);padding:7px 14px;font-size:var(--text-base);white-space:nowrap;cursor:pointer;font-weight:var(--fw-m)}
+.fchip.on{background:var(--color-primary-500);color:#fff;border-color:var(--color-primary-500)}
+/* bottom nav */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
+.tab .ti{font-size:22px;line-height:1}
+.tab .tl{font-size:var(--text-xs);font-weight:var(--fw-m)}
+.tab.on{color:var(--color-primary-500)}
+.tab .nbadge{position:absolute;top:2px;right:calc(50% - 22px)}
+/* sheet/modal */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-width:560px;margin:0 auto}
+.sheet.show{transform:translateY(0)}
+.sheet .grip{width:38px;height:4px;background:var(--color-border-strong);border-radius:2px;margin:6px auto 12px}
+.sheet h3{margin:0 0 var(--space-4);font-size:var(--text-xl)}
+/* form */
+label.fld{display:block;margin-bottom:var(--space-4)}
+label.fld .lbl{font-size:var(--text-sm);font-weight:var(--fw-m);color:var(--color-text-secondary);margin-bottom:4px;display:block}
+input,select,textarea{width:100%;background:var(--color-bg-muted);border:1.5px solid var(--color-border);border-radius:var(--radius-md);padding:12px 14px;font-size:var(--text-md);font-family:inherit;color:var(--color-text-primary);min-height:48px}
+textarea{min-height:72px;resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary-500);background:var(--color-bg-surface);box-shadow:0 0 0 3px rgba(232,106,53,.15)}
+input.amt{font-family:var(--font-family-number);text-align:right;font-size:var(--text-xl);font-weight:var(--fw-b)}
+.seg{display:flex;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:4px;gap:4px}
+.seg button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-weight:var(--fw-m);color:var(--color-text-secondary);cursor:pointer;font-family:inherit;font-size:var(--text-base)}
+.seg button.on{background:var(--color-bg-surface);color:var(--color-primary-600);font-weight:var(--fw-b);box-shadow:var(--shadow-xs)}
+.form-row{display:flex;gap:10px}.form-row > *{flex:1}
+.sheet-actions{display:flex;gap:10px;margin-top:8px}
+.delete-link{text-align:center;color:var(--color-danger);font-size:var(--text-base);padding:14px;cursor:pointer;font-weight:var(--fw-m)}
+/* settings */
+.set-group{background:var(--color-bg-surface);border-radius:var(--radius-lg);border:1px solid var(--color-border);overflow:hidden;margin-bottom:var(--space-4)}
+.set-head{font-size:var(--text-xs);letter-spacing:.04em;color:var(--color-text-secondary);font-weight:var(--fw-b);margin:var(--space-5) 4px var(--space-2)}
+.set-cell{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--color-border)}
+.set-cell:last-child{border-bottom:none}
+.set-cell .lab{font-weight:var(--fw-m)}
+.set-cell .desc{font-size:var(--text-sm);color:var(--color-text-secondary)}
+.switch{position:relative;width:48px;height:28px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;inset:0;background:var(--color-border-strong);border-radius:var(--radius-full);transition:.2s;cursor:pointer}
+.switch .sl:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .sl{background:var(--color-accent-500)}
+.switch input:checked + .sl:before{transform:translateX(20px)}
+/* calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.cal-dow{text-align:center;font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-b);padding:4px 0}
+.cal-cell{aspect-ratio:1;border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:5px;font-size:var(--text-base);cursor:pointer;position:relative;background:var(--color-bg-surface);border:1px solid transparent;font-family:var(--font-family-number)}
+.cal-cell.muted{color:var(--color-text-disabled);background:transparent}
+.cal-cell.today{border-color:var(--color-primary-500);font-weight:var(--fw-b)}
+.cal-cell.sun{color:var(--color-danger)}.cal-cell.sat{color:var(--color-secondary-500)}
+.cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
+.cdot{width:5px;height:5px;border-radius:50%}
+.cd-pay{background:var(--color-danger)}.cd-task{background:var(--color-primary-500)}.cd-event{background:var(--color-secondary-400)}.cd-wish{background:var(--color-accent-500)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+a.tlink{color:var(--color-secondary-500)}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1 id="hd-title">ホーム</h1>
+    <div class="sub" id="hd-sub"></div>
+  </div>
+  <div class="month-nav" id="month-nav">
+    <button onclick="App.shiftMonth(-1)">‹</button>
+    <span class="cur num" id="cur-month"></span>
+    <button onclick="App.shiftMonth(1)">›</button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<button class="fab" id="fab" onclick="App.fabAction()">＋</button>
+
+<nav class="tabbar">
+  <button class="tab" data-tab="dashboard" onclick="App.go('dashboard')"><span class="ti">🏠</span><span class="tl">ホーム</span></button>
+  <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti">✅</span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
+  <button class="tab" data-tab="wishlist" onclick="App.go('wishlist')"><span class="ti">✨</span><span class="tl">やりたい</span></button>
+  <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti">📅</span><span class="tl">カレンダー</span></button>
+  <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti">⚙️</span><span class="tl">設定</span></button>
+</nav>
+
+<div class="scrim" id="scrim" onclick="App.closeSheet()"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   今岡家ライフプラン管理  — single-file app
+   data: localStorage (default) + optional Supabase realtime sync
+   ============================================================ */
+const CATS = {
+  income:[
+    {id:"income_salary_h",label:"給与(夫)",icon:"💼"},{id:"income_salary_w",label:"給与(妻)",icon:"👜"},
+    {id:"income_bonus_h",label:"賞与(夫)",icon:"💰"},{id:"income_bonus_w",label:"賞与(妻)",icon:"💵"},
+    {id:"income_side",label:"副業・フリーランス",icon:"💻"},{id:"income_child_allow",label:"児童手当",icon:"👧"},
+    {id:"income_invest",label:"配当・運用益",icon:"📈"},{id:"income_rent",label:"不動産収入",icon:"🏘️"},
+    {id:"income_gift",label:"親族からの支援",icon:"🎀"},{id:"income_other",label:"その他収入",icon:"💫"}
+  ],
+  fixed:[
+    {id:"fixed_rent",label:"住居費",icon:"🏠"},{id:"fixed_electric",label:"電気代",icon:"💡"},
+    {id:"fixed_gas",label:"ガス代",icon:"🔥"},{id:"fixed_water",label:"水道代",icon:"💧"},
+    {id:"fixed_net",label:"インターネット",icon:"📡"},{id:"fixed_mobile",label:"スマホ代",icon:"📱"},
+    {id:"fixed_nhk",label:"NHK受信料",icon:"📺"},{id:"fixed_life_ins",label:"生命保険",icon:"🛡️"},
+    {id:"fixed_med_ins",label:"医療保険",icon:"🏥"},{id:"fixed_cancer_ins",label:"がん保険",icon:"🔬"},
+    {id:"fixed_car_ins",label:"自動車保険",icon:"🚗"},{id:"fixed_fire_ins",label:"火災・地震保険",icon:"🏚️"},
+    {id:"fixed_car_loan",label:"カーローン",icon:"🚙"},{id:"fixed_car_tax",label:"車関連(固定)",icon:"🅿️"},
+    {id:"fixed_edu",label:"習い事・塾",icon:"📚"},{id:"fixed_childcare",label:"保育園・幼稚園",icon:"🏫"},
+    {id:"fixed_sub_netflix",label:"Netflix",icon:"🎬"},{id:"fixed_sub_amazon",label:"Amazon Prime",icon:"📦"},
+    {id:"fixed_sub_spotify",label:"Spotify",icon:"🎵"},{id:"fixed_sub_other",label:"その他サブスク",icon:"🔄"},
+    {id:"fixed_loan_other",label:"その他ローン",icon:"💳"}
+  ],
+  variable:[
+    {id:"var_grocery",label:"食費(スーパー)",icon:"🛒"},{id:"var_dining",label:"外食・テイクアウト",icon:"🍜"},
+    {id:"var_daily",label:"日用品",icon:"🧴"},{id:"var_clothes",label:"衣類・クリーニング",icon:"👗"},
+    {id:"var_medical",label:"医療費",icon:"💊"},{id:"var_child",label:"子供費",icon:"👶"},
+    {id:"var_beauty",label:"美容・理容",icon:"💇"},{id:"var_transport",label:"交通費",icon:"🚃"},
+    {id:"var_social",label:"交際費",icon:"🎁"},{id:"var_hobby",label:"趣味・娯楽",icon:"🎮"},
+    {id:"var_books",label:"書籍・学習",icon:"📖"},{id:"var_travel",label:"旅行・レジャー",icon:"✈️"},
+    {id:"var_home",label:"住居メンテ",icon:"🔧"},{id:"var_pet",label:"ペット費",icon:"🐾"},
+    {id:"var_misc",label:"雑費・使途不明",icon:"❓"}
+  ],
+  wish:[
+    {id:"wish_travel",label:"行きたい場所",icon:"🗺️"},{id:"wish_experience",label:"やりたいこと",icon:"🌟"},
+    {id:"wish_item",label:"欲しい物",icon:"🛍️"},{id:"wish_family",label:"家族の夢",icon:"👨‍👩‍👧‍👦"},
+    {id:"wish_self",label:"自己投資",icon:"📚"}
+  ],
+  task:[
+    {id:"insurance",label:"保険",icon:"🛡️"},{id:"child",label:"子供",icon:"👶"},
+    {id:"admin",label:"行政・手続き",icon:"📋"},{id:"finance",label:"お金",icon:"💰"},
+    {id:"home",label:"住居・車",icon:"🏠"},{id:"event",label:"イベント",icon:"🎉"},{id:"other",label:"その他",icon:"📌"}
+  ],
+  goalType:[
+    {id:"goal_emergency",label:"緊急予備資金",icon:"🆘",bench:1800000},
+    {id:"goal_edu",label:"教育資金",icon:"🎓",bench:10000000},
+    {id:"goal_housing",label:"住宅購入・リフォーム",icon:"🏡",bench:5000000},
+    {id:"goal_retirement",label:"老後資金",icon:"🧓",bench:20000000},
+    {id:"goal_travel",label:"旅行・家族レジャー",icon:"🏖️",bench:500000},
+    {id:"goal_car",label:"車の買替",icon:"🚘",bench:3000000},
+    {id:"goal_home_appliance",label:"家電・家具買替",icon:"🛋️",bench:500000},
+    {id:"goal_wish",label:"夢・欲しいもの",icon:"✨",bench:0}
+  ]
+};
+function allCats(group){return (CATS[group]||[]).concat((App.state&&App.state.customCats&&App.state.customCats[group])||[]);}
+const findCat=(group,id)=>allCats(group).find(c=>c.id===id)||{label:"その他",icon:"📌"};
+
+/* ---------- default seed ---------- */
+function seedState(){
+  return {
+    v:1,
+    settings:{husband:"夫",wife:"妻",theme:"auto",sync:{enabled:false,url:"",key:"",space:""}},
+    customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
+    incomes:[], expenses:[],
+    goals:[
+      {id:uid(),typeId:"goal_emergency",label:"緊急予備資金",target:1800000,current:0},
+      {id:uid(),typeId:"goal_edu",label:"教育資金",target:10000000,current:0},
+      {id:uid(),typeId:"goal_housing",label:"住宅購入",target:5000000,current:0},
+      {id:uid(),typeId:"goal_travel",label:"家族旅行",target:500000,current:0}
+    ],
+    wishes:[
+      {id:uid(),title:"沖縄に家族旅行",cat:"wish_travel",target:300000,date:"2027-08",priority:"high",assignee:"family",status:"saving",memo:"",current:0},
+      {id:uid(),title:"ディズニーリゾート",cat:"wish_travel",target:80000,date:"2026-12",priority:"high",assignee:"family",status:"planning",memo:"",current:0},
+      {id:uid(),title:"マイホーム購入",cat:"wish_family",target:null,date:"2029-03",priority:"high",assignee:"family",status:"dream",memo:"",current:0},
+      {id:uid(),title:"新しい冷蔵庫",cat:"wish_item",target:150000,date:"2027-01",priority:"medium",assignee:"family",status:"saving",memo:"",current:0},
+      {id:uid(),title:"子供とキャンプデビュー",cat:"wish_experience",target:80000,date:"2026-09",priority:"medium",assignee:"family",status:"planning",memo:"",current:0},
+      {id:uid(),title:"ヨーロッパ夫婦旅行",cat:"wish_travel",target:600000,date:null,priority:"low",assignee:"family",status:"dream",memo:"",current:0},
+      {id:uid(),title:"英語学習(オンライン)",cat:"wish_self",target:50000,date:"2026-07",priority:"medium",assignee:"husband",status:"saving",memo:"",current:0}
+    ],
+    tasks:[
+      {id:uid(),title:"生命保険の保障額を見直す",cat:"insurance",assignee:"both",due:"2026-09-30",status:"todo",priority:"high",memo:"加入から3年経過。子供の成長に合わせ保障額を更新。"},
+      {id:uid(),title:"火災・地震保険の更新確認",cat:"insurance",assignee:"husband",due:"2027-01-31",status:"todo",priority:"medium",memo:""},
+      {id:uid(),title:"NISAの年間投資枠を使い切る計画",cat:"finance",assignee:"both",due:"2026-12-01",status:"todo",priority:"high",memo:"つみたて枠を月10万設定で確認。"},
+      {id:uid(),title:"iDeCoの掛金額を見直す",cat:"finance",assignee:"husband",due:"2026-08-31",status:"todo",priority:"medium",memo:""},
+      {id:uid(),title:"ふるさと納税の上限額を計算",cat:"finance",assignee:"wife",due:"2026-10-31",status:"todo",priority:"medium",memo:""},
+      {id:uid(),title:"家計の年間収支レビュー",cat:"finance",assignee:"both",due:"2026-12-31",status:"todo",priority:"high",memo:"翌年の貯蓄目標を二人で決定。"},
+      {id:uid(),title:"子供の習い事を比較・検討",cat:"child",assignee:"both",due:"2026-08-31",status:"todo",priority:"medium",memo:""},
+      {id:uid(),title:"学資/ジュニアNISAの運用確認",cat:"child",assignee:"husband",due:"2026-09-30",status:"todo",priority:"high",memo:""},
+      {id:uid(),title:"予防接種スケジュール確認",cat:"child",assignee:"wife",due:"2026-07-31",status:"todo",priority:"high",memo:""},
+      {id:uid(),title:"確定申告(医療費控除)",cat:"admin",assignee:"husband",due:"2027-03-15",status:"todo",priority:"high",memo:"10万円超の医療費を集計。領収書を保管。"},
+      {id:uid(),title:"パスポートの有効期限確認",cat:"admin",assignee:"both",due:"2026-08-31",status:"todo",priority:"medium",memo:""},
+      {id:uid(),title:"車検の準備",cat:"home",assignee:"husband",due:"2027-02-28",status:"todo",priority:"high",memo:"費用目安8〜15万円。相見積もりを検討。"},
+      {id:uid(),title:"エアコンフィルター清掃",cat:"home",assignee:"husband",due:"2026-07-01",status:"todo",priority:"medium",memo:"梅雨明け前に実施。"}
+    ],
+    events:[]
+  };
+}
+
+/* ---------- utilities ---------- */
+function uid(){return (crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.round(Math.random()*1e6))}
+const yen=n=>"¥"+Math.round(n||0).toLocaleString("ja-JP");
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const thisMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
+function monthLabel(m){const[y,mo]=m.split("-");return (y+"年"+Number(mo)+"月")}
+function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+/* ============================================================ */
+const App = {
+  state:null, tab:"dashboard", curMonth:thisMonth(),
+  filters:{tasks:"open", wishlist:"all"},
+  calMonth:thisMonth(),
+  _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
+
+  init(){
+    this.load();
+    this.applyTheme();
+    this.go("dashboard");
+    if(this.state.settings.sync.enabled) this.startSync(true);
+    window.addEventListener("beforeunload",()=>this.save());
+  },
+
+  /* ---- persistence ---- */
+  load(){
+    try{
+      const raw=localStorage.getItem("imaoka_lifeplan");
+      this.state = raw?JSON.parse(raw):seedState();
+    }catch(e){this.state=seedState();}
+    // backfill
+    const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
+    ["incomes","expenses","goals","wishes","tasks","events"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
+    s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
+    s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
+  },
+  save(skipCloud){
+    localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));
+    if(!skipCloud && this.state.settings.sync.enabled) this.queueCloudPush();
+  },
+  // called after any data mutation
+  commit(){ this.save(); this.render(); },
+
+  /* ---- navigation ---- */
+  go(tab){
+    this.tab=tab;
+    document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
+    document.getElementById("month-nav").style.display=(tab==="dashboard")?"flex":"none";
+    document.getElementById("fab").style.display=(tab==="dashboard"||tab==="settings")?"none":"flex";
+    this.render();
+  },
+  shiftMonth(d){
+    let[y,m]=this.curMonth.split("-").map(Number); m+=d;
+    if(m<1){m=12;y--}if(m>12){m=1;y++}
+    this.curMonth=y+"-"+String(m).padStart(2,"0"); this.render();
+  },
+  shiftCal(d){
+    let[y,m]=this.calMonth.split("-").map(Number); m+=d;
+    if(m<1){m=12;y--}if(m>12){m=1;y++}
+    this.calMonth=y+"-"+String(m).padStart(2,"0"); this.render();
+  },
+
+  render(){
+    document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
+    const titles={dashboard:"ホーム",tasks:"タスク",wishlist:"やりたいこと",calendar:"カレンダー",settings:"設定"};
+    document.getElementById("hd-title").textContent=titles[this.tab];
+    document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?("今岡家 "+this.dot()):this.dot(true);
+    const v=document.getElementById("view");
+    v.innerHTML=this["view_"+this.tab]();
+    this.updateBadges();
+  },
+  dot(plain){
+    const s=this._syncStatus; if(s==="off") return plain?"":"";
+    const cls=s==="on"?"sync-on":(s==="err"?"sync-err":"sync-off");
+    const txt=s==="on"?"同期中":(s==="err"?"同期エラー":"同期");
+    return '<span class="sync-dot '+cls+'"></span> '+txt;
+  },
+  updateBadges(){
+    const open=this.state.tasks.filter(t=>t.status!=="done").length;
+    const b=document.getElementById("tab-task-badge");
+    b.innerHTML=open>0?('<span class="badge">'+open+'</span>'):"";
+  },
+
+  /* ============== DASHBOARD ============== */
+  metrics(month){
+    const inc=this.state.incomes.filter(i=>i.month===month);
+    const exp=this.state.expenses.filter(e=>e.month===month);
+    const totalIncome=inc.reduce((a,b)=>a+(+b.amount||0),0);
+    const fixed=exp.filter(e=>e.type==="fixed").reduce((a,b)=>a+(+b.amount||0),0);
+    const variable=exp.filter(e=>e.type==="variable").reduce((a,b)=>a+(+b.amount||0),0);
+    const totalExpense=fixed+variable;
+    const balance=totalIncome-totalExpense;
+    const savingsRate=totalIncome>0?(balance/totalIncome*100):0;
+    const hInc=inc.filter(i=>i.owner==="husband").reduce((a,b)=>a+(+b.amount||0),0);
+    const wInc=inc.filter(i=>i.owner==="wife").reduce((a,b)=>a+(+b.amount||0),0);
+    const oInc=totalIncome-hInc-wInc;
+    return {totalIncome,fixed,variable,totalExpense,balance,savingsRate,hInc,wInc,oInc,inc,exp};
+  },
+  view_dashboard(){
+    const m=this.metrics(this.curMonth), s=this.state.settings;
+    const exRate=m.totalIncome>0?(m.totalExpense/m.totalIncome*100):0;
+    const fixedPct=m.totalIncome>0?Math.min(100,m.fixed/m.totalIncome*100):0;
+    const varPct=m.totalIncome>0?Math.min(100,m.variable/m.totalIncome*100):0;
+    let srPill=m.savingsRate>=20?'pill-ok':(m.savingsRate>=10?'pill-warn':'pill-bad');
+    const balColor=m.balance>=0?'var(--color-accent-500)':'var(--color-danger)';
+
+    // income card
+    let incCard;
+    if(m.totalIncome===0){
+      incCard='<div class="card"><p class="card-title">今月の収入</p><div class="empty"><span class="e-ic">💰</span>収入をまだ登録していません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openIncome()">＋ 収入を追加</button></div></div>';
+    }else{
+      incCard='<div class="card" onclick="App.go(\'income_list\')" style="cursor:pointer"><p class="card-title">今月の収入</p>'+
+        '<div class="big-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</div>'+
+        '<div class="muted" style="font-size:var(--text-sm);margin-top:6px">'+esc(s.husband)+' '+yen(m.hInc)+' / '+esc(s.wife)+' '+yen(m.wInc)+(m.oInc?(' / その他 '+yen(m.oInc)):'')+'</div></div>';
+    }
+    // expense card
+    let expCard;
+    if(m.totalExpense===0){
+      expCard='<div class="card"><p class="card-title">今月の支出</p><div class="empty"><span class="e-ic">🧾</span>支出をまだ登録していません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openExpense()">＋ 支出を追加</button></div></div>';
+    }else{
+      expCard='<div class="card" onclick="App.go(\'expense_list\')" style="cursor:pointer"><div class="row"><p class="card-title" style="margin:0">支出合計</p><span class="mid-num">'+yen(m.totalExpense)+'</span></div><div class="divider"></div>'+
+        '<div class="row"><span>🏠 固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div>'+
+        '<div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
+        '<div class="row" style="margin-top:14px"><span>🛒 生活費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div>'+
+        '<div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
+        '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div></div>';
+    }
+    // savings available card
+    const availCard='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)">'+
+      '<p class="card-title" style="color:var(--color-primary-700)">✨ 今月の積立可能額</p>'+
+      '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
+      '<div class="row" style="margin-top:8px"><span class="muted" style="font-size:var(--text-sm)">貯蓄率</span><span class="'+srPill+' pill">'+m.savingsRate.toFixed(1)+'%（目標20%）</span></div>'+
+      (m.totalIncome>0?'<div class="prog lg" style="margin-top:6px"><span class="'+(m.savingsRate>=20?'fill-accent':(m.savingsRate>=10?'fill-warning':'fill-danger'))+'" style="width:'+Math.max(0,Math.min(100,m.savingsRate))+'%"></span></div>':'')+
+      '</div>';
+
+    // goals
+    let goalsHtml="";
+    this.state.goals.forEach(g=>{
+      const t=findCat("goalType",g.typeId);
+      const pct=g.target>0?Math.min(100,g.current/g.target*100):0;
+      goalsHtml+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer">'+
+        '<span class="ic">'+t.icon+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
+        '<div class="prog"><span class="fill-accent" style="width:'+pct+'%"></span></div></div>'+
+        '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(pct)+'%</div><div class="meta">'+yen(g.current)+'</div></div></div>';
+    });
+    const goalsCard='<div class="section-title">積立ゴール<span class="link" onclick="App.openGoal()">＋ 追加</span></div><div class="card">'+
+      (goalsHtml||'<div class="empty"><span class="e-ic">🎯</span>積立ゴールを追加しましょう</div>')+'</div>';
+
+    // tasks short
+    const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
+    let tHtml="";
+    open.forEach(t=>tHtml+=this.taskRow(t,true));
+    const tasksCard='<div class="section-title">直近のタスク<span class="link" onclick="App.go(\'tasks\')">すべて見る</span></div><div class="card">'+
+      (tHtml||'<div class="empty"><span class="e-ic">🎉</span>未完了のタスクはありません</div>')+'</div>';
+
+    // wishes short
+    const ws=this.state.wishes.filter(w=>w.status!=="done").slice(0,2);
+    let wHtml="";
+    ws.forEach(w=>{
+      const c=findCat("wish",w.cat); const pct=w.target?Math.min(100,(w.current||0)/w.target*100):0;
+      wHtml+='<div class="li" onclick="App.openWish(\''+w.id+'\')" style="cursor:pointer"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(w.title)+'</div>'+
+        (w.target?'<div class="prog"><span class="fill-accent" style="width:'+pct+'%"></span></div>':'<div class="meta">'+(w.date?w.date:'いつか')+'</div>')+'</div>'+
+        (w.target?'<div style="text-align:right"><div class="meta num">'+yen(w.current||0)+'</div></div>':'')+'</div>';
+    });
+    const wishCard='<div class="section-title">やりたいこと<span class="link" onclick="App.go(\'wishlist\')">すべて見る</span></div><div class="card">'+
+      (wHtml||'<div class="empty"><span class="e-ic">✨</span>夢を書き出してみましょう</div>')+'</div>';
+
+    const quick='<div class="form-row" style="margin-bottom:12px"><button class="btn btn-primary btn-sm" style="flex:1" onclick="App.openIncome()">＋ 収入</button><button class="btn btn-ghost btn-sm" style="flex:1" onclick="App.openExpense()">＋ 支出</button></div>';
+
+    return quick+incCard+expCard+availCard+goalsCard+tasksCard+wishCard;
+  },
+
+  /* ====== income / expense lists ====== */
+  view_income_list(){
+    const list=this.state.incomes.filter(i=>i.month===this.curMonth).sort((a,b)=>b.amount-a.amount);
+    let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:14px" onclick="App.go(\'dashboard\')">‹ ホームに戻る</button>';
+    h+='<div class="section-title" style="margin-top:0">'+monthLabel(this.curMonth)+'の収入<span class="link" onclick="App.openIncome()">＋ 追加</span></div><div class="card">';
+    if(!list.length) h+='<div class="empty"><span class="e-ic">💰</span>収入がありません</div>';
+    list.forEach(i=>{const c=findCat("income",i.typeId);
+      h+='<div class="li" onclick="App.openIncome(\''+i.id+'\')" style="cursor:pointer"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(i.label||c.label)+'</div><div class="meta">'+(i.owner==="husband"?esc(this.state.settings.husband):i.owner==="wife"?esc(this.state.settings.wife):"共通")+(i.date?' ・ '+i.date.slice(5).replace("-","/"):"")+'</div></div><span class="amt">'+yen(i.amount)+'</span></div>';
+    });
+    h+='</div>';
+    return h;
+  },
+  view_expense_list(){
+    const list=this.state.expenses.filter(e=>e.month===this.curMonth);
+    const fixed=list.filter(e=>e.type==="fixed").sort((a,b)=>b.amount-a.amount);
+    const variable=list.filter(e=>e.type==="variable").sort((a,b)=>b.amount-a.amount);
+    let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:14px" onclick="App.go(\'dashboard\')">‹ ホームに戻る</button>';
+    h+='<div class="section-title" style="margin-top:0">'+monthLabel(this.curMonth)+'の支出<span class="link" onclick="App.openExpense()">＋ 追加</span></div>';
+    const block=(arr,title,grp)=>{
+      let b='<p class="set-head">'+title+'</p><div class="card">';
+      if(!arr.length)b+='<div class="empty" style="padding:14px">なし</div>';
+      arr.forEach(e=>{const c=findCat(grp,e.catId);
+        b+='<div class="li" onclick="App.openExpense(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(e.label||c.label)+'</div>'+(e.date?'<div class="meta num">'+e.date.slice(5).replace("-","/")+'</div>':'')+'</div><span class="amt">'+yen(e.amount)+'</span></div>';
+      });
+      return b+'</div>';
+    };
+    h+=block(fixed,"固定費","fixed")+block(variable,"生活費","variable");
+    return h;
+  },
+
+  /* ============== TASKS ============== */
+  taskRow(t,compact){
+    const c=findCat("task",t.cat);
+    const overdue=t.due && t.status!=="done" && t.due<todayStr();
+    const aChip=t.assignee==="husband"?'<span class="chip chip-full chip-h">'+esc(this.state.settings.husband)+'</span>':
+      t.assignee==="wife"?'<span class="chip chip-full chip-w">'+esc(this.state.settings.wife)+'</span>':
+      '<span class="chip chip-full chip-both">二人</span>';
+    const dueChip=t.due?('<span class="chip '+(overdue?'chip-over':'chip-todo')+'">📅 '+t.due.slice(5).replace("-","/")+'</span>'):'';
+    const att=(t.loc?'📍':'')+(t.url?'🔗':'')+(t.image?'🖼':'');
+    const attChip=att?('<span class="chip chip-todo">'+att+'</span>'):'';
+    return '<div class="li '+(t.status==="done"?"done":"")+'">'+
+      '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?"✓":"")+'</div>'+
+      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl">'+c.icon+' '+esc(t.title)+'</div>'+
+      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+attChip+'</div></div></div>';
+  },
+  view_tasks(){
+    const f=this.filters.tasks;
+    let list=this.state.tasks.slice();
+    if(f==="open")list=list.filter(t=>t.status!=="done");
+    else if(f==="husband")list=list.filter(t=>t.assignee==="husband"||t.assignee==="both");
+    else if(f==="wife")list=list.filter(t=>t.assignee==="wife"||t.assignee==="both");
+    else if(f==="done")list=list.filter(t=>t.status==="done");
+    list.sort((a,b)=>{
+      if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;
+      return (a.due||"9999")<(b.due||"9999")?-1:1;
+    });
+    const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
+    let h='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
+    h+='<div class="card">';
+    if(!list.length)h+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
+    list.forEach(t=>h+=this.taskRow(t));
+    h+='</div>';
+    return h;
+  },
+  toggleTask(id){const t=this.state.tasks.find(x=>x.id===id);if(t){t.status=t.status==="done"?"todo":"done";this.commit();}},
+  setFilter(view,val){this.filters[view]=val;this.render();},
+
+  /* ============== WISHLIST ============== */
+  view_wishlist(){
+    const f=this.filters.wishlist;
+    let list=this.state.wishes.slice();
+    if(f!=="all")list=list.filter(w=>w.cat===f);
+    list.sort((a,b)=>{const o={dream:3,planning:1,saving:0,done:4};return (o[a.status]||2)-(o[b.status]||2)});
+    const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'wishlist\',\''+k+'\')">'+l+'</button>';
+    let h='<div class="filters">'+fc("all","すべて")+CATS.wish.map(c=>fc(c.id,c.icon+c.label)).join("")+'</div>';
+    const statusLabel={dream:"いつか",planning:"計画中",saving:"貯金中",done:"達成🎉"};
+    if(!list.length)h+='<div class="card"><div class="empty"><span class="e-ic">✨</span>やりたいことを追加しましょう</div></div>';
+    list.forEach(w=>{
+      const c=findCat("wish",w.cat); const pct=w.target?Math.min(100,(w.current||0)/w.target*100):0;
+      h+='<div class="card" onclick="App.openWish(\''+w.id+'\')" style="cursor:pointer;padding:16px">'+
+        '<div class="row" style="align-items:flex-start"><div style="flex:1"><div style="font-weight:700;font-size:var(--text-md)">'+c.icon+' '+esc(w.title)+'</div>'+
+        '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><span class="chip chip-todo">'+(statusLabel[w.status]||"")+'</span>'+(w.date?'<span class="chip chip-fixed">🗓 '+esc(w.date)+'</span>':'')+'</div></div>'+
+        (w.priority==="high"?'<span class="pill pill-bad">優先</span>':'')+'</div>';
+      if(w.target){
+        h+='<div class="prog lg" style="margin-top:12px"><span class="fill-accent" style="width:'+pct+'%"></span></div>'+
+          '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(w.current||0)+' / '+yen(w.target)+'</span><span class="meta num">'+Math.round(pct)+'%</span></div>';
+      }
+      h+='</div>';
+    });
+    return h;
+  },
+
+  /* ============== CALENDAR ============== */
+  view_calendar(){
+    const[y,mo]=this.calMonth.split("-").map(Number);
+    const first=new Date(y,mo-1,1), startDow=first.getDay();
+    const days=new Date(y,mo,0).getDate();
+    const prevDays=new Date(y,mo-1,0).getDate();
+    const items=this.calItems();
+    let h='<div class="card"><div class="row" style="margin-bottom:6px"><button class="month-nav" style="display:flex"><span onclick="App.shiftCal(-1)" style="cursor:pointer;font-size:20px;padding:0 10px">‹</span></button>'+
+      '<strong class="num" style="font-size:var(--text-lg)">'+monthLabel(this.calMonth)+'</strong>'+
+      '<span onclick="App.shiftCal(1)" style="cursor:pointer;font-size:20px;padding:0 10px">›</span></div>';
+    h+='<div class="cal-grid">'+["日","月","火","水","木","金","土"].map((d,i)=>'<div class="cal-dow '+(i===0?'sun':i===6?'sat':'')+'">'+d+'</div>').join("");
+    let cells=[];
+    for(let i=startDow-1;i>=0;i--)cells.push({d:prevDays-i,muted:true});
+    for(let d=1;d<=days;d++)cells.push({d,muted:false});
+    while(cells.length%7!==0)cells.push({d:cells.length-(startDow+days)+1,muted:true});
+    cells.forEach((c,idx)=>{
+      const dow=idx%7;
+      if(c.muted){h+='<div class="cal-cell muted">'+c.d+'</div>';return;}
+      const ds=this.calMonth+"-"+String(c.d).padStart(2,"0");
+      const dayItems=items[ds]||[];
+      const today=ds===todayStr();
+      const types=[...new Set(dayItems.map(x=>x.t))];
+      let dots=types.slice(0,4).map(t=>'<span class="cdot cd-'+t+'"></span>').join("");
+      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+c.d+'<div class="cal-dots">'+dots+'</div></div>';
+    });
+    h+='</div><div class="legend"><span><span class="cdot cd-pay"></span>支払い</span><span><span class="cdot cd-task"></span>タスク</span><span><span class="cdot cd-event"></span>予定</span><span><span class="cdot cd-wish"></span>目標時期</span></div></div>';
+    // upcoming list
+    h+='<div class="section-title">これからの予定<span class="link" onclick="App.openEvent()">＋ 予定追加</span></div><div class="card">';
+    const flat=[];
+    Object.keys(items).forEach(d=>items[d].forEach(it=>{if(d>=todayStr())flat.push({...it,date:d})}));
+    flat.sort((a,b)=>a.date<b.date?-1:1);
+    if(!flat.length)h+='<div class="empty"><span class="e-ic">📅</span>予定はありません</div>';
+    flat.slice(0,12).forEach(it=>{
+      h+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
+    });
+    h+='</div>';
+    return h;
+  },
+  calItems(){
+    const map={};
+    const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
+    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";add(e.date,{t:e.type==="payment"?"pay":"event",icon:e.type==="payment"?"💴":"📌",title:tm+e.title,amount:e.amount,start:e.start||"",onclick:"App.openEvent('"+e.id+"')"})});
+    this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",icon:c.icon,title:(e.label||c.label),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
+    this.state.wishes.forEach(w=>{if(w.date&&w.date.length===7&&w.status!=="done"){const c=findCat("wish",w.cat);add(w.date+"-01",{t:"wish",icon:c.icon,title:"目標: "+w.title,start:"",onclick:"App.openWish('"+w.id+"')"})}});
+    Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
+    return map;
+  },
+  openDay(ds){
+    const items=this.calItems()[ds]||[];
+    let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
+    if(!items.length)h+='<div class="empty">予定はありません</div>';
+    items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
+    h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
+    this.showSheet(h);
+  },
+
+  /* ============== SETTINGS ============== */
+  view_settings(){
+    const s=this.state.settings, sy=s.sync;
+    let h='';
+    h+='<p class="set-head">家族の名前</p><div class="set-group">'+
+      '<div class="set-cell"><span class="lab">夫の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.husband)+'" onchange="App.setName(\'husband\',this.value)"></div>'+
+      '<div class="set-cell"><span class="lab">妻の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.wife)+'" onchange="App.setName(\'wife\',this.value)"></div></div>';
+
+    h+='<p class="set-head">表示</p><div class="set-group">'+
+      '<div class="set-cell"><div><span class="lab">テーマ</span></div><select style="max-width:150px;min-height:40px" onchange="App.setTheme(this.value)">'+
+      ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(s.theme===v?"selected":"")+'>'+l+'</option>'}).join("")+
+      '</select></div></div>';
+
+    // sync
+    const stat=this._syncStatus;
+    h+='<p class="set-head">クラウド同期（スマホ2台でリアルタイム共有）</p><div class="set-group">'+
+      '<div class="set-cell"><div><span class="lab">同期を有効にする</span><div class="desc">'+(stat==="on"?'<span style="color:var(--color-accent-600)">● 同期中</span>':stat==="err"?'<span style="color:var(--color-danger)">● エラー（設定を確認）</span>':'未設定')+'</div></div>'+
+      '<label class="switch"><input type="checkbox" '+(sy.enabled?"checked":"")+' onchange="App.toggleSync(this.checked)"><span class="sl"></span></label></div>'+
+      '<div class="set-cell" style="display:block"><span class="lab">Supabase URL</span><input style="margin-top:6px" placeholder="https://xxxx.supabase.co" value="'+esc(sy.url)+'" onchange="App.setSync(\'url\',this.value)"></div>'+
+      '<div class="set-cell" style="display:block"><span class="lab">anon key（公開キー）</span><input style="margin-top:6px" placeholder="eyJhbGciOi..." value="'+esc(sy.key)+'" onchange="App.setSync(\'key\',this.value)"></div>'+
+      '<div class="set-cell" style="display:block"><span class="lab">共有コード（夫婦で同じ文字列にする）</span><div style="display:flex;gap:8px;margin-top:6px"><input placeholder="例: imaoka-home-2026" value="'+esc(sy.space)+'" onchange="App.setSync(\'space\',this.value)"><button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="App.genSpace()">生成</button></div></div>'+
+      '</div>'+
+      '<p class="desc" style="margin:0 4px 16px;color:var(--color-text-secondary);font-size:var(--text-sm)">※ 奥さんの端末でも同じURL・anon key・共有コードを入れると、リアルタイムで同期されます。設定手順は同梱の「セットアップ.md」を参照。</p>';
+
+    const grpLabel={fixed:"固定費",variable:"生活費",task:"タスク"};
+    let catHtml="";
+    ["fixed","variable","task"].forEach(g=>{(this.state.customCats[g]||[]).forEach(c=>{
+      catHtml+='<div class="set-cell"><span class="lab">'+c.icon+' '+esc(c.label)+' <span class="desc">（'+grpLabel[g]+'）</span></span><span style="color:var(--color-danger);cursor:pointer;font-size:var(--text-sm)" onclick="App.delCat(\''+g+'\',\''+c.id+'\')">削除</span></div>';
+    });});
+    if(!catHtml)catHtml='<div class="set-cell"><span class="desc">自分で追加したカテゴリがここに表示されます。収入・支出・タスクの入力画面で、カテゴリ欄の「＋ 新しいカテゴリを追加…」から追加できます。</span></div>';
+    h+='<p class="set-head">カテゴリ管理（自分で追加した分）</p><div class="set-group">'+catHtml+'</div>';
+
+    h+='<p class="set-head">データ</p><div class="set-group">'+
+      '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
+      '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
+      '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">🗑 すべてのデータを消す</span></div></div>'+
+      '<input type="file" id="importer" accept="application/json" style="display:none" onchange="App.importData(this.files[0])">';
+
+    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">今岡家ライフプラン管理 v1.0<br>株式会社今岡勇成 制作</p>';
+    return h;
+  },
+  setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
+  setTheme(v){this.state.settings.theme=v;this.applyTheme();this.save();},
+  applyTheme(){
+    const t=this.state.settings.theme;
+    if(t==="auto"){const dark=matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"dark":"light");}
+    else document.documentElement.setAttribute("data-theme",t);
+  },
+  setSync(k,v){this.state.settings.sync[k]=v.trim();this.save(true);},
+  genSpace(){this.state.settings.sync.space="imaoka-"+Math.random().toString(36).slice(2,8)+"-"+Math.random().toString(36).slice(2,6);this.save(true);this.render();},
+
+  /* ============== Sheets / Forms ============== */
+  showSheet(html){
+    const sh=document.getElementById("sheet");
+    sh.innerHTML='<div class="grip"></div>'+html;
+    document.getElementById("scrim").classList.add("show");
+    requestAnimationFrame(()=>sh.classList.add("show"));
+  },
+  closeSheet(){document.getElementById("sheet").classList.remove("show");document.getElementById("scrim").classList.remove("show");},
+  fabAction(){
+    if(this.tab==="tasks")this.openTask();
+    else if(this.tab==="wishlist")this.openWish();
+    else if(this.tab==="calendar")this.openEvent();
+  },
+  field(label,inner){return '<label class="fld"><span class="lbl">'+label+'</span>'+inner+'</label>';},
+  opts(group,sel,allowAdd){let h=allCats(group).map(c=>'<option value="'+c.id+'" '+(c.id===sel?"selected":"")+'>'+c.icon+' '+c.label+'</option>').join("");if(allowAdd)h+='<option value="__add__">＋ 新しいカテゴリを追加…</option>';return h;},
+  addCat(group,selectId){
+    const sel=document.getElementById(selectId);
+    const name=(prompt("新しいカテゴリ名を入力\n(例: コンビニ / 外食 / ふるさと納税)")||"").trim();
+    if(!name){if(sel&&sel.options.length)sel.value=sel.options[0].value;return;}
+    let icon=(prompt("アイコン(絵文字を1つ。空欄可)","🏷️")||"").trim();if(!icon)icon="🏷️";
+    const id="custom_"+group+"_"+uid().slice(0,8);
+    this.state.customCats[group].push({id,label:name,icon});
+    this.save();
+    if(sel){sel.innerHTML=this.opts(group,id,true);sel.value=id;}
+    this.toast("「"+name+"」を追加しました");
+  },
+  delCat(group,id){if(!confirm("このカテゴリを削除しますか?\n(過去に記録した金額データは残ります)"))return;this.state.customCats[group]=this.state.customCats[group].filter(c=>c.id!==id);this.commit();this.toast("削除しました");},
+
+  // ---- income ----
+  openIncome(id){
+    const it=id?this.state.incomes.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"収入を編集":"収入を追加")+'</h3>'+
+      this.field("種類",'<select id="f-type">'+this.opts("income",it?it.typeId:"income_salary_h")+'</select>')+
+      this.field("名前（任意）",'<input id="f-label" placeholder="例: 6月給与" value="'+esc(it?it.label:"")+'">')+
+      this.field("担当",'<div class="seg" id="f-owner">'+
+        ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'common:共通'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.owner:"husband")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      this.field("金額",'<input id="f-amount" class="amt" type="number" inputmode="numeric" placeholder="0" value="'+(it?it.amount:"")+'">')+
+      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:(this.curMonth+"-01"))+'">')+
+      this.actions(()=>{
+        const amount=+document.getElementById("f-amount").value;if(!amount){this.toast("金額を入力してください");return false;}
+        const date=val("f-date")||this.curMonth+"-01";
+        const data={typeId:val("f-type"),label:val("f-label"),owner:seg("f-owner"),amount,date,month:date.slice(0,7)};
+        if(it)Object.assign(it,data);else this.state.incomes.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("incomes",id):null);
+    this.showSheet(h);
+  },
+  // ---- expense ----
+  openExpense(id){
+    const it=id?this.state.expenses.find(x=>x.id===id):null;
+    const type=it?it.type:"fixed";
+    this.curExpType=type;
+    const catSel='<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(App.curExpType,\'f-cat\')">'+this.opts(type,it?it.catId:null,true)+'</select>';
+    const h='<h3>'+(it?"支出を編集":"支出を追加")+'</h3>'+
+      this.field("種別",'<div class="seg" id="f-etype">'+
+        ['fixed:固定費','variable:生活費'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(type===v?"on":"")+'" onclick="App.segExpense(this)">'+l+'</button>'}).join("")+'</div>')+
+      '<div id="cat-wrap">'+this.field("カテゴリ",catSel)+'</div>'+
+      this.field("名前（任意）",'<input id="f-label" placeholder="メモ" value="'+esc(it?it.label:"")+'">')+
+      this.field("金額",'<input id="f-amount" class="amt" type="number" inputmode="numeric" placeholder="0" value="'+(it?it.amount:"")+'">')+
+      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:(this.curMonth+"-01"))+'">')+
+      this.actions(()=>{
+        const amount=+document.getElementById("f-amount").value;if(!amount){this.toast("金額を入力してください");return false;}
+        if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
+        const date=val("f-date")||this.curMonth+"-01";
+        const data={type:seg("f-etype"),catId:val("f-cat"),label:val("f-label"),amount,date,month:date.slice(0,7)};
+        if(it)Object.assign(it,data);else this.state.expenses.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("expenses",id):null);
+    this.showSheet(h);
+  },
+  segExpense(btn){this.seg(btn);const type=btn.dataset.v;this.curExpType=type;document.getElementById("cat-wrap").innerHTML=this.field("カテゴリ",'<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(App.curExpType,\'f-cat\')">'+this.opts(type,null,true)+'</select>');},
+  // ---- task ----
+  openTask(id){
+    const it=id?this.state.tasks.find(x=>x.id===id):null;
+    this._formImage=it&&it.image?it.image:null;
+    const h='<h3>'+(it?"タスクを編集":"タスクを追加")+'</h3>'+
+      this.field("やること",'<input id="f-title" placeholder="例: 保険の見直し" value="'+esc(it?it.title:"")+'">')+
+      this.field("カテゴリ",'<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(\'task\',\'f-cat\')">'+this.opts("task",it?it.cat:"other",true)+'</select>')+
+      this.field("担当",'<div class="seg" id="f-assignee">'+
+        ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'both:二人'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.assignee:"both")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:"")+'">')+
+      this.field("優先度",'<select id="f-priority">'+['high:高','medium:中','low:低'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.priority:"medium")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+'</div>'+
+      this.field("メモ",'<textarea id="f-memo" placeholder="詳細メモ">'+esc(it?it.memo:"")+'</textarea>')+
+      this.field("場所（任意）",'<input id="f-loc" placeholder="例: 区役所 / 自宅" value="'+esc(it&&it.loc?it.loc:"")+'">')+
+      this.field("URL（任意）",'<input id="f-url" type="url" inputmode="url" placeholder="https://" value="'+esc(it&&it.url?it.url:"")+'">')+
+      (it&&it.url?'<a class="tlink" href="'+esc(it.url)+'" target="_blank" rel="noopener" style="font-size:var(--text-sm);display:inline-block;margin:-10px 0 14px">リンクを開く ↗</a>':'')+
+      this.field("画像・添付（任意）",'<div id="f-img-preview">'+this.imgPreview(it&&it.image)+'</div><input type="file" accept="image/*" onchange="App.pickImage(this)">')+
+      this.actions(()=>{
+        const title=val("f-title");if(!title){this.toast("やることを入力してください");return false;}
+        if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
+        const data={title,cat:val("f-cat"),assignee:seg("f-assignee"),due:val("f-due")||null,priority:val("f-priority"),memo:val("f-memo"),loc:val("f-loc"),url:val("f-url"),image:this._formImage||null};
+        if(it)Object.assign(it,data);else this.state.tasks.push({id:uid(),status:"todo",...data});
+        return true;
+      },it?()=>this.del("tasks",id):null);
+    this.showSheet(h);
+  },
+  imgPreview(src){return src?('<div style="position:relative;display:inline-block;margin-bottom:10px"><img src="'+src+'" style="max-width:100%;max-height:180px;border-radius:var(--radius-md);display:block"><button type="button" class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;min-height:30px;padding:4px 10px" onclick="App.clearImage()">削除</button></div>'):'';},
+  pickImage(input){const f=input.files&&input.files[0];if(!f)return;readImage(f,(d)=>{this._formImage=d;const p=document.getElementById("f-img-preview");if(p)p.innerHTML=this.imgPreview(d);});},
+  clearImage(){this._formImage=null;const p=document.getElementById("f-img-preview");if(p)p.innerHTML="";},
+  // ---- wish ----
+  openWish(id){
+    const it=id?this.state.wishes.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"やりたいことを編集":"やりたいことを追加")+'</h3>'+
+      this.field("タイトル",'<input id="f-title" placeholder="例: 沖縄に家族旅行" value="'+esc(it?it.title:"")+'">')+
+      this.field("分類",'<select id="f-cat">'+this.opts("wish",it?it.cat:"wish_travel")+'</select>')+
+      '<div class="form-row">'+this.field("目標金額（任意）",'<input id="f-target" type="number" inputmode="numeric" placeholder="未定" value="'+(it&&it.target?it.target:"")+'">')+
+      this.field("現在の貯金",'<input id="f-current" type="number" inputmode="numeric" placeholder="0" value="'+(it&&it.current?it.current:"")+'">')+'</div>'+
+      '<div class="form-row">'+this.field("希望時期（任意）",'<input id="f-date" type="month" value="'+(it&&it.date?it.date:"")+'">')+
+      this.field("優先度",'<select id="f-priority">'+['high:高','medium:中','low:低'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.priority:"medium")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+'</div>'+
+      this.field("ステータス",'<select id="f-status">'+['dream:いつか','planning:計画中','saving:貯金中','done:達成'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.status:"dream")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+
+      this.field("メモ",'<textarea id="f-memo" placeholder="自由メモ">'+esc(it?it.memo:"")+'</textarea>')+
+      this.actions(()=>{
+        const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
+        const data={title,cat:val("f-cat"),target:+document.getElementById("f-target").value||null,current:+document.getElementById("f-current").value||0,date:val("f-date")||null,priority:val("f-priority"),status:val("f-status"),memo:val("f-memo")};
+        if(it)Object.assign(it,data);else this.state.wishes.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("wishes",id):null);
+    this.showSheet(h);
+  },
+  // ---- goal ----
+  openGoal(id){
+    const it=id?this.state.goals.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"積立ゴールを編集":"積立ゴールを追加")+'</h3>'+
+      this.field("種類",'<select id="f-type" onchange="var g=App.glabel(this.value);if(g)document.getElementById(\'f-label\').value=g">'+this.opts("goalType",it?it.typeId:"goal_emergency")+'</select>')+
+      this.field("名前",'<input id="f-label" value="'+esc(it?it.label:"緊急予備資金")+'">')+
+      '<div class="form-row">'+this.field("目標金額",'<input id="f-target" type="number" inputmode="numeric" placeholder="0" value="'+(it?it.target:"")+'">')+
+      this.field("現在の積立額",'<input id="f-current" type="number" inputmode="numeric" placeholder="0" value="'+(it?it.current:"")+'">')+'</div>'+
+      (it?'<div class="form-row"><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',10000)">+1万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',30000)">+3万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',50000)">+5万</button></div>':'')+
+      this.actions(()=>{
+        const data={typeId:val("f-type"),label:val("f-label"),target:+document.getElementById("f-target").value||0,current:+document.getElementById("f-current").value||0};
+        if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("goals",id):null);
+    this.showSheet(h);
+  },
+  glabel(typeId){const t=findCat("goalType",typeId);return t?t.label:"";},
+  addToGoal(id,amt){const g=this.state.goals.find(x=>x.id===id);if(g){g.current=(+g.current||0)+amt;document.getElementById("f-current").value=g.current;this.save();this.toast(yen(amt)+"を積立");}},
+  // ---- event ----
+  openEvent(id,presetDate){
+    const it=id?this.state.events.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"予定を編集":"予定を追加")+'</h3>'+
+      this.field("タイトル",'<input id="f-title" placeholder="例: 保育園の運動会 / 家賃引落し" value="'+esc(it?it.title:"")+'">')+
+      this.field("種別",'<div class="seg" id="f-etype">'+
+        ['event:予定','payment:支払い'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.type:"event")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      this.field("日付",'<input id="f-date" type="date" value="'+(it?it.date:(presetDate||todayStr()))+'">')+
+      '<div class="form-row">'+this.field("開始時刻（任意）",'<input id="f-start" type="time" value="'+(it&&it.start?it.start:"")+'">')+
+      this.field("終了時刻（任意）",'<input id="f-end" type="time" value="'+(it&&it.end?it.end:"")+'">')+'</div>'+
+      this.field("場所（任意）",'<input id="f-loc" placeholder="例: 〇〇小学校 体育館" value="'+esc(it&&it.loc?it.loc:"")+'">')+
+      this.field("金額（任意）",'<input id="f-amount" class="amt" type="number" inputmode="numeric" placeholder="0" value="'+(it&&it.amount?it.amount:"")+'">')+
+      (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">📅 Googleカレンダーに追加</a>':'')+
+      this.actions(()=>{
+        const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
+        const data={title,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,loc:val("f-loc"),amount:+document.getElementById("f-amount").value||null};
+        if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("events",id):null);
+    this.showSheet(h);
+  },
+  gcalUrl(ev){
+    const d=ev.date.replace(/-/g,"");
+    let dates;
+    if(ev.start){const st=ev.start.replace(":","")+"00";const en=(ev.end||ev.start).replace(":","")+"00";dates=d+"T"+st+"/"+d+"T"+en;}
+    else{dates=d+"/"+addDay(ev.date);}
+    let u="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(ev.title)+"&dates="+dates;
+    if(ev.loc)u+="&location="+encodeURIComponent(ev.loc);
+    if(ev.amount)u+="&details="+encodeURIComponent("金額: "+yen(ev.amount));
+    return u;
+  },
+
+  actions(onSave,onDelete){
+    let h='<div class="sheet-actions"><button class="btn btn-ghost" style="flex:1" onclick="App.closeSheet()">キャンセル</button><button class="btn btn-primary" style="flex:2" onclick="App._save()">保存</button></div>';
+    if(onDelete)h+='<div class="delete-link" onclick="App._delete()">削除する</div>';
+    this._onSave=onSave;this._onDelete=onDelete;
+    return h;
+  },
+  _save(){if(this._onSave()!==false){this.closeSheet();this.commit();this.toast("保存しました");}},
+  _delete(){if(confirm("削除しますか?")){this._onDelete();this.closeSheet();this.commit();this.toast("削除しました");}},
+  del(coll,id){this.state[coll]=this.state[coll].filter(x=>x.id!==id);},
+  seg(btn){btn.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("on"));btn.classList.add("on");},
+
+  toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(this._tt);this._tt=setTimeout(()=>t.classList.remove("show"),1900);},
+
+  /* ---- data import/export ---- */
+  exportData(){
+    const blob=new Blob([JSON.stringify(this.state,null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download="imaoka-lifeplan-backup.json";a.click();this.toast("書き出しました");
+  },
+  importData(file){
+    if(!file)return;const r=new FileReader();
+    r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.settings)throw 0;this.state=d;this.load();this.applyTheme();this.save();this.render();this.toast("読み込みました");}catch(e){this.toast("ファイルを読めませんでした");}};
+    r.readAsText(file);
+  },
+  resetData(){if(confirm("すべてのデータを消して初期状態に戻します。よろしいですか?")){this.state=seedState();this.applyTheme();this.save();this.render();this.toast("リセットしました");}},
+
+  /* ============== SUPABASE SYNC ============== */
+  toggleSync(on){
+    this.state.settings.sync.enabled=on;
+    if(on)this.startSync(false);else{this.stopSync();this.save(true);this.render();}
+  },
+  async loadSb(){
+    if(window.supabase&&window.supabase.createClient)return;
+    await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  },
+  async startSync(silent){
+    const sy=this.state.settings.sync;
+    if(!sy.url||!sy.key||!sy.space){if(!silent)this.toast("URL・キー・共有コードを入力してください");this._syncStatus="off";this.state.settings.sync.enabled=false;this.save(true);this.render();return;}
+    try{
+      await this.loadSb();
+      this._client=window.supabase.createClient(sy.url,sy.key);
+      // pull
+      const{data,error}=await this._client.from("app_state").select("data,updated_at").eq("space_id",sy.space).maybeSingle();
+      if(error)throw error;
+      if(data&&data.data){
+        const adopt=silent||confirm("クラウドに保存済みのデータがあります。\n「OK」= クラウドのデータを読み込む\n「キャンセル」= この端末のデータをクラウドへ上書き");
+        if(adopt){const remote=data.data;remote.settings.sync=sy;this.state=remote;this.load();this.applyTheme();this.save(true);}
+        else{await this.pushNow();}
+      }else{await this.pushNow();}
+      // realtime
+      if(this._channel)this._client.removeChannel(this._channel);
+      this._channel=this._client.channel("st-"+sy.space)
+        .on("postgres_changes",{event:"*",schema:"public",table:"app_state",filter:"space_id=eq."+sy.space},payload=>{
+          const nd=payload.new; if(!nd||!nd.data)return;
+          if(nd.updated_at===this._lastPushed)return; // our own write
+          nd.data.settings.sync=this.state.settings.sync;
+          this.state=nd.data;this.load();this.applyTheme();
+          localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));
+          this.render();this.toast("同期されました");
+        })
+        .subscribe();
+      this._syncStatus="on";this.save(true);this.render();
+      if(!silent)this.toast("クラウド同期を開始しました");
+    }catch(e){
+      console.error(e);this._syncStatus="err";if(!silent)this.toast("接続に失敗しました。設定を確認してください");this.render();
+    }
+  },
+  stopSync(){if(this._channel&&this._client){this._client.removeChannel(this._channel);}this._channel=null;this._syncStatus="off";},
+  queueCloudPush(){clearTimeout(this._pushTimer);this._pushTimer=setTimeout(()=>this.pushNow(),800);},
+  async pushNow(){
+    const sy=this.state.settings.sync;
+    if(!this._client||!sy.space)return;
+    const ts=new Date().toISOString();this._lastPushed=ts;
+    const payload=JSON.parse(JSON.stringify(this.state));
+    delete payload.settings.sync; // never store secrets in cloud blob
+    try{
+      const{error}=await this._client.from("app_state").upsert({space_id:sy.space,data:payload,updated_at:ts},{onConflict:"space_id"});
+      if(error)throw error;
+      if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}
+    }catch(e){console.error(e);this._syncStatus="err";this.render();}
+  }
+};
+// helpers used inside form callbacks
+function val(id){const el=document.getElementById(id);return el?el.value.trim():"";}
+function seg(id){const el=document.getElementById(id);const on=el&&el.querySelector("button.on");return on?on.dataset.v:"";}
+function pad2(n){return String(n).padStart(2,"0");}
+function addDay(ymd){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y,m-1,d+1);return ""+dt.getFullYear()+pad2(dt.getMonth()+1)+pad2(dt.getDate());}
+function readImage(file,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1280;let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",0.72));}catch(e){cb(r.result);}};img.src=r.result;};r.readAsDataURL(file);}
+
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",()=>{if(App.state&&App.state.settings.theme==="auto")App.applyTheme();});
+App.init();
+
+/* service worker for installable PWA (optional, ignored if file missing) */
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+</script>
+</body>
+</html>
