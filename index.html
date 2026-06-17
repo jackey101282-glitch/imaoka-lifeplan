@@ -169,7 +169,8 @@ input.amt{font-family:var(--font-family-number);text-align:right;font-size:var(-
 .seg{display:flex;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:4px;gap:4px}
 .seg button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-weight:var(--fw-m);color:var(--color-text-secondary);cursor:pointer;font-family:inherit;font-size:var(--text-base)}
 .seg button.on{background:var(--color-bg-surface);color:var(--color-primary-600);font-weight:var(--fw-b);box-shadow:var(--shadow-xs)}
-.form-row{display:flex;gap:10px}.form-row > *{flex:1}
+.form-row{display:flex;gap:10px}.form-row > *{flex:1 1 0;min-width:0}
+input[type=date],input[type=time]{min-width:0;max-width:100%}
 .sheet-actions{display:flex;gap:10px;margin-top:8px}
 .delete-link{text-align:center;color:var(--color-danger);font-size:var(--text-base);padding:14px;cursor:pointer;font-weight:var(--fw-m)}
 /* settings */
