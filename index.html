@@ -59,13 +59,15 @@ body{
 }
 .app-header h1{font-size:var(--text-lg);font-weight:var(--fw-b);margin:0}
 .app-header .sub{font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-m)}
-.month-nav{display:flex;align-items:center;gap:4px}
-.month-nav button{
-  border:none;background:var(--color-bg-muted);color:var(--color-text-primary);
-  width:32px;height:32px;border-radius:var(--radius-full);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.month-nav .cur{font-weight:var(--fw-b);font-size:var(--text-base);min-width:74px;text-align:center}
+.month-nav{display:flex;align-items:center;gap:2px;background:var(--color-primary-50);border:1px solid var(--color-primary-100);border-radius:var(--radius-full);padding:3px 4px}
+.month-nav button{border:none;background:transparent;color:var(--color-primary-600);width:30px;height:30px;border-radius:var(--radius-full);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.month-nav button:active{background:var(--color-primary-100)}
+.month-nav .cur{font-weight:var(--fw-b);font-size:var(--text-base);min-width:88px;text-align:center;color:var(--color-primary-700);cursor:pointer}
+.month-nav.off{background:#FCEFD9;border-color:#F3D9A8}
+.month-nav.off button,.month-nav.off .cur{color:var(--color-warning)}
+html[data-theme="dark"] .month-nav .cur,html[data-theme="dark"] .month-nav button{color:var(--color-primary-500)}
+html[data-theme="dark"] .month-nav.off{background:#3a2f1a;border-color:#5a4520}
+html[data-theme="dark"] .month-nav.off button,html[data-theme="dark"] .month-nav.off .cur{color:var(--color-warning)}
 .sync-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-left:2px;vertical-align:middle}
 .sync-on{background:var(--color-accent-500)}.sync-off{background:var(--color-text-disabled)}
 .sync-err{background:var(--color-danger)}
@@ -204,9 +206,9 @@ a.tlink{color:var(--color-secondary-500)}
     <div class="sub" id="hd-sub"></div>
   </div>
   <div class="month-nav" id="month-nav">
-    <button onclick="App.shiftMonth(-1)">‹</button>
-    <span class="cur num" id="cur-month"></span>
-    <button onclick="App.shiftMonth(1)">›</button>
+    <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
+    <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
+    <button onclick="App.shiftMonth(1)" aria-label="次の月">›</button>
   </div>
 </header>
 
@@ -219,7 +221,7 @@ a.tlink{color:var(--color-secondary-500)}
   <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti">✅</span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
   <button class="tab" data-tab="wishlist" onclick="App.go('wishlist')"><span class="ti">✨</span><span class="tl">やりたい</span></button>
   <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti">📅</span><span class="tl">カレンダー</span></button>
-  <button class="tab" data-tab="links" onclick="App.go('links')"><span class="ti">🔗</span><span class="tl">リンク</span></button>
+  <button class="tab" data-tab="share" onclick="App.go('share')"><span class="ti">🤝</span><span class="tl">共有</span></button>
   <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti">⚙️</span><span class="tl">設定</span></button>
 </nav>
 
@@ -325,7 +327,8 @@ function seedState(){
       {id:uid(),title:"エアコンフィルター清掃",cat:"home",assignee:"husband",due:"2026-07-01",status:"todo",priority:"medium",memo:"梅雨明け前に実施。"}
     ],
     events:[],
-    links:[]
+    links:[],
+    notes:[]
   };
 }
 
@@ -339,7 +342,7 @@ function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;
 
 /* ============================================================ */
 const App = {
-  state:null, tab:"dashboard", curMonth:thisMonth(),
+  state:null, tab:"dashboard", curMonth:thisMonth(), shareView:"home",
   filters:{tasks:"open", wishlist:"all"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
@@ -360,7 +363,7 @@ const App = {
     }catch(e){this.state=seedState();}
     // backfill
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
-    ["incomes","expenses","goals","wishes","tasks","events","links"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    ["incomes","expenses","goals","wishes","tasks","events","links","notes"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
@@ -375,11 +378,12 @@ const App = {
   /* ---- navigation ---- */
   go(tab){
     this.tab=tab;
+    if(tab==="share")this.shareView="home";
     document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
     document.getElementById("month-nav").style.display=(tab==="dashboard")?"flex":"none";
-    document.getElementById("fab").style.display=(tab==="dashboard"||tab==="settings")?"none":"flex";
     this.render();
   },
+  shareGo(view){this.shareView=view;this.render();window.scrollTo(0,0);},
   shiftMonth(d){
     let[y,m]=this.curMonth.split("-").map(Number); m+=d;
     if(m<1){m=12;y--}if(m>12){m=1;y++}
@@ -393,13 +397,19 @@ const App = {
 
   render(){
     document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
-    const titles={dashboard:"ホーム",tasks:"タスク",wishlist:"やりたいこと",calendar:"カレンダー",links:"リンク集",settings:"設定"};
-    document.getElementById("hd-title").textContent=titles[this.tab];
+    document.getElementById("month-nav").classList.toggle("off",this.curMonth!==thisMonth());
+    const titles={dashboard:"ホーム",tasks:"タスク",wishlist:"やりたいこと",calendar:"カレンダー",share:"共有事項",settings:"設定"};
+    let title=titles[this.tab];
+    if(this.tab==="share")title=this.shareView==="notes"?"共有メモ":this.shareView==="links"?"リンク集":"共有事項";
+    document.getElementById("hd-title").textContent=title;
     document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?("今岡家 "+this.dot()):this.dot(true);
     const v=document.getElementById("view");
     v.innerHTML=this["view_"+this.tab]();
     this.updateBadges();
+    this.updateFab();
   },
+  updateFab(){const show=(this.tab==="tasks"||this.tab==="wishlist"||this.tab==="calendar")||(this.tab==="share"&&this.shareView!=="home");document.getElementById("fab").style.display=show?"flex":"none";},
+  thisMonthJump(){this.curMonth=thisMonth();this.render();},
   dot(plain){
     const s=this._syncStatus; if(s==="off") return plain?"":"";
     const cls=s==="on"?"sync-on":(s==="err"?"sync-err":"sync-off");
@@ -650,10 +660,54 @@ const App = {
     this.showSheet(h);
   },
 
+  /* ============== SHARE HUB (共有事項) ============== */
+  view_share(){
+    if(this.shareView==="notes")return this.view_notes();
+    if(this.shareView==="links")return this.view_links();
+    const nc=this.state.notes.length,lc=this.state.links.length;
+    let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 14px">日付や納期のない「二人で共有しておきたいこと」をここに。LINEのように流れず、ずっと残ります。</p>';
+    h+=this.hubCard("📝","共有メモ","買いたい物・気づき・決めごとなど自由に",nc+"件","notes");
+    h+=this.hubCard("🔗","リンク集","よく使うサイト・ログインID/パスワード",lc+"件","links");
+    return h;
+  },
+  hubCard(icon,title,desc,count,view){
+    return '<div class="card" style="padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px" onclick="App.shareGo(\''+view+'\')">'+
+      '<div style="font-size:30px;flex-shrink:0;line-height:1">'+icon+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md)">'+title+'</div><div class="meta" style="margin-top:2px">'+esc(desc)+'</div></div>'+
+      '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px"><span class="chip chip-todo">'+count+'</span><span style="color:var(--color-text-disabled);font-size:22px">›</span></div></div>';
+  },
+  view_notes(){
+    let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:12px" onclick="App.shareGo(\'home\')">‹ 共有事項にもどる</button>';
+    const list=this.state.notes.slice().sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+    if(!list.length){h+='<div class="card"><div class="empty"><span class="e-ic">📝</span>共有メモがありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openNote()">＋ メモを追加</button></div></div>';return h;}
+    list.forEach(n=>{
+      h+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openNote(\''+n.id+'\')">'+
+        (n.title?'<div style="font-weight:700;font-size:var(--text-md);margin-bottom:4px">'+(n.pinned?'📌 ':'')+esc(n.title)+'</div>':(n.pinned?'<div style="margin-bottom:4px">📌</div>':''))+
+        (n.body?'<div style="white-space:pre-wrap">'+esc(n.body)+'</div>':'')+'</div>';
+    });
+    return h;
+  },
+  openNote(id){
+    const it=id?this.state.notes.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"共有メモを編集":"共有メモを追加")+'</h3>'+
+      this.field("タイトル（任意）",'<input id="f-title" placeholder="例: 買い替え検討リスト" value="'+esc(it?it.title:"")+'">')+
+      this.field("内容",'<textarea id="f-body" style="min-height:140px" placeholder="二人で共有したいことを自由に書けます">'+esc(it&&it.body?it.body:"")+'</textarea>')+
+      '<div style="margin-bottom:16px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="f-pin" '+(it&&it.pinned?"checked":"")+' style="width:auto;min-height:auto"> 上部に固定（ピン留め）</label></div>'+
+      this.actions(()=>{
+        const title=val("f-title"),body=val("f-body");
+        if(!title&&!body){this.toast("内容を入力してください");return false;}
+        const data={title,body,pinned:document.getElementById("f-pin").checked};
+        if(it)Object.assign(it,data);else this.state.notes.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("notes",id):null);
+    this.showSheet(h);
+  },
+
   /* ============== LINKS ============== */
   view_links(){
     const list=this.state.links;
-    let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">二人でよく使うサイトのURLやログイン情報をまとめておけます。</p>';
+    let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:12px" onclick="App.shareGo(\'home\')">‹ 共有事項にもどる</button>';
+    h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">二人でよく使うサイトのURLやログイン情報をまとめておけます。</p>';
     if(!list.length){
       h+='<div class="card"><div class="empty"><span class="e-ic">🔗</span>まだリンクがありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openLink()">＋ リンクを追加</button></div></div>';
       return h;
@@ -771,7 +825,7 @@ const App = {
     if(this.tab==="tasks")this.openTask();
     else if(this.tab==="wishlist")this.openWish();
     else if(this.tab==="calendar")this.openEvent();
-    else if(this.tab==="links")this.openLink();
+    else if(this.tab==="share"){if(this.shareView==="notes")this.openNote();else if(this.shareView==="links")this.openLink();}
   },
   field(label,inner){return '<label class="fld"><span class="lbl">'+label+'</span>'+inner+'</label>';},
   opts(group,sel,allowAdd){let h=allCats(group).map(c=>'<option value="'+c.id+'" '+(c.id===sel?"selected":"")+'>'+c.icon+' '+c.label+'</option>').join("");if(allowAdd)h+='<option value="__add__">＋ 新しいカテゴリを追加…</option>';return h;},
