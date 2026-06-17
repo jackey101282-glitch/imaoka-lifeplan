@@ -219,6 +219,7 @@ a.tlink{color:var(--color-secondary-500)}
   <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti">✅</span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
   <button class="tab" data-tab="wishlist" onclick="App.go('wishlist')"><span class="ti">✨</span><span class="tl">やりたい</span></button>
   <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti">📅</span><span class="tl">カレンダー</span></button>
+  <button class="tab" data-tab="links" onclick="App.go('links')"><span class="ti">🔗</span><span class="tl">リンク</span></button>
   <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti">⚙️</span><span class="tl">設定</span></button>
 </nav>
 
@@ -323,7 +324,8 @@ function seedState(){
       {id:uid(),title:"車検の準備",cat:"home",assignee:"husband",due:"2027-02-28",status:"todo",priority:"high",memo:"費用目安8〜15万円。相見積もりを検討。"},
       {id:uid(),title:"エアコンフィルター清掃",cat:"home",assignee:"husband",due:"2026-07-01",status:"todo",priority:"medium",memo:"梅雨明け前に実施。"}
     ],
-    events:[]
+    events:[],
+    links:[]
   };
 }
 
@@ -358,7 +360,7 @@ const App = {
     }catch(e){this.state=seedState();}
     // backfill
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
-    ["incomes","expenses","goals","wishes","tasks","events"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    ["incomes","expenses","goals","wishes","tasks","events","links"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
@@ -391,7 +393,7 @@ const App = {
 
   render(){
     document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
-    const titles={dashboard:"ホーム",tasks:"タスク",wishlist:"やりたいこと",calendar:"カレンダー",settings:"設定"};
+    const titles={dashboard:"ホーム",tasks:"タスク",wishlist:"やりたいこと",calendar:"カレンダー",links:"リンク集",settings:"設定"};
     document.getElementById("hd-title").textContent=titles[this.tab];
     document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?("今岡家 "+this.dot()):this.dot(true);
     const v=document.getElementById("view");
@@ -648,6 +650,64 @@ const App = {
     this.showSheet(h);
   },
 
+  /* ============== LINKS ============== */
+  view_links(){
+    const list=this.state.links;
+    let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">二人でよく使うサイトのURLやログイン情報をまとめておけます。</p>';
+    if(!list.length){
+      h+='<div class="card"><div class="empty"><span class="e-ic">🔗</span>まだリンクがありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openLink()">＋ リンクを追加</button></div></div>';
+      return h;
+    }
+    list.forEach(l=>{
+      const dom=domainOf(l.url);
+      const fav=dom?('<img src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(dom)+'&sz=64" style="width:28px;height:28px;border-radius:6px;display:block" onerror="this.replaceWith(document.createTextNode(\'🔗\'))">'):'🔗';
+      h+='<div class="card" style="padding:16px">'+
+        '<div class="row" style="align-items:flex-start;gap:10px"><div style="flex-shrink:0;width:28px;text-align:center;font-size:22px;line-height:1">'+fav+'</div>'+
+        '<div style="flex:1;min-width:0;cursor:pointer" onclick="App.openLink(\''+l.id+'\')"><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.name||dom||"(名称未設定)")+'</div>'+
+        (dom?'<div class="meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(dom)+'</div>':'')+'</div>'+
+        (l.url?'<a class="btn btn-sec btn-sm" style="text-decoration:none;min-height:36px;padding:6px 12px;white-space:nowrap" href="'+esc(l.url)+'" target="_blank" rel="noopener">開く ↗</a>':'')+'</div>';
+      if(l.loginId||l.password){
+        h+='<div style="margin-top:12px;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:10px 12px">';
+        if(l.loginId){
+          h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">ID</div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.loginId)+'</div></div>'+
+            '<button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 12px;white-space:nowrap" onclick="App.copyField(\''+l.id+'\',\'loginId\')">コピー</button></div>';
+        }
+        if(l.password){
+          if(l.loginId)h+='<div class="divider" style="margin:8px 0"></div>';
+          h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">パスワード</div><div id="pw-'+l.id+'" data-shown="0" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-family-number)">••••••••</div></div>'+
+            '<button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 10px;white-space:nowrap" onclick="App.revealPw(\''+l.id+'\',this)">表示</button>'+
+            '<button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 10px;margin-left:6px;white-space:nowrap" onclick="App.copyField(\''+l.id+'\',\'password\')">コピー</button></div>';
+        }
+        h+='</div>';
+      }
+      if(l.memo)h+='<div class="meta" style="margin-top:10px;white-space:pre-wrap">'+esc(l.memo)+'</div>';
+      h+='</div>';
+    });
+    return h;
+  },
+  revealPw(id,btn){const l=this.state.links.find(x=>x.id===id);if(!l)return;const el=document.getElementById("pw-"+id);if(!el)return;if(el.dataset.shown==="1"){el.textContent="••••••••";el.dataset.shown="0";btn.textContent="表示";}else{el.textContent=l.password;el.dataset.shown="1";btn.textContent="隠す";}},
+  copyField(id,field){const l=this.state.links.find(x=>x.id===id);if(l)this.copy(l[field]||"");},
+  copy(text){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>this.toast("コピーしました")).catch(()=>this.toast("コピーできませんでした"));}else{this.toast("コピーできませんでした");}},
+  openLink(id){
+    const it=id?this.state.links.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"リンクを編集":"リンクを追加")+'</h3>'+
+      this.field("サイト名（分かりやすい名前）",'<input id="f-name" placeholder="例: 楽天 / 子供の保育園サイト" value="'+esc(it?it.name:"")+'">')+
+      this.field("URL",'<input id="f-url" type="url" inputmode="url" placeholder="https://" value="'+esc(it&&it.url?it.url:"")+'">')+
+      this.field("ログインID（任意）",'<input id="f-lid" autocomplete="off" autocapitalize="off" placeholder="メールアドレス・ユーザー名など" value="'+esc(it&&it.loginId?it.loginId:"")+'">')+
+      this.field("パスワード（任意）",'<input id="f-pw" type="text" autocomplete="off" autocapitalize="off" placeholder="" value="'+esc(it&&it.password?it.password:"")+'">')+
+      this.field("メモ（任意）",'<textarea id="f-memo" placeholder="補足メモ">'+esc(it&&it.memo?it.memo:"")+'</textarea>')+
+      '<p class="muted" style="font-size:var(--text-xs);margin:-6px 2px 14px;line-height:1.6">🔒 ID・パスワードはこの端末と共有先（クラウド）に保存されます。ネット銀行など特に重要なものの保存は避けることをおすすめします。</p>'+
+      this.actions(()=>{
+        const name=val("f-name");let url=val("f-url");
+        if(!name&&!url){this.toast("サイト名かURLを入力してください");return false;}
+        if(url&&!/^https?:\/\//i.test(url))url="https://"+url;
+        const data={name,url,loginId:val("f-lid"),password:val("f-pw"),memo:val("f-memo")};
+        if(it)Object.assign(it,data);else this.state.links.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("links",id):null);
+    this.showSheet(h);
+  },
+
   /* ============== SETTINGS ============== */
   view_settings(){
     const s=this.state.settings, sy=s.sync;
@@ -711,6 +771,7 @@ const App = {
     if(this.tab==="tasks")this.openTask();
     else if(this.tab==="wishlist")this.openWish();
     else if(this.tab==="calendar")this.openEvent();
+    else if(this.tab==="links")this.openLink();
   },
   field(label,inner){return '<label class="fld"><span class="lbl">'+label+'</span>'+inner+'</label>';},
   opts(group,sel,allowAdd){let h=allCats(group).map(c=>'<option value="'+c.id+'" '+(c.id===sel?"selected":"")+'>'+c.icon+' '+c.label+'</option>').join("");if(allowAdd)h+='<option value="__add__">＋ 新しいカテゴリを追加…</option>';return h;},
@@ -953,6 +1014,7 @@ const App = {
 // helpers used inside form callbacks
 function val(id){const el=document.getElementById(id);return el?el.value.trim():"";}
 function seg(id){const el=document.getElementById(id);const on=el&&el.querySelector("button.on");return on?on.dataset.v:"";}
+function domainOf(url){if(!url)return "";try{let u=url;if(!/^https?:\/\//i.test(u))u="https://"+u;return new URL(u).hostname.replace(/^www\./,"");}catch(e){return "";}}
 function pad2(n){return String(n).padStart(2,"0");}
 function addDay(ymd){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y,m-1,d+1);return ""+dt.getFullYear()+pad2(dt.getMonth()+1)+pad2(dt.getDate());}
 function readImage(file,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1280;let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",0.72));}catch(e){cb(r.result);}};img.src=r.result;};r.readAsDataURL(file);}
