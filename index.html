@@ -200,6 +200,28 @@ input.amt{font-family:var(--font-family-number);text-align:right;font-size:var(-
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 a.tlink{color:var(--color-secondary-500)}
+/* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
+@media (min-width:900px){
+  body{padding-bottom:0;padding-left:230px}
+  .tabbar{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:230px;height:100vh;border-top:none;border-right:1px solid var(--color-border);padding:16px 14px;gap:4px;justify-content:flex-start;align-items:stretch}
+  .tabbar::before{content:"🏡 今岡家ライフプラン";display:block;font-weight:700;font-size:var(--text-md);color:var(--color-primary-600);padding:8px 12px 18px;line-height:1.4}
+  .tab{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:14px;padding:13px 14px;border-radius:var(--radius-md);width:100%}
+  .tab:hover{background:var(--color-bg-muted)}
+  .tab.on{background:var(--color-primary-50)}
+  .tab .ti{font-size:21px;width:24px;text-align:center}
+  .tab .tl{font-size:var(--text-md);font-weight:var(--fw-m)}
+  .tab .nbadge{position:static;margin-left:auto}
+  .app-header{max-width:840px;margin-left:auto;margin-right:auto}
+  main{max-width:840px;padding-top:24px}
+  .sheet{left:230px}
+  .fab{right:max(20px, calc((100vw - 230px - 840px)/2 + 20px))}
+}
+@media (min-width:900px){
+  /* ダッシュボードのカードを2列に */
+  #view .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  #view .dash-grid > .card{margin-bottom:0}
+  #view .dash-grid > .dash-full{grid-column:1 / -1}
+}
 </style>
 </head>
 <body>
@@ -355,6 +377,12 @@ function monthLabel(m){const[y,mo]=m.split("-");return (y+"年"+Number(mo)+"月"
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 /* ============================================================ */
+/* ===== 自動同期の埋め込み設定 =====
+   ここにSupabaseのURL・anon key・共有コードを入れると、
+   全端末がURLを開くだけで自動的に同期されます(設定操作不要)。
+   空のままなら従来どおり「設定」からの手動オンが必要です。 */
+const APP_CONFIG = { syncUrl:"", syncKey:"", syncSpace:"" };
+
 const App = {
   state:null, tab:"dashboard", curMonth:thisMonth(), shareView:"home", curFolderId:null,
   taskView:"home", curProjectId:null, curSubId:null,
@@ -364,10 +392,20 @@ const App = {
 
   init(){
     this.load();
+    this.applyBakedConfig();
     this.applyTheme();
     this.go("dashboard");
     if(this.state.settings.sync.enabled) this.startSync(true);
     window.addEventListener("beforeunload",()=>this.save());
+  },
+  // 埋め込み設定があれば自動で同期を有効化(ユーザーが別途独自設定していれば尊重)
+  applyBakedConfig(){
+    const c=APP_CONFIG; if(!c.syncUrl||!c.syncKey||!c.syncSpace) return;
+    const sy=this.state.settings.sync;
+    if(!sy.url || sy.url===c.syncUrl){
+      sy.url=c.syncUrl; sy.key=c.syncKey; sy.space=c.syncSpace; sy.enabled=true;
+      this.save(true);
+    }
   },
 
   /* ---- persistence ---- */
@@ -547,7 +585,7 @@ const App = {
 
     const quick='<div class="form-row" style="margin-bottom:12px"><button class="btn btn-primary btn-sm" style="flex:1" onclick="App.openExpense()">＋ 支出</button><button class="btn btn-sec btn-sm" style="flex:1" onclick="App.openIncome()">＋ 収入</button></div>';
 
-    return quick+incCard+expCard+availCard+goalsCard+tasksCard+wishCard;
+    return quick+'<div class="dash-grid">'+incCard+expCard+'</div>'+availCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
