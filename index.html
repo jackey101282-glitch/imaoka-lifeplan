@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <title>今岡家ライフプラン</title>
 <link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 <style>
 :root{
   --color-primary-50:#FFF4EF;--color-primary-100:#FFE4D6;--color-primary-200:#FFCAAD;
@@ -216,7 +219,7 @@ a.tlink{color:var(--color-secondary-500)}
 .authcard{width:100%;max-width:380px;margin:auto;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-md)}
 .authcard h2{font-size:var(--text-xl)}
 .my-brand{text-align:center;margin-bottom:22px}
-.my-brand .ic{width:62px;height:62px;display:inline-block;filter:drop-shadow(0 7px 16px rgba(232,106,53,.34))}
+.my-brand .ic{width:72px;height:72px;border-radius:18px;display:inline-block;object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.16)}
 .my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
 .my-tag{font-size:var(--text-sm);color:var(--color-text-secondary);margin:0}
 html[data-theme="dark"] .warn-box{background:#3a2020}
@@ -1491,7 +1494,7 @@ const App = {
     }
     const su=this._authView==="signup";
     return '<div class="authcard"><div class="my-brand">'+
-      '<svg class="ic" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="mylg" x1="8" y1="6" x2="52" y2="54" gradientUnits="userSpaceOnUse"><stop stop-color="#FF9A6B"/><stop offset="1" stop-color="#E86A35"/></linearGradient></defs><rect width="60" height="60" rx="16" fill="url(#mylg)"/><path d="M30 47C30 47 11 36 11 23.5C11 17.6 15.6 13 21.2 13C25 13 28.2 15.2 30 18.4C31.8 15.2 35 13 38.8 13C44.4 13 49 17.6 49 23.5C49 36 30 47 30 47Z" fill="#fff"/></svg>'+
+      '<img class="ic" src="icon-192.png" alt="make your life." />'+
       '<h2 class="my-wordmark">make your life<span style="color:var(--color-accent-500)">.</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+

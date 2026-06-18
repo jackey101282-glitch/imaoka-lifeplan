@@ -15,3 +15,4 @@ imaoka-lifeplan-backup*.json
 
 # ローカル設定(端末固有のため公開しない)
 .claude/settings.local.json
+icon-master.png
