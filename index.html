@@ -43,7 +43,8 @@ html[data-theme="dark"]{
   --color-success:#52B88E;--color-warning:#F5B040;--color-danger:#E86060;--color-info:#4A72C4;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;overflow-x:hidden;overscroll-behavior-y:none}
+html{overflow-x:hidden}
+html,body{margin:0;padding:0;overscroll-behavior-y:none}
 body.noscroll{overflow:hidden}
 body{
   font-family:var(--font-family-base);background:var(--color-bg-base);
@@ -212,14 +213,18 @@ a.tlink{color:var(--color-secondary-500)}
 .chev.open{transform:rotate(180deg)}
 .warn-box{margin-top:12px;background:#FDECEC;color:var(--color-danger);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.6}
 .authwrap{position:fixed;inset:0;z-index:100;background:var(--color-bg-base);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
-.authcard{width:100%;max-width:380px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-md)}
+.authcard{width:100%;max-width:380px;margin:auto;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-md)}
 .authcard h2{font-size:var(--text-xl)}
+.my-brand{text-align:center;margin-bottom:22px}
+.my-brand .ic{width:62px;height:62px;display:inline-block;filter:drop-shadow(0 7px 16px rgba(232,106,53,.34))}
+.my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
+.my-tag{font-size:var(--text-sm);color:var(--color-text-secondary);margin:0}
 html[data-theme="dark"] .warn-box{background:#3a2020}
 /* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
   .tabbar{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:230px;height:100vh;border-top:none;border-right:1px solid var(--color-border);padding:16px 14px;gap:4px;justify-content:flex-start;align-items:stretch}
-  .tabbar::before{content:"🏡 今岡家ライフプラン";display:block;font-weight:700;font-size:var(--text-md);color:var(--color-primary-600);padding:8px 12px 18px;line-height:1.4}
+  .tabbar::before{content:"make your life.";display:block;font-weight:800;font-size:var(--text-lg);letter-spacing:-.02em;color:var(--color-primary-600);padding:10px 12px 18px;line-height:1.2}
   .tab{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:14px;padding:13px 14px;border-radius:var(--radius-md);width:100%}
   .tab:hover{background:var(--color-bg-muted)}
   .tab.on{background:var(--color-primary-50)}
@@ -1485,7 +1490,10 @@ const App = {
         '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.doLogout()">ログアウト</span></div></div>';
     }
     const su=this._authView==="signup";
-    return '<div class="authcard"><div style="text-align:center;font-size:36px">🏠</div><h2 style="text-align:center;margin:6px 0 2px">今岡家ライフプラン</h2><p class="muted" style="text-align:center;margin:0 0 18px">夫婦で使う 家計・予定・やりたい</p>'+
+    return '<div class="authcard"><div class="my-brand">'+
+      '<svg class="ic" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="mylg" x1="8" y1="6" x2="52" y2="54" gradientUnits="userSpaceOnUse"><stop stop-color="#FF9A6B"/><stop offset="1" stop-color="#E86A35"/></linearGradient></defs><rect width="60" height="60" rx="16" fill="url(#mylg)"/><path d="M30 47C30 47 11 36 11 23.5C11 17.6 15.6 13 21.2 13C25 13 28.2 15.2 30 18.4C31.8 15.2 35 13 38.8 13C44.4 13 49 17.6 49 23.5C49 36 30 47 30 47Z" fill="#fff"/></svg>'+
+      '<h2 class="my-wordmark">make your life<span style="color:var(--color-accent-500)">.</span></h2>'+
+      '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
       '<button class="btn btn-primary btn-block" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録":"ログイン")+'</button>'+
