@@ -412,13 +412,24 @@ const App = {
     this.notifyPending();
     this.initCloud();
     window.addEventListener("beforeunload",()=>this.save());
+    // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)this.pullLatest();});
+    window.addEventListener("online",()=>this.pullLatest());
   },
   setDevice(v){this.deviceOwner=v;localStorage.setItem("imaoka_device",v);this.render();},
+  // 通知は端末ごと(localStorage)。相手には同期されない
+  notifyOn(){return localStorage.getItem("imaoka_notify")==="1"&&("Notification"in window)&&Notification.permission==="granted";},
   toggleNotify(on){
-    if(on&&"Notification"in window){Notification.requestPermission().then(p=>{this.state.settings.notify=(p==="granted");this.save(true);this.render();if(p!=="granted")this.toast("通知が許可されませんでした");});}
-    else{this.state.settings.notify=false;this.save(true);this.render();}
+    if(!on){localStorage.setItem("imaoka_notify","0");this.render();return;}
+    if(!("Notification"in window)){
+      const ios=/iP(hone|ad|od)/.test(navigator.userAgent);
+      const standalone=window.navigator.standalone===true||matchMedia("(display-mode:standalone)").matches;
+      this.toast(ios&&!standalone?"iPhoneは『ホーム画面に追加』して、そのアイコンから開くと通知をオンにできます":"このブラウザは通知に対応していません");
+      this.render();return;
+    }
+    Notification.requestPermission().then(p=>{const ok=(p==="granted");localStorage.setItem("imaoka_notify",ok?"1":"0");this.render();if(!ok)this.toast("通知が許可されませんでした");}).catch(()=>{this.toast("通知をオンにできませんでした");this.render();});
   },
-  notify(title,body){if(this.state.settings.notify&&"Notification"in window&&Notification.permission==="granted"){try{new Notification(title,{body});}catch(e){}}},
+  notify(title,body){if(this.notifyOn()){try{new Notification(title,{body});}catch(e){}}},
   pendingApprovals(){return this.state.expenses.filter(e=>e.approve==="pending");},
   notifyPending(){const mine=this.pendingApprovals().filter(e=>this.deviceOwner&&e.reqBy&&e.reqBy!==this.deviceOwner);if(mine.length)this.notify("承認待ちの支出",mine.length+"件の確認をお願いします");},
   approveExpense(id){const e=this.state.expenses.find(x=>x.id===id);if(e){e.approve="approved";this.commit();this.toast("承認しました");}},
@@ -981,7 +992,7 @@ const App = {
     const map={};
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
-    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const rec=(e.recurrence&&e.recurrence!=="none")?" 🔁":"";const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+rec,amount:e.amount,start:e.start||"",onclick:"App.openEvent('"+e.id+"')"}))});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const rec=(e.recurrence&&e.recurrence!=="none")?" 🔁":"";const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+rec,amount:e.amount,memo:e.memo||"",start:e.start||"",onclick:"App.openEvent('"+e.id+"')"}))});
     this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
     this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
@@ -1025,7 +1036,7 @@ const App = {
     const items=this.calItems(ds.slice(0,7))[ds]||[];
     let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
     if(!items.length)h+='<div class="empty">予定はありません</div>';
-    items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
+    items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
     h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
     this.showSheet(h);
   },
@@ -1174,12 +1185,12 @@ const App = {
       '<div class="set-cell" style="display:block"><span class="lab">この端末を使うのは?</span><div class="desc">お小遣いの非公開・承認・通知に使われます(この端末だけの設定)</div><div class="seg" style="margin-top:8px">'+
       [["husband",esc(s.husband)],["wife",esc(s.wife)]].map(o=>'<button type="button" class="'+(this.deviceOwner===o[0]?"on":"")+'" onclick="App.setDevice(\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div></div>'+
       '<div class="set-cell"><div><span class="lab">大きな支出の承認</span><div class="desc">この金額以上は相手の承認待ちに(0でオフ)</div></div><input class="amt" style="max-width:120px;min-height:40px" type="text" inputmode="numeric" value="'+cf(s.approveThreshold)+'" oninput="App.commaize(this)" onchange="App.setApproveThreshold(this.value)"></div>'+
-      '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・もうすぐの支払いを通知(ホーム画面に追加した状態で有効)</div></div><label class="switch"><input type="checkbox" '+(s.notify?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
+      '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・もうすぐの支払いを通知(この端末だけの設定。iPhoneは「ホーム画面に追加」してそのアイコンから開くと有効)</div></div><label class="switch"><input type="checkbox" '+(this.notifyOn()?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
       '</div>';
 
     h+='<p class="set-head">表示</p><div class="set-group">'+
       '<div class="set-cell"><div><span class="lab">テーマ</span></div><select style="max-width:150px;min-height:40px" onchange="App.setTheme(this.value)">'+
-      ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(s.theme===v?"selected":"")+'>'+l+'</option>'}).join("")+
+      ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(this.getDeviceTheme()===v?"selected":"")+'>'+l+'</option>'}).join("")+
       '</select></div></div>';
 
     // アカウント・パートナー招待
@@ -1209,9 +1220,11 @@ const App = {
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
   setApproveThreshold(v){this.state.settings.approveThreshold=+String(v).replace(/[^0-9.]/g,"")||0;this.save(true);},
-  setTheme(v){this.state.settings.theme=v;this.applyTheme();this.save();},
+  // テーマは端末ごと(localStorage)。相手には同期されない
+  getDeviceTheme(){let t=localStorage.getItem("imaoka_theme");if(!t){t=(this.state&&this.state.settings&&this.state.settings.theme)||"auto";localStorage.setItem("imaoka_theme",t);}return t;},
+  setTheme(v){localStorage.setItem("imaoka_theme",v);this.applyTheme();this.render();},
   applyTheme(){
-    const t=this.state.settings.theme;
+    const t=this.getDeviceTheme();
     if(t==="auto"){const dark=matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"dark":"light");}
     else document.documentElement.setAttribute("data-theme",t);
   },
@@ -1363,11 +1376,12 @@ const App = {
       this.field("終了時刻（任意）",'<input id="f-end" type="time" value="'+(it&&it.end?it.end:"")+'">')+'</div>'+
       this.field("繰り返し",'<select id="f-rec">'+[['none','繰り返さない'],['weekly','毎週（同じ曜日）'],['monthly_date','毎月（同じ日）'],['monthly_nth','毎月（第◯◯曜）'],['yearly','毎年（同じ日付）']].map(o=>'<option value="'+o[0]+'" '+((it&&it.recurrence?it.recurrence:"none")===o[0]?"selected":"")+'>'+o[1]+'</option>').join("")+'</select>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 〇〇小学校 体育館" value="'+esc(it&&it.loc?it.loc:"")+'">')+
+      this.field("メモ（任意）",'<textarea id="f-memo" placeholder="持ち物・詳細・URLなど">'+esc(it&&it.memo?it.memo:"")+'</textarea>')+
       this.field("金額（任意）",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
       (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">📅 Googleカレンダーに追加（1回分）</a>':'')+
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
-        const data={title,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),amount:numv("f-amount")||null};
+        const data={title,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),memo:val("f-memo"),amount:numv("f-amount")||null};
         if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
         return true;
       },it?()=>this.del("events",id):null);
@@ -1380,7 +1394,8 @@ const App = {
     else{dates=d+"/"+addDay(ev.date);}
     let u="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(ev.title)+"&dates="+dates;
     if(ev.loc)u+="&location="+encodeURIComponent(ev.loc);
-    if(ev.amount)u+="&details="+encodeURIComponent("金額: "+yen(ev.amount));
+    const det=[ev.memo||"",ev.amount?("金額: "+yen(ev.amount)):""].filter(Boolean).join("\n");
+    if(det)u+="&details="+encodeURIComponent(det);
     return u;
   },
 
@@ -1465,13 +1480,26 @@ const App = {
       this.render();
     }catch(e){console.error(e);this._syncStatus="err";this.render();}
   },
+  // クラウドから最新を取得して反映(リアルタイムの取りこぼし対策・タブ復帰時など)
+  async pullLatest(){
+    if(!this._client||!this.householdId)return;
+    try{
+      const{data,error}=await this._client.from("app_state").select("data,updated_at").eq("household_id",this.householdId).maybeSingle();
+      if(error||!data||!data.data||!Object.keys(data.data).length)return;
+      if(data.updated_at===this._lastPushed)return; // 自分が直前に送った更新
+      if(this._lastApplied&&data.updated_at&&data.updated_at<=this._lastApplied)return;
+      this._lastApplied=data.updated_at;
+      this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();this.render();
+    }catch(e){}
+  },
   subscribeRealtime(){
     if(this._channel)this._client.removeChannel(this._channel);
     this._channel=this._client.channel("hh-"+this.householdId)
       .on("postgres_changes",{event:"*",schema:"public",table:"app_state",filter:"household_id=eq."+this.householdId},payload=>{
         const nd=payload.new;if(!nd||!nd.data)return;if(nd.updated_at===this._lastPushed)return;
+        this._lastApplied=nd.updated_at;
         this.state=nd.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();this.render();
-      }).subscribe();
+      }).subscribe((status)=>{ if(status==="SUBSCRIBED")this.pullLatest(); });
   },
   queueCloudPush(){clearTimeout(this._pushTimer);this._pushTimer=setTimeout(()=>this.pushNow(),700);},
   async pushNow(){
@@ -1514,7 +1542,7 @@ function addDay(ymd){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y
 function addDaysStr(ymd,n){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y,m-1,d+n);return dt.getFullYear()+"-"+pad2(dt.getMonth()+1)+"-"+pad2(dt.getDate());}
 function readImage(file,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1280;let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",0.72));}catch(e){cb(r.result);}};img.src=r.result;};r.readAsDataURL(file);}
 
-matchMedia("(prefers-color-scheme:dark)").addEventListener("change",()=>{if(App.state&&App.state.settings.theme==="auto")App.applyTheme();});
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",()=>{if(App.getDeviceTheme&&App.getDeviceTheme()==="auto")App.applyTheme();});
 App.init();
 
 /* service worker for installable PWA (optional, ignored if file missing) */
