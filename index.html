@@ -65,6 +65,10 @@ body{
 }
 .app-header h1{font-size:var(--text-lg);font-weight:var(--fw-b);margin:0}
 .app-header .sub{font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-m)}
+.hd-right{display:flex;align-items:center;gap:8px}
+.eye-btn{flex:0 0 auto;border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text-secondary);width:38px;height:38px;border-radius:var(--radius-full);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.eye-btn:active{transform:scale(.94)}
+.eye-btn.on{background:var(--color-primary-50);border-color:var(--color-primary-200);color:var(--color-primary-600)}
 .month-nav{display:flex;align-items:center;gap:2px;background:var(--color-primary-50);border:1px solid var(--color-primary-100);border-radius:var(--radius-full);padding:3px 4px}
 .month-nav button{border:none;background:transparent;color:var(--color-primary-600);width:30px;height:30px;border-radius:var(--radius-full);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .month-nav button:active{background:var(--color-primary-100)}
@@ -253,10 +257,13 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
     <h1 id="hd-title">ホーム</h1>
     <div class="sub" id="hd-sub"></div>
   </div>
-  <div class="month-nav" id="month-nav">
-    <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
-    <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
-    <button onclick="App.shiftMonth(1)" aria-label="次の月">›</button>
+  <div class="hd-right">
+    <button class="eye-btn" id="eye-btn" onclick="App.toggleHideAmt()" aria-label="金額の表示を切り替え" title="金額を隠す">👁</button>
+    <div class="month-nav" id="month-nav">
+      <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
+      <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
+      <button onclick="App.shiftMonth(1)" aria-label="次の月">›</button>
+    </div>
   </div>
 </header>
 
@@ -381,7 +388,8 @@ function seedState(){
 
 /* ---------- utilities ---------- */
 function uid(){return (crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.round(Math.random()*1e6))}
-const yen=n=>"¥"+Math.round(n||0).toLocaleString("ja-JP");
+let HIDE_AMT=false; // 友だちに見せる時など、金額を一時的に隠す(この端末だけ)
+const yen=n=>HIDE_AMT?"¥•••":"¥"+Math.round(n||0).toLocaleString("ja-JP");
 const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const thisMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
 function monthLabel(m){const[y,mo]=m.split("-");return (y+"年"+Number(mo)+"月")}
@@ -401,12 +409,13 @@ const App = {
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
-  _user:null, householdId:null, _inviteCode:"", _authView:"login",
+  _user:null, householdId:null, _inviteCode:"", _authView:"login", hideAmt:false,
 
   init(){
     try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
     this.load();
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
+    this.hideAmt=localStorage.getItem("imaoka_hide_amt")==="1"; HIDE_AMT=this.hideAmt;
     this.applyTheme();
     this.go("dashboard");
     this.notifyPending();
@@ -417,6 +426,8 @@ const App = {
     window.addEventListener("online",()=>this.pullLatest());
   },
   setDevice(v){this.deviceOwner=v;localStorage.setItem("imaoka_device",v);this.render();},
+  // 金額の目隠し(友だちに見せる時など。この端末だけ・相手には影響しない)
+  toggleHideAmt(){this.hideAmt=!this.hideAmt;HIDE_AMT=this.hideAmt;localStorage.setItem("imaoka_hide_amt",this.hideAmt?"1":"0");this.render();this.toast(this.hideAmt?"金額を隠しました":"金額を表示しました");},
   // 通知は端末ごと(localStorage)。相手には同期されない
   notifyOn(){return localStorage.getItem("imaoka_notify")==="1"&&("Notification"in window)&&Notification.permission==="granted";},
   toggleNotify(on){
@@ -510,6 +521,7 @@ const App = {
     }
     document.getElementById("hd-title").textContent=title;
     document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?("今岡家 "+this.dot()):this.dot(true);
+    const eb=document.getElementById("eye-btn");if(eb){eb.textContent=this.hideAmt?"🙈":"👁";eb.classList.toggle("on",this.hideAmt);eb.title=this.hideAmt?"金額を表示":"金額を隠す";}
     const v=document.getElementById("view");
     v.innerHTML=this["view_"+this.tab]();
     this.updateBadges();
