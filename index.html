@@ -495,24 +495,27 @@ const App = {
     const totalIncome=inc.reduce((a,b)=>a+(+b.amount||0),0);
     const fixed=exp.filter(e=>e.type==="fixed").reduce((a,b)=>a+(+b.amount||0),0);
     const variable=exp.filter(e=>e.type==="variable").reduce((a,b)=>a+(+b.amount||0),0);
-    const eventExp=this.eventExpense(month);
-    const totalExpense=fixed+variable+eventExp;
-    const balance=totalIncome-totalExpense;
+    const evConfirmed=this.eventExpense(month,"confirmed");
+    const evPlanned=this.eventExpense(month,"planned");
+    const totalExpense=fixed+variable+evConfirmed; // 確定支出
+    const planned=evPlanned;                       // これから支払う予定
+    const balance=totalIncome-totalExpense;         // 積立可能額(確定ベース)
+    const afterPlanned=totalIncome-totalExpense-planned;
     const savingsRate=totalIncome>0?(balance/totalIncome*100):0;
     const hInc=inc.filter(i=>i.owner==="husband").reduce((a,b)=>a+(+b.amount||0),0);
     const wInc=inc.filter(i=>i.owner==="wife").reduce((a,b)=>a+(+b.amount||0),0);
     const oInc=totalIncome-hInc-wInc;
-    return {totalIncome,fixed,variable,eventExp,totalExpense,balance,savingsRate,hInc,wInc,oInc,inc,exp};
+    return {totalIncome,fixed,variable,evConfirmed,planned,totalExpense,balance,afterPlanned,savingsRate,hInc,wInc,oInc,inc,exp};
   },
-  // カレンダーの金額入り予定を、その月の支出として集計(繰り返しは回数分)
-  eventExpense(month){
-    let sum=0;
-    this.state.events.forEach(e=>{if(e.amount>0)sum+=this.eventDatesInMonth(e,month).length*(+e.amount||0);});
+  // カレンダーの金額入り予定を集計。mode: 'confirmed'(支払日到来=確定)/'planned'(未来)/'all'
+  eventExpense(month,mode){
+    const today=todayStr(); let sum=0;
+    this.state.events.forEach(e=>{if(e.amount>0)this.eventDatesInMonth(e,month).forEach(ds=>{const past=ds<=today;if(mode==="confirmed"&&!past)return;if(mode==="planned"&&past)return;sum+=(+e.amount||0);});});
     return sum;
   },
-  eventExpenseList(month){
-    const list=[];
-    this.state.events.forEach(e=>{if(e.amount>0){const n=this.eventDatesInMonth(e,month).length;if(n>0)list.push({id:e.id,title:e.title,n,sum:n*(+e.amount||0)});}});
+  eventExpenseList(month,mode){
+    const today=todayStr(),list=[];
+    this.state.events.forEach(e=>{if(e.amount>0){const ds=this.eventDatesInMonth(e,month);const hit=ds.filter(d=>{const past=d<=today;if(mode==="confirmed"&&!past)return false;if(mode==="planned"&&past)return false;return true;});if(hit.length)list.push({id:e.id,title:e.title,n:hit.length,sum:hit.length*(+e.amount||0),next:hit.sort()[0]});}});
     return list.sort((a,b)=>b.sum-a.sum);
   },
   view_dashboard(){
@@ -523,7 +526,7 @@ const App = {
     let srPill=m.savingsRate>=20?'pill-ok':(m.savingsRate>=10?'pill-warn':'pill-bad');
     const balColor=m.balance>=0?'var(--color-accent-500)':'var(--color-danger)';
 
-    const eventPct=m.totalIncome>0?Math.min(100,m.eventExp/m.totalIncome*100):0;
+    const eventPct=m.totalIncome>0?Math.min(100,m.evConfirmed/m.totalIncome*100):0;
     // expense card(支出を先に)
     let expCard;
     if(m.totalExpense===0){
@@ -534,9 +537,11 @@ const App = {
         '<div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
         '<div class="row" style="margin-top:14px"><span>🛒 生活費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div>'+
         '<div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
-        (m.eventExp>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い</span><span class="num" style="font-weight:700">'+yen(m.eventExp)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
+        (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
         '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div></div>';
     }
+    // これから支払う予定(支払日が未来のカレンダー予定)
+    const plannedCard=m.planned>0?('<div class="card" style="border-color:#F3D9A8;background:#FCEFD9"><div class="row"><p class="card-title" style="margin:0;color:var(--color-warning)">📅 これから支払う予定</p><span class="mid-num" style="color:var(--color-warning);cursor:pointer" onclick="App.go(\'expense_list\')">'+yen(m.planned)+'</span></div><div class="meta" style="margin-top:6px;color:#9a6a1a">支払日が来たら自動で「今月の支出」に移ります。支払うと積立可能額は '+yen(m.afterPlanned)+' に。</div></div>'):'';
     // income card
     let incCard;
     if(m.totalIncome===0){
@@ -587,7 +592,7 @@ const App = {
     const wishCard='<div class="section-title">やりたい・欲しいもの<span class="link" onclick="App.go(\'share\')">すべて見る</span></div><div class="card">'+
       (wHtml||'<div class="empty"><span class="e-ic">✨</span>「共有」タブのフォルダに追加できます</div>')+'</div>';
 
-    return '<div class="dash-grid">'+expCard+incCard+'</div>'+availCard+goalsCard+tasksCard+wishCard;
+    return '<div class="dash-grid">'+expCard+incCard+'</div>'+plannedCard+availCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -617,11 +622,17 @@ const App = {
       return b+'</div>';
     };
     h+=block(fixed,"固定費","fixed")+block(variable,"生活費","variable");
-    // カレンダーの金額入り予定
-    const evList=this.eventExpenseList(this.curMonth);
-    if(evList.length){
-      h+='<p class="set-head">予定・支払い(カレンダーから)</p><div class="card">';
-      evList.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">📅</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+    // カレンダーの金額入り予定(確定/予定で分ける)
+    const evDone=this.eventExpenseList(this.curMonth,"confirmed");
+    const evPlan=this.eventExpenseList(this.curMonth,"planned");
+    if(evDone.length){
+      h+='<p class="set-head">予定・支払い(支払済)</p><div class="card">';
+      evDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">📅</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+      h+='</div>';
+    }
+    if(evPlan.length){
+      h+='<p class="set-head">これから支払う予定</p><div class="card">';
+      evPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">🗓️</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-warning)">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     return h;
@@ -777,11 +788,11 @@ const App = {
     h+='</div>';
     // この月のカテゴリ別支出
     const exp=this.state.expenses.filter(e=>e.month===this.calMonth);
-    const evExp=this.eventExpense(this.calMonth), evN=this.eventExpenseList(this.calMonth).reduce((s,x)=>s+x.n,0);
+    const evExp=this.eventExpense(this.calMonth,"confirmed"), evN=this.eventExpenseList(this.calMonth,"confirmed").reduce((s,x)=>s+x.n,0);
     if(exp.length||evExp>0){
       const byCat={};exp.forEach(e=>{const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[e.catId])byCat[e.catId]={icon:c.icon,label:c.label,sum:0,n:0};byCat[e.catId].sum+=(+e.amount||0);byCat[e.catId].n++;});
       const arr=Object.values(byCat).sort((a,b)=>b.sum-a.sum);
-      if(evExp>0)arr.push({icon:"📅",label:"予定・支払い",sum:evExp,n:evN});
+      if(evExp>0)arr.push({icon:"📅",label:"予定・支払い(済)",sum:evExp,n:evN});
       arr.sort((a,b)=>b.sum-a.sum);
       const total=arr.reduce((s,x)=>s+x.sum,0);
       h+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
