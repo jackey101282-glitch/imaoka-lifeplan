@@ -392,6 +392,7 @@ const App = {
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
 
   init(){
+    try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
     this.load();
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
     this.applyBakedConfig();
@@ -696,7 +697,8 @@ const App = {
         r+='<div class="row" style="margin-top:8px"><div style="min-width:0;flex:1"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(lbl)+' '+yen(e.amount)+'</div><div class="meta">'+(mine?"相手の承認待ち":(who+"さんが登録"))+'</div></div>'+(mine?'<span class="chip chip-todo">確認中</span>':'<button class="btn btn-primary btn-sm" style="min-height:34px;padding:5px 14px;white-space:nowrap" onclick="App.approveExpense(\''+e.id+'\')">承認</button>')+'</div>';});
       approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title" style="margin:0;color:var(--color-warning)">🤝 承認待ちの支出</p>'+r+'</div>';
     }
-    return remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
+    const storeWarn=(!this.state.settings.sync.enabled)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ 今は<b>この端末だけ</b>に保存中です。プライベートモードや一部のアプリ内ブラウザでは、閉じるとデータが消えることがあります。<b>設定→クラウド同期</b>をオンにすると、消えず・2台で共有できます。<div style="margin-top:6px"><span class="link" onclick="App.go(\'settings\')">設定をひらく ›</span></div></div></div>':'';
+    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
