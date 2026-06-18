@@ -1,5 +1,5 @@
 /* 今岡家ライフプラン — service worker (オフライン対応) */
-const CACHE = "imaoka-lifeplan-v2";
+const CACHE = "imaoka-lifeplan-v3";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {

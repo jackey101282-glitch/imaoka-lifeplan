@@ -211,6 +211,9 @@ a.tlink{color:var(--color-secondary-500)}
 .chev{display:inline-block;transition:transform .2s;color:var(--color-text-disabled);font-size:18px;font-weight:700;line-height:1}
 .chev.open{transform:rotate(180deg)}
 .warn-box{margin-top:12px;background:#FDECEC;color:var(--color-danger);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.6}
+.authwrap{position:fixed;inset:0;z-index:100;background:var(--color-bg-base);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.authcard{width:100%;max-width:380px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-md)}
+.authcard h2{font-size:var(--text-xl)}
 html[data-theme="dark"] .warn-box{background:#3a2020}
 /* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
 @media (min-width:900px){
@@ -381,7 +384,7 @@ function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;
    ここにSupabaseのURL・anon key・共有コードを入れると、
    全端末がURLを開くだけで自動的に同期されます(設定操作不要)。
    空のままなら従来どおり「設定」からの手動オンが必要です。 */
-const APP_CONFIG = { syncUrl:"", syncKey:"", syncSpace:"" };
+const APP_CONFIG = { url:"https://imfynopqugqiczevrmsl.supabase.co", key:"sb_publishable_ISnAg8AcBswzT5lL7CtUeA_Yev1Om85" };
 
 const App = {
   state:null, tab:"dashboard", curMonth:thisMonth(), shareView:"home", curFolderId:null,
@@ -390,16 +393,16 @@ const App = {
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
+  _user:null, householdId:null, _inviteCode:"", _authView:"login",
 
   init(){
     try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
     this.load();
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
-    this.applyBakedConfig();
     this.applyTheme();
     this.go("dashboard");
     this.notifyPending();
-    if(this.state.settings.sync.enabled) this.startSync(true);
+    this.initCloud();
     window.addEventListener("beforeunload",()=>this.save());
   },
   setDevice(v){this.deviceOwner=v;localStorage.setItem("imaoka_device",v);this.render();},
@@ -412,15 +415,6 @@ const App = {
   notifyPending(){const mine=this.pendingApprovals().filter(e=>this.deviceOwner&&e.reqBy&&e.reqBy!==this.deviceOwner);if(mine.length)this.notify("承認待ちの支出",mine.length+"件の確認をお願いします");},
   approveExpense(id){const e=this.state.expenses.find(x=>x.id===id);if(e){e.approve="approved";this.commit();this.toast("承認しました");}},
   seeDetail(e){return !e.private||!this.deviceOwner||e.owner===this.deviceOwner;},
-  // 埋め込み設定があれば自動で同期を有効化(ユーザーが別途独自設定していれば尊重)
-  applyBakedConfig(){
-    const c=APP_CONFIG; if(!c.syncUrl||!c.syncKey||!c.syncSpace) return;
-    const sy=this.state.settings.sync;
-    if(!sy.url || sy.url===c.syncUrl){
-      sy.url=c.syncUrl; sy.key=c.syncKey; sy.space=c.syncSpace; sy.enabled=true;
-      this.save(true);
-    }
-  },
 
   /* ---- persistence ---- */
   load(){
@@ -428,7 +422,9 @@ const App = {
       const raw=localStorage.getItem("imaoka_lifeplan");
       this.state = raw?JSON.parse(raw):seedState();
     }catch(e){this.state=seedState();}
-    // backfill
+    this.normalize();
+  },
+  normalize(){
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0; if(s.settings.notify==null)s.settings.notify=false;
     ["incomes","expenses","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
@@ -451,7 +447,7 @@ const App = {
   },
   save(skipCloud){
     localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));
-    if(!skipCloud && this.state.settings.sync.enabled) this.queueCloudPush();
+    if(!skipCloud && this._client && this.householdId) this.queueCloudPush();
   },
   // called after any data mutation
   commit(){ this.save(); this.render(); },
@@ -697,7 +693,7 @@ const App = {
         r+='<div class="row" style="margin-top:8px"><div style="min-width:0;flex:1"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(lbl)+' '+yen(e.amount)+'</div><div class="meta">'+(mine?"相手の承認待ち":(who+"さんが登録"))+'</div></div>'+(mine?'<span class="chip chip-todo">確認中</span>':'<button class="btn btn-primary btn-sm" style="min-height:34px;padding:5px 14px;white-space:nowrap" onclick="App.approveExpense(\''+e.id+'\')">承認</button>')+'</div>';});
       approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title" style="margin:0;color:var(--color-warning)">🤝 承認待ちの支出</p>'+r+'</div>';
     }
-    const storeWarn=(!this.state.settings.sync.enabled)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ 今は<b>この端末だけ</b>に保存中です。プライベートモードや一部のアプリ内ブラウザでは、閉じるとデータが消えることがあります。<b>設定→クラウド同期</b>をオンにすると、消えず・2台で共有できます。<div style="margin-top:6px"><span class="link" onclick="App.go(\'settings\')">設定をひらく ›</span></div></div></div>':'';
+    const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
     return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
@@ -1178,16 +1174,13 @@ const App = {
       ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(s.theme===v?"selected":"")+'>'+l+'</option>'}).join("")+
       '</select></div></div>';
 
-    // sync
+    // アカウント・パートナー招待
     const stat=this._syncStatus;
-    h+='<p class="set-head">クラウド同期（スマホ2台でリアルタイム共有）</p><div class="set-group">'+
-      '<div class="set-cell"><div><span class="lab">同期を有効にする</span><div class="desc">'+(stat==="on"?'<span style="color:var(--color-accent-600)">● 同期中</span>':stat==="err"?'<span style="color:var(--color-danger)">● エラー（設定を確認）</span>':'未設定')+'</div></div>'+
-      '<label class="switch"><input type="checkbox" '+(sy.enabled?"checked":"")+' onchange="App.toggleSync(this.checked)"><span class="sl"></span></label></div>'+
-      '<div class="set-cell" style="display:block"><span class="lab">Supabase URL</span><input style="margin-top:6px" placeholder="https://xxxx.supabase.co" value="'+esc(sy.url)+'" onchange="App.setSync(\'url\',this.value)"></div>'+
-      '<div class="set-cell" style="display:block"><span class="lab">anon key（公開キー）</span><input style="margin-top:6px" placeholder="eyJhbGciOi..." value="'+esc(sy.key)+'" onchange="App.setSync(\'key\',this.value)"></div>'+
-      '<div class="set-cell" style="display:block"><span class="lab">共有コード（夫婦で同じ文字列にする）</span><div style="display:flex;gap:8px;margin-top:6px"><input placeholder="例: imaoka-home-2026" value="'+esc(sy.space)+'" onchange="App.setSync(\'space\',this.value)"><button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="App.genSpace()">生成</button></div></div>'+
-      '</div>'+
-      '<p class="desc" style="margin:0 4px 16px;color:var(--color-text-secondary);font-size:var(--text-sm)">※ 奥さんの端末でも同じURL・anon key・共有コードを入れると、リアルタイムで同期されます。設定手順は同梱の「セットアップ.md」を参照。</p>';
+    h+='<p class="set-head">アカウント・パートナー</p><div class="set-group">'+
+      '<div class="set-cell"><div><span class="lab">ログイン中</span><div class="desc">'+(this._user?esc(this._user.email):"未ログイン")+(stat==="on"?' ・<span style="color:var(--color-accent-600)">クラウド同期中</span>':"")+'</div></div></div>'+
+      (this._inviteCode?'<div class="set-cell"><div><span class="lab">パートナー招待コード</span><div class="desc">相手にこのコードを伝え、ログイン後に入力してもらうと2人で共有できます</div></div><div style="display:flex;align-items:center;gap:8px"><span class="num" style="font-weight:700;font-size:var(--text-lg);letter-spacing:2px">'+esc(this._inviteCode)+'</span><button class="btn btn-ghost btn-sm" onclick="App.copy(\''+esc(this._inviteCode)+'\')">コピー</button></div></div>':"")+
+      (this._user?'<div class="set-cell" onclick="App.doLogout()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">ログアウト</span></div>':"")+
+      '</div>';
 
     const grpLabel={fixed:"固定費",variable:"変動費",task:"タスク"};
     let catHtml="";
@@ -1214,8 +1207,6 @@ const App = {
     if(t==="auto"){const dark=matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"dark":"light");}
     else document.documentElement.setAttribute("data-theme",t);
   },
-  setSync(k,v){this.state.settings.sync[k]=v.trim();this.save(true);},
-  genSpace(){this.state.settings.sync.space="imaoka-"+Math.random().toString(36).slice(2,8)+"-"+Math.random().toString(36).slice(2,6);this.save(true);this.render();},
 
   /* ============== Sheets / Forms ============== */
   showSheet(html){
@@ -1413,59 +1404,92 @@ const App = {
   resetData(){if(confirm("すべてのデータを消して初期状態に戻します。よろしいですか?")){this.state=seedState();this.applyTheme();this.save();this.render();this.toast("リセットしました");}},
 
   /* ============== SUPABASE SYNC ============== */
-  toggleSync(on){
-    this.state.settings.sync.enabled=on;
-    if(on)this.startSync(false);else{this.stopSync();this.save(true);this.render();}
-  },
+  /* ===== クラウド(ログイン・世帯共有) ===== */
   async loadSb(){
     if(window.supabase&&window.supabase.createClient)return;
     await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
   },
-  async startSync(silent){
-    const sy=this.state.settings.sync;
-    if(!sy.url||!sy.key||!sy.space){if(!silent)this.toast("URL・キー・共有コードを入力してください");this._syncStatus="off";this.state.settings.sync.enabled=false;this.save(true);this.render();return;}
+  async initCloud(){
+    if(!APP_CONFIG.url||!APP_CONFIG.key)return; // ローカルのみ
     try{
       await this.loadSb();
-      this._client=window.supabase.createClient(sy.url,sy.key);
-      // pull
-      const{data,error}=await this._client.from("app_state").select("data,updated_at").eq("space_id",sy.space).maybeSingle();
-      if(error)throw error;
-      if(data&&data.data){
-        const adopt=silent||confirm("クラウドに保存済みのデータがあります。\n「OK」= クラウドのデータを読み込む\n「キャンセル」= この端末のデータをクラウドへ上書き");
-        if(adopt){const remote=data.data;remote.settings.sync=sy;this.state=remote;this.load();this.applyTheme();this.save(true);}
-        else{await this.pushNow();}
-      }else{await this.pushNow();}
-      // realtime
-      if(this._channel)this._client.removeChannel(this._channel);
-      this._channel=this._client.channel("st-"+sy.space)
-        .on("postgres_changes",{event:"*",schema:"public",table:"app_state",filter:"space_id=eq."+sy.space},payload=>{
-          const nd=payload.new; if(!nd||!nd.data)return;
-          if(nd.updated_at===this._lastPushed)return; // our own write
-          nd.data.settings.sync=this.state.settings.sync;
-          this.state=nd.data;this.load();this.applyTheme();
-          localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));
-          this.render();this.toast("同期されました");
-        })
-        .subscribe();
-      this._syncStatus="on";this.save(true);this.render();
-      if(!silent)this.toast("クラウド同期を開始しました");
-    }catch(e){
-      console.error(e);this._syncStatus="err";if(!silent)this.toast("接続に失敗しました。設定を確認してください");this.render();
-    }
+      this._client=window.supabase.createClient(APP_CONFIG.url,APP_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true}});
+      const {data:{session}}=await this._client.auth.getSession();
+      if(session&&session.user){this._user=session.user;await this.afterAuth();}
+      else{this.showAuth();}
+    }catch(e){console.error(e);this.toast("接続に問題が発生しました");}
   },
-  stopSync(){if(this._channel&&this._client){this._client.removeChannel(this._channel);}this._channel=null;this._syncStatus="off";},
-  queueCloudPush(){clearTimeout(this._pushTimer);this._pushTimer=setTimeout(()=>this.pushNow(),800);},
+  async doAuth(mode){
+    const email=val("au-email"),pw=val("au-pw");
+    if(!email||!pw){this.toast("メールとパスワードを入力してください");return;}
+    if(pw.length<6){this.toast("パスワードは6文字以上にしてください");return;}
+    try{
+      const r=mode==="signup"?await this._client.auth.signUp({email,password:pw}):await this._client.auth.signInWithPassword({email,password:pw});
+      if(r.error){this.toast(r.error.message||"認証に失敗しました");return;}
+      if(!r.data.session){this.toast("確認メールを送信しました。メールのリンクを開いてから再度ログインしてください");return;}
+      this._user=r.data.user;await this.afterAuth();
+    }catch(e){console.error(e);this.toast("認証エラー");}
+  },
+  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.showAuth();},
+  switchAuth(v){this._authView=v;this.showAuth();},
+  async afterAuth(){
+    try{
+      const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
+      if(error)throw error;
+      if(mem&&mem.length){this.householdId=mem[0].household_id;await this.loadCloud();this.hideAuth();}
+      else{this._authView="household";this.showAuth();}
+    }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
+  },
+  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("はじめましょう!");}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("参加しました!");}catch(e){console.error(e);this.toast("招待コードが正しくありません");}},
+  async loadCloud(){
+    try{
+      const{data,error}=await this._client.from("app_state").select("data,invite_code").eq("household_id",this.householdId).maybeSingle();
+      if(error)throw error;
+      this._inviteCode=data?(data.invite_code||""):"";
+      if(data&&data.data&&Object.keys(data.data).length){
+        this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();
+      }else{
+        await this.pushNow(); // 初回: 今のデータをクラウドへ
+      }
+      this._syncStatus="on";
+      this.subscribeRealtime();
+      this.render();
+    }catch(e){console.error(e);this._syncStatus="err";this.render();}
+  },
+  subscribeRealtime(){
+    if(this._channel)this._client.removeChannel(this._channel);
+    this._channel=this._client.channel("hh-"+this.householdId)
+      .on("postgres_changes",{event:"*",schema:"public",table:"app_state",filter:"household_id=eq."+this.householdId},payload=>{
+        const nd=payload.new;if(!nd||!nd.data)return;if(nd.updated_at===this._lastPushed)return;
+        this.state=nd.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();this.render();
+      }).subscribe();
+  },
+  queueCloudPush(){clearTimeout(this._pushTimer);this._pushTimer=setTimeout(()=>this.pushNow(),700);},
   async pushNow(){
-    const sy=this.state.settings.sync;
-    if(!this._client||!sy.space)return;
+    if(!this._client||!this.householdId)return;
     const ts=new Date().toISOString();this._lastPushed=ts;
     const payload=JSON.parse(JSON.stringify(this.state));
-    delete payload.settings.sync; // never store secrets in cloud blob
-    try{
-      const{error}=await this._client.from("app_state").upsert({space_id:sy.space,data:payload,updated_at:ts},{onConflict:"space_id"});
-      if(error)throw error;
-      if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}
-    }catch(e){console.error(e);this._syncStatus="err";this.render();}
+    try{const{error}=await this._client.from("app_state").update({data:payload,updated_at:ts}).eq("household_id",this.householdId);if(error)throw error;if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}}catch(e){console.error(e);this._syncStatus="err";}
+  },
+  /* ---- 認証オーバーレイ ---- */
+  showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
+  hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
+  authHtml(){
+    if(this._authView==="household"){
+      return '<div class="authcard"><div style="text-align:center;font-size:34px">👫</div><h2 style="text-align:center;margin:6px 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.createHousehold()">新しく家計を始める</button>'+
+        '<div class="muted" style="text-align:center;margin:14px 0 10px">― または ―</div>'+
+        '<input id="au-code" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
+        '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.joinHousehold(document.getElementById(\'au-code\').value)">招待コードで参加</button>'+
+        '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.doLogout()">ログアウト</span></div></div>';
+    }
+    const su=this._authView==="signup";
+    return '<div class="authcard"><div style="text-align:center;font-size:36px">🏠</div><h2 style="text-align:center;margin:6px 0 2px">今岡家ライフプラン</h2><p class="muted" style="text-align:center;margin:0 0 18px">夫婦で使う 家計・予定・やりたい</p>'+
+      '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
+      '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
+      '<button class="btn btn-primary btn-block" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録":"ログイン")+'</button>'+
+      '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"すでにアカウントがある → ログイン":"はじめての方 → 新規登録")+'</span></div></div>';
   }
 };
 // helpers used inside form callbacks
