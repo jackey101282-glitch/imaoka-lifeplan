@@ -363,7 +363,8 @@ function seedState(){
     events:[],
     notes:[],
     projects:[],
-    subprojects:[]
+    subprojects:[],
+    sim:{current:0,monthly:"",bonus:0,years:10,events:[]}
   };
 }
 
@@ -417,6 +418,7 @@ const App = {
     // backfill
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     ["incomes","expenses","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
@@ -465,8 +467,8 @@ const App = {
   render(){
     document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
     document.getElementById("month-nav").classList.toggle("off",this.curMonth!==thisMonth());
-    const titles={dashboard:"ホーム",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定"};
-    let title=titles[this.tab];
+    const titles={dashboard:"ホーム",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定",income_list:"収入",expense_list:"支出",simulator:"ライフプラン"};
+    let title=titles[this.tab]||"";
     if(this.tab==="share"){
       if(this.shareView==="notes")title="共有メモ";
       else if(this.shareView==="folder"){const f=this.state.folders.find(x=>x.id===this.curFolderId);title=f?f.name:"共有";}
@@ -591,6 +593,8 @@ const App = {
           '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openExpense()">＋ 追加</span>　<span class="link" onclick="App.go(\'expense_list\')">一覧 ›</span></div>'):'')+
       '</div>';
     }
+    // ライフプラン・シミュレーターへの入口
+    const simCard='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-secondary-50);border-color:var(--color-secondary-200)" onclick="App.go(\'simulator\')"><div style="font-size:28px">🔮</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-secondary-600)">ライフプラン・シミュレーター</div><div class="meta">10年後・将来の貯蓄を見える化</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
     // これからの予定(未来の入金・支払い)
     let plannedCard='';
     if(m.planned>0||m.plannedIncome>0){
@@ -670,7 +674,7 @@ const App = {
       rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ic[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
       remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">🔔 もうすぐ（7日以内）</p>'+r+'</div>';
     }
-    return remindCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+goalsCard+tasksCard+wishCard;
+    return remindCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -727,6 +731,57 @@ const App = {
       h+='</div>';
     }
     return h;
+  },
+
+  /* ============== ライフプラン・シミュレーター ============== */
+  simProjection(){
+    const sim=this.state.sim;
+    const monthly=(sim.monthly!==""&&sim.monthly!=null)?(+String(sim.monthly).replace(/[^0-9.]/g,"")||0):Math.max(0,this.metrics(thisMonth()).balance);
+    const bonus=+String(sim.bonus).replace(/[^0-9.]/g,"")||0;
+    const years=+sim.years||10;
+    let bal=+String(sim.current).replace(/[^0-9.]/g,"")||0;
+    const rows=[{year:0,label:"現在",bal,events:[]}];
+    for(let y=1;y<=years;y++){
+      bal+=monthly*12+bonus;
+      const evs=(sim.events||[]).filter(e=>+e.after===y);
+      evs.forEach(e=>{bal+=(e.kind==="income"?+e.amount:-(+e.amount))||0;});
+      rows.push({year:y,label:y+"年後",bal,events:evs});
+    }
+    return {monthly,bonus,years,rows};
+  },
+  setSim(k,v){this.state.sim[k]=(k==="years")?(+v):String(v).replace(/[^0-9.]/g,"");this.commit();},
+  view_simulator(){
+    const sim=this.state.sim, proj=this.simProjection(), final=proj.rows[proj.rows.length-1];
+    const maxAbs=Math.max(1,...proj.rows.map(r=>Math.abs(r.bal)));
+    let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:14px" onclick="App.go(\'dashboard\')">‹ ホームに戻る</button>';
+    h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">今の貯蓄ペースと予定から、将来の貯蓄を試算します。数字を変えるとすぐ反映されます。</p>';
+    h+='<div class="card">'+
+      this.field("現在の貯蓄（今ある貯金）",'<input class="amt" type="text" inputmode="numeric" value="'+cf(sim.current)+'" oninput="App.commaize(this)" onchange="App.setSim(\'current\',this.value)">')+
+      this.field("毎月の貯蓄額",'<input class="amt" type="text" inputmode="numeric" placeholder="'+cf(Math.max(0,this.metrics(thisMonth()).balance))+'（今月の残り）" value="'+cf(sim.monthly)+'" oninput="App.commaize(this)" onchange="App.setSim(\'monthly\',this.value)">')+
+      '<div class="form-row">'+this.field("年間の臨時収入（ボーナス等）",'<input class="amt" type="text" inputmode="numeric" value="'+cf(sim.bonus)+'" oninput="App.commaize(this)" onchange="App.setSim(\'bonus\',this.value)">')+
+      this.field("試算する年数",'<select onchange="App.setSim(\'years\',this.value)">'+[5,10,15,20,30].map(y=>'<option value="'+y+'" '+(+sim.years===y?"selected":"")+'>'+y+'年</option>').join("")+'</select>')+'</div>'+
+      '</div>';
+    h+='<div class="card" style="border:1.5px solid var(--color-secondary-400)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">'+proj.years+'年後の貯蓄見込み</p><div class="big-num" style="color:'+(final.bal>=0?"var(--color-secondary-600)":"var(--color-danger)")+'">'+yen(final.bal)+'</div><div class="meta" style="margin-top:4px">毎月 '+yen(proj.monthly)+' ペース'+(proj.bonus>0?(" ＋ 年 "+yen(proj.bonus)):"")+'</div></div>';
+    h+='<div class="section-title">ライフイベント<span class="link" onclick="App.openSimEvent()">＋ 追加</span></div><div class="card">';
+    if(!sim.events.length)h+='<div class="empty" style="padding:14px"><span class="e-ic">🎏</span>結婚・出産・住宅購入・車・旅行などを追加すると試算に反映されます</div>';
+    sim.events.slice().sort((a,b)=>a.after-b.after).forEach(e=>{h+='<div class="li" onclick="App.openSimEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+(e.kind==="income"?"💰":"💸")+'</span><div class="main"><div class="ttl">'+esc(e.name)+'</div><div class="meta">'+e.after+'年後</div></div><span class="amt" style="color:'+(e.kind==="income"?"var(--color-accent-600)":"var(--color-danger)")+'">'+(e.kind==="income"?"＋":"－")+yen(e.amount)+'</span></div>';});
+    h+='</div>';
+    h+='<div class="section-title">貯蓄の推移</div><div class="card">';
+    proj.rows.forEach(r=>{const pct=Math.max(2,Math.abs(r.bal)/maxAbs*100);h+='<div style="margin-bottom:12px"><div class="row" style="margin-bottom:4px"><span class="meta">'+r.label+(r.events.length?(" ・"+r.events.map(e=>esc(e.name)).join("/")):"")+'</span><span class="num" style="font-weight:700;color:'+(r.bal>=0?"var(--color-text-primary)":"var(--color-danger)")+'">'+yen(r.bal)+'</span></div><div class="prog lg"><span class="'+(r.bal>=0?"fill-accent":"fill-danger")+'" style="width:'+pct+'%"></span></div></div>';});
+    h+='</div>';
+    h+='<p class="muted" style="font-size:var(--text-xs);margin:8px 4px 0;line-height:1.6">※ 物価変動や運用利回りは考慮しない簡易試算です。将来を二人で話すきっかけにどうぞ。</p>';
+    return h;
+  },
+  openSimEvent(id){
+    const it=id?this.state.sim.events.find(x=>x.id===id):null;
+    const yrs=+this.state.sim.years||10;
+    const h='<h3>'+(it?"ライフイベントを編集":"ライフイベントを追加")+'</h3>'+
+      this.field("イベント名",'<input id="f-name" placeholder="例: マイホーム購入 / 出産 / 車買い替え" value="'+esc(it?it.name:"")+'">')+
+      this.field("種別",'<div class="seg" id="f-kind">'+[["cost","出費"],["income","臨時収入"]].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+((it?it.kind:"cost")===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
+      '<div class="form-row">'+this.field("何年後",'<select id="f-after">'+Array.from({length:yrs},(_,i)=>i+1).map(y=>'<option value="'+y+'" '+((it?+it.after:1)===y?"selected":"")+'>'+y+'年後</option>').join("")+'</select>')+
+      this.field("金額",'<input id="f-amt" class="amt" type="text" inputmode="numeric" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+'</div>'+
+      this.actions(()=>{const name=val("f-name");if(!name){this.toast("名前を入力してください");return false;}const data={name,kind:seg("f-kind"),after:+val("f-after"),amount:numv("f-amt")};if(it)Object.assign(it,data);else this.state.sim.events.push({id:uid(),...data});return true;},it?()=>{this.state.sim.events=this.state.sim.events.filter(x=>x.id!==id);}:null);
+    this.showSheet(h);
   },
 
   /* ============== TASKS ============== */
