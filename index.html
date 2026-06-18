@@ -136,7 +136,8 @@ html[data-theme="dark"] .chip-over{background:#3a2020}
 .btn-block{width:100%}
 .btn-sm{min-height:38px;padding:8px 14px;font-size:var(--text-base)}
 /* FAB */
-.fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:28px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center}
+.fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:28px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.fab.wide{width:auto;height:52px;padding:0 22px;font-size:var(--text-md);font-weight:var(--fw-b);gap:4px}
 .fab:active{transform:scale(.94)}
 /* filters */
 .filters{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
@@ -206,6 +207,8 @@ input[type=date],input[type=time]{min-width:0;max-width:100%;width:100%}
 a.tlink{color:var(--color-secondary-500)}
 .chev{display:inline-block;transition:transform .2s;color:var(--color-text-disabled);font-size:18px;font-weight:700;line-height:1}
 .chev.open{transform:rotate(180deg)}
+.warn-box{margin-top:12px;background:#FDECEC;color:var(--color-danger);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.6}
+html[data-theme="dark"] .warn-box{background:#3a2020}
 /* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
@@ -478,7 +481,7 @@ const App = {
     this.updateBadges();
     this.updateFab();
   },
-  updateFab(){const show=(this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");document.getElementById("fab").style.display=show?"flex":"none";},
+  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
   dot(plain){
@@ -539,7 +542,7 @@ const App = {
         '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'exp\')"><p class="card-title" style="margin:0">今月の支出</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num">'+yen(m.totalExpense)+'</span>'+chev('exp')+'</span></div>'+
         (this.dashOpen.exp?('<div class="divider"></div>'+
           '<div class="row"><span>🏠 固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div><div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
-          '<div class="row" style="margin-top:14px"><span>🛒 生活費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
+          '<div class="row" style="margin-top:14px"><span>🛒 変動費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
           (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
           '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div>'+
           '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openExpense()">＋ 追加</span>　<span class="link" onclick="App.go(\'expense_list\')">一覧 ›</span></div>'):'')+
@@ -562,12 +565,17 @@ const App = {
       '</div>';
     }
     // 残り(貯金できる分)= 収入 − 確定支出
+    const negative=m.balance<0||m.afterPlanned<0;
     const balColor=m.balance>=0?'var(--color-accent-600)':'var(--color-danger)';
-    const remainCard='<div class="card" style="border:1.5px solid var(--color-accent-500)">'+
-      '<p class="card-title" style="margin:0;color:var(--color-accent-600)">残り（貯金できる分）</p>'+
+    let warn='';
+    if(m.balance<0)warn='<div class="warn-box">⚠️ 支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
+    else if(m.afterPlanned<0)warn='<div class="warn-box">⚠️ これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
+    const remainCard='<div class="card" style="border:1.5px solid '+(negative?'var(--color-danger)':'var(--color-accent-500)')+'">'+
+      '<p class="card-title" style="margin:0;color:'+(negative?'var(--color-danger)':'var(--color-accent-600)')+'">残り（貯金できる分）</p>'+
       '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
       '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
-      (m.planned>0?'<div class="meta" style="margin-top:4px">📅 予定の支払い '+yen(m.planned)+' 後は '+yen(m.afterPlanned)+'</div>':'')+'</div>';
+      (m.planned>0?'<div class="meta" style="margin-top:4px">📅 予定の支払い '+yen(m.planned)+' 後は '+yen(m.afterPlanned)+'</div>':'')+
+      warn+'</div>';
 
     // goals
     let goalsHtml="";
@@ -631,7 +639,7 @@ const App = {
       });
       return b+'</div>';
     };
-    h+=block(fixed,"固定費","fixed")+block(variable,"生活費","variable");
+    h+=block(fixed,"固定費","fixed")+block(variable,"変動費","variable");
     // カレンダーの金額入り予定(確定/予定で分ける)
     const evDone=this.eventExpenseList(this.curMonth,"confirmed");
     const evPlan=this.eventExpenseList(this.curMonth,"planned");
@@ -1019,7 +1027,7 @@ const App = {
       '</div>'+
       '<p class="desc" style="margin:0 4px 16px;color:var(--color-text-secondary);font-size:var(--text-sm)">※ 奥さんの端末でも同じURL・anon key・共有コードを入れると、リアルタイムで同期されます。設定手順は同梱の「セットアップ.md」を参照。</p>';
 
-    const grpLabel={fixed:"固定費",variable:"生活費",task:"タスク"};
+    const grpLabel={fixed:"固定費",variable:"変動費",task:"タスク"};
     let catHtml="";
     ["fixed","variable","task"].forEach(g=>{(this.state.customCats[g]||[]).forEach(c=>{
       catHtml+='<div class="set-cell"><span class="lab">'+c.icon+' '+esc(c.label)+' <span class="desc">（'+grpLabel[g]+'）</span></span><span style="color:var(--color-danger);cursor:pointer;font-size:var(--text-sm)" onclick="App.delCat(\''+g+'\',\''+c.id+'\')">削除</span></div>';
@@ -1056,7 +1064,8 @@ const App = {
   },
   closeSheet(){document.getElementById("sheet").classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
   fabAction(){
-    if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
+    if(this.tab==="dashboard")this.openExpense();
+    else if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
     else if(this.tab==="calendar")this.openEvent();
     else if(this.tab==="share"){if(this.shareView==="notes")this.openNote();else if(this.shareView==="folder")this.openItem(null,this.curFolderId);else this.openFolderForm();}
   },
@@ -1084,10 +1093,10 @@ const App = {
       this.field("担当",'<div class="seg" id="f-owner">'+
         ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'common:共通'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.owner:"husband")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
       this.field("金額",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
-      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:(this.curMonth+"-01"))+'">')+
+      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:todayStr())+'">')+
       this.actions(()=>{
         const amount=numv("f-amount");if(!amount){this.toast("金額を入力してください");return false;}
-        const date=val("f-date")||this.curMonth+"-01";
+        const date=val("f-date")||todayStr();
         const data={typeId:val("f-type"),label:val("f-label"),owner:seg("f-owner"),amount,date,month:date.slice(0,7)};
         if(it)Object.assign(it,data);else this.state.incomes.push({id:uid(),...data});
         return true;
@@ -1097,21 +1106,21 @@ const App = {
   // ---- expense ----
   openExpense(id){
     const it=id?this.state.expenses.find(x=>x.id===id):null;
-    const type=it?it.type:"fixed";
+    const type=it?it.type:"variable";
     this.curExpType=type;
     const catSel='<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(App.curExpType,\'f-cat\')">'+this.opts(type,it?it.catId:null,true)+'</select>';
     const h='<h3>'+(it?"支出を編集":"支出を追加")+'</h3>'+
       this.field("種別",'<div class="seg" id="f-etype">'+
-        ['fixed:固定費','variable:生活費'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(type===v?"on":"")+'" onclick="App.segExpense(this)">'+l+'</button>'}).join("")+'</div>')+
+        ['fixed:固定費','variable:変動費'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(type===v?"on":"")+'" onclick="App.segExpense(this)">'+l+'</button>'}).join("")+'</div>')+
       '<div id="cat-wrap">'+this.field("大項目（カテゴリ）",catSel)+'</div>'+
       this.field("中項目（任意）",'<input id="f-sub" placeholder="例: コンビニ / スーパー / 外食" value="'+esc(it&&it.sub?it.sub:"")+'">')+
       this.field("名前・メモ（任意）",'<input id="f-label" placeholder="お店の名前など" value="'+esc(it?it.label:"")+'">')+
       this.field("金額",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
-      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:(this.curMonth+"-01"))+'">')+
+      this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:todayStr())+'">')+
       this.actions(()=>{
         const amount=numv("f-amount");if(!amount){this.toast("金額を入力してください");return false;}
         if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
-        const date=val("f-date")||this.curMonth+"-01";
+        const date=val("f-date")||todayStr();
         const data={type:seg("f-etype"),catId:val("f-cat"),sub:val("f-sub"),label:val("f-label"),amount,date,month:date.slice(0,7)};
         if(it)Object.assign(it,data);else this.state.expenses.push({id:uid(),...data});
         return true;
