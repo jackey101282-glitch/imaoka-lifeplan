@@ -393,12 +393,24 @@ const App = {
 
   init(){
     this.load();
+    this.deviceOwner=localStorage.getItem("imaoka_device")||"";
     this.applyBakedConfig();
     this.applyTheme();
     this.go("dashboard");
+    this.notifyPending();
     if(this.state.settings.sync.enabled) this.startSync(true);
     window.addEventListener("beforeunload",()=>this.save());
   },
+  setDevice(v){this.deviceOwner=v;localStorage.setItem("imaoka_device",v);this.render();},
+  toggleNotify(on){
+    if(on&&"Notification"in window){Notification.requestPermission().then(p=>{this.state.settings.notify=(p==="granted");this.save(true);this.render();if(p!=="granted")this.toast("通知が許可されませんでした");});}
+    else{this.state.settings.notify=false;this.save(true);this.render();}
+  },
+  notify(title,body){if(this.state.settings.notify&&"Notification"in window&&Notification.permission==="granted"){try{new Notification(title,{body});}catch(e){}}},
+  pendingApprovals(){return this.state.expenses.filter(e=>e.approve==="pending");},
+  notifyPending(){const mine=this.pendingApprovals().filter(e=>this.deviceOwner&&e.reqBy&&e.reqBy!==this.deviceOwner);if(mine.length)this.notify("承認待ちの支出",mine.length+"件の確認をお願いします");},
+  approveExpense(id){const e=this.state.expenses.find(x=>x.id===id);if(e){e.approve="approved";this.commit();this.toast("承認しました");}},
+  seeDetail(e){return !e.private||!this.deviceOwner||e.owner===this.deviceOwner;},
   // 埋め込み設定があれば自動で同期を有効化(ユーザーが別途独自設定していれば尊重)
   applyBakedConfig(){
     const c=APP_CONFIG; if(!c.syncUrl||!c.syncKey||!c.syncSpace) return;
@@ -417,6 +429,7 @@ const App = {
     }catch(e){this.state=seedState();}
     // backfill
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
+    if(s.settings.approveThreshold==null)s.settings.approveThreshold=0; if(s.settings.notify==null)s.settings.notify=false;
     ["incomes","expenses","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
@@ -674,7 +687,16 @@ const App = {
       rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ic[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
       remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">🔔 もうすぐ（7日以内）</p>'+r+'</div>';
     }
-    return remindCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
+    // 🤝 承認待ちの支出
+    const pend=this.pendingApprovals();
+    let approveCard='';
+    if(pend.length){
+      let r='';
+      pend.forEach(e=>{const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);const mine=this.deviceOwner&&e.reqBy===this.deviceOwner;const lbl=this.seeDetail(e)?(c.label+(e.label?"・"+e.label:"")):"個人支出";const who=e.reqBy==="husband"?esc(s.husband):(e.reqBy==="wife"?esc(s.wife):"相手");
+        r+='<div class="row" style="margin-top:8px"><div style="min-width:0;flex:1"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(lbl)+' '+yen(e.amount)+'</div><div class="meta">'+(mine?"相手の承認待ち":(who+"さんが登録"))+'</div></div>'+(mine?'<span class="chip chip-todo">確認中</span>':'<button class="btn btn-primary btn-sm" style="min-height:34px;padding:5px 14px;white-space:nowrap" onclick="App.approveExpense(\''+e.id+'\')">承認</button>')+'</div>';});
+      approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title" style="margin:0;color:var(--color-warning)">🤝 承認待ちの支出</p>'+r+'</div>';
+    }
+    return remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -711,8 +733,9 @@ const App = {
     const block=(arr,title,grp)=>{
       let b='<p class="set-head">'+title+'</p><div class="card">';
       if(!arr.length)b+='<div class="empty" style="padding:14px">なし</div>';
-      arr.forEach(e=>{const c=findCat(grp,e.catId);
-        b+='<div class="li" onclick="App.openExpense(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+(e.sub?'<span class="meta"> / '+esc(e.sub)+'</span>':'')+(e.label?'<span class="meta"> ・'+esc(e.label)+'</span>':'')+'</div>'+(e.date?'<div class="meta num">'+e.date.slice(5).replace("-","/")+'</div>':'')+'</div><span class="amt">'+yen(e.amount)+'</span></div>';
+      arr.forEach(e=>{const c=findCat(grp,e.catId);const see=this.seeDetail(e);
+        const ic=see?c.icon:"🔒";const ttl=see?(esc(c.label)+(e.private?' 🔒':'')+(e.sub?'<span class="meta"> / '+esc(e.sub)+'</span>':'')+(e.label?'<span class="meta"> ・'+esc(e.label)+'</span>':'')):'個人支出';const click=see?(' onclick="App.openExpense(\''+e.id+'\')" style="cursor:pointer"'):'';
+        b+='<div class="li"'+click+'><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+ttl+'</div>'+(e.date?'<div class="meta num">'+e.date.slice(5).replace("-","/")+'</div>':'')+'</div><span class="amt">'+yen(e.amount)+'</span></div>';
       });
       return b+'</div>';
     };
@@ -936,7 +959,7 @@ const App = {
     const exp=this.state.expenses.filter(e=>e.month===this.calMonth);
     const evExp=this.eventExpense(this.calMonth,"confirmed"), evN=this.eventExpenseList(this.calMonth,"confirmed").reduce((s,x)=>s+x.n,0);
     if(exp.length||evExp>0){
-      const byCat={};exp.forEach(e=>{const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[e.catId])byCat[e.catId]={icon:c.icon,label:c.label,sum:0,n:0};byCat[e.catId].sum+=(+e.amount||0);byCat[e.catId].n++;});
+      const byCat={};exp.forEach(e=>{const see=this.seeDetail(e);const key=see?e.catId:"__priv";const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[key])byCat[key]=see?{icon:c.icon,label:c.label,sum:0,n:0}:{icon:"🔒",label:"個人支出",sum:0,n:0};byCat[key].sum+=(+e.amount||0);byCat[key].n++;});
       const arr=Object.values(byCat).sort((a,b)=>b.sum-a.sum);
       if(evExp>0)arr.push({icon:"📅",label:"予定・支払い(済)",sum:evExp,n:evN});
       arr.sort((a,b)=>b.sum-a.sum);
@@ -1140,6 +1163,14 @@ const App = {
       '<div class="set-cell"><span class="lab">夫の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.husband)+'" onchange="App.setName(\'husband\',this.value)"></div>'+
       '<div class="set-cell"><span class="lab">妻の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.wife)+'" onchange="App.setName(\'wife\',this.value)"></div></div>';
 
+    // この端末の本人・承認・通知(夫婦で巻き込む)
+    h+='<p class="set-head">この端末・通知</p><div class="set-group">'+
+      '<div class="set-cell" style="display:block"><span class="lab">この端末を使うのは?</span><div class="desc">お小遣いの非公開・承認・通知に使われます(この端末だけの設定)</div><div class="seg" style="margin-top:8px">'+
+      [["husband",esc(s.husband)],["wife",esc(s.wife)]].map(o=>'<button type="button" class="'+(this.deviceOwner===o[0]?"on":"")+'" onclick="App.setDevice(\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div></div>'+
+      '<div class="set-cell"><div><span class="lab">大きな支出の承認</span><div class="desc">この金額以上は相手の承認待ちに(0でオフ)</div></div><input class="amt" style="max-width:120px;min-height:40px" type="text" inputmode="numeric" value="'+cf(s.approveThreshold)+'" oninput="App.commaize(this)" onchange="App.setApproveThreshold(this.value)"></div>'+
+      '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・もうすぐの支払いを通知(ホーム画面に追加した状態で有効)</div></div><label class="switch"><input type="checkbox" '+(s.notify?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
+      '</div>';
+
     h+='<p class="set-head">表示</p><div class="set-group">'+
       '<div class="set-cell"><div><span class="lab">テーマ</span></div><select style="max-width:150px;min-height:40px" onchange="App.setTheme(this.value)">'+
       ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(s.theme===v?"selected":"")+'>'+l+'</option>'}).join("")+
@@ -1174,6 +1205,7 @@ const App = {
     return h;
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
+  setApproveThreshold(v){this.state.settings.approveThreshold=+String(v).replace(/[^0-9.]/g,"")||0;this.save(true);},
   setTheme(v){this.state.settings.theme=v;this.applyTheme();this.save();},
   applyTheme(){
     const t=this.state.settings.theme;
@@ -1247,11 +1279,15 @@ const App = {
       this.field("名前・メモ（任意）",'<input id="f-label" placeholder="お店の名前など" value="'+esc(it?it.label:(pre&&pre.label?pre.label:""))+'">')+
       this.field("金額",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it?it.amount:(pre&&pre.amount?pre.amount:""))+'" oninput="App.commaize(this)">')+
       this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:todayStr())+'">')+
+      (this.deviceOwner?this.field("公開範囲",'<div class="seg" id="f-vis">'+[["shared","二人で共有"],["private","自分のお小遣い🔒"]].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(((it&&it.private)?"private":"shared")===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>'):"")+
       this.actions(()=>{
         const amount=numv("f-amount");if(!amount){this.toast("金額を入力してください");return false;}
         if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
         const date=val("f-date")||todayStr();
-        const data={type:seg("f-etype"),catId:val("f-cat"),sub:val("f-sub"),label:val("f-label"),amount,date,month:date.slice(0,7)};
+        const isPriv=this.deviceOwner?(seg("f-vis")==="private"):(it?!!it.private:false);
+        const owner=isPriv?((it&&it.owner)?it.owner:this.deviceOwner):"";
+        const data={type:seg("f-etype"),catId:val("f-cat"),sub:val("f-sub"),label:val("f-label"),amount,date,month:date.slice(0,7),private:isPriv,owner:owner};
+        if(!it){const th=+this.state.settings.approveThreshold||0;if(!isPriv&&th>0&&this.deviceOwner&&amount>=th){data.approve="pending";data.reqBy=this.deviceOwner;}}
         if(it)Object.assign(it,data);else this.state.expenses.push({id:uid(),...data});
         if(pre&&pre.fromItem){const item=this.state.items.find(x=>x.id===pre.fromItem);if(item)item.done=true;}
         return true;
