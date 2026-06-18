@@ -203,6 +203,8 @@ input[type=date],input[type=time]{min-width:0;max-width:100%;width:100%}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 a.tlink{color:var(--color-secondary-500)}
+.chev{display:inline-block;transition:transform .2s;color:var(--color-text-disabled);font-size:18px;font-weight:700;line-height:1}
+.chev.open{transform:rotate(180deg)}
 /* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
@@ -376,6 +378,7 @@ const APP_CONFIG = { syncUrl:"", syncKey:"", syncSpace:"" };
 const App = {
   state:null, tab:"dashboard", curMonth:thisMonth(), shareView:"home", curFolderId:null,
   taskView:"home", curProjectId:null, curSubId:null,
+  dashOpen:{inc:false,exp:false},
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
@@ -476,6 +479,7 @@ const App = {
   },
   updateFab(){const show=(this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");document.getElementById("fab").style.display=show?"flex":"none";},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
+  toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
   dot(plain){
     const s=this._syncStatus; if(s==="off") return plain?"":"";
     const cls=s==="on"?"sync-on":(s==="err"?"sync-err":"sync-off");
@@ -523,41 +527,46 @@ const App = {
     const exRate=m.totalIncome>0?(m.totalExpense/m.totalIncome*100):0;
     const fixedPct=m.totalIncome>0?Math.min(100,m.fixed/m.totalIncome*100):0;
     const varPct=m.totalIncome>0?Math.min(100,m.variable/m.totalIncome*100):0;
-    let srPill=m.savingsRate>=20?'pill-ok':(m.savingsRate>=10?'pill-warn':'pill-bad');
-    const balColor=m.balance>=0?'var(--color-accent-500)':'var(--color-danger)';
-
     const eventPct=m.totalIncome>0?Math.min(100,m.evConfirmed/m.totalIncome*100):0;
-    // expense card(支出を先に)
+    const chev=(k)=>'<span class="chev'+(this.dashOpen[k]?' open':'')+'">▾</span>';
+    // 支出カード(合計+▼で内訳開閉)
     let expCard;
     if(m.totalExpense===0){
       expCard='<div class="card"><div class="row"><p class="card-title" style="margin:0">今月の支出</p><span class="link" onclick="App.openExpense()">＋ 追加</span></div><div class="empty"><span class="e-ic">🧾</span>支出をまだ登録していません</div></div>';
     }else{
-      expCard='<div class="card"><div class="row"><p class="card-title" style="margin:0">支出合計 <span class="link" style="font-weight:500" onclick="App.openExpense()">＋追加</span></p><span class="mid-num" style="cursor:pointer" onclick="App.go(\'expense_list\')">'+yen(m.totalExpense)+'</span></div><div class="divider"></div>'+
-        '<div class="row"><span>🏠 固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div>'+
-        '<div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
-        '<div class="row" style="margin-top:14px"><span>🛒 生活費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div>'+
-        '<div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
-        (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
-        '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div></div>';
+      expCard='<div class="card">'+
+        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'exp\')"><p class="card-title" style="margin:0">今月の支出</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num">'+yen(m.totalExpense)+'</span>'+chev('exp')+'</span></div>'+
+        (this.dashOpen.exp?('<div class="divider"></div>'+
+          '<div class="row"><span>🏠 固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div><div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
+          '<div class="row" style="margin-top:14px"><span>🛒 生活費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
+          (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
+          '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div>'+
+          '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openExpense()">＋ 追加</span>　<span class="link" onclick="App.go(\'expense_list\')">一覧 ›</span></div>'):'')+
+      '</div>';
     }
     // これから支払う予定(支払日が未来のカレンダー予定)
-    const plannedCard=m.planned>0?('<div class="card" style="border-color:#F3D9A8;background:#FCEFD9"><div class="row"><p class="card-title" style="margin:0;color:var(--color-warning)">📅 これから支払う予定</p><span class="mid-num" style="color:var(--color-warning);cursor:pointer" onclick="App.go(\'expense_list\')">'+yen(m.planned)+'</span></div><div class="meta" style="margin-top:6px;color:#9a6a1a">支払日が来たら自動で「今月の支出」に移ります。支払うと積立可能額は '+yen(m.afterPlanned)+' に。</div></div>'):'';
-    // income card
+    const plannedCard=m.planned>0?('<div class="card" style="border-color:#F3D9A8;background:#FCEFD9"><div class="row"><p class="card-title" style="margin:0;color:var(--color-warning)">📅 これから支払う予定</p><span class="mid-num" style="color:var(--color-warning);cursor:pointer" onclick="App.go(\'expense_list\')">'+yen(m.planned)+'</span></div><div class="meta" style="margin-top:6px;color:#9a6a1a">支払日が来たら自動で「今月の支出」に移ります。支払うと残りは '+yen(m.afterPlanned)+' に。</div></div>'):'';
+    // 収入カード(合計+▼で内訳開閉)
     let incCard;
     if(m.totalIncome===0){
       incCard='<div class="card"><div class="row"><p class="card-title" style="margin:0">今月の収入</p><span class="link" onclick="App.openIncome()">＋ 追加</span></div><div class="empty"><span class="e-ic">💰</span>収入をまだ登録していません</div></div>';
     }else{
-      incCard='<div class="card"><div class="row" style="margin-bottom:4px"><p class="card-title" style="margin:0">今月の収入</p><span class="link" onclick="App.openIncome()">＋ 追加</span></div>'+
-        '<div class="big-num" style="color:var(--color-primary-500);cursor:pointer" onclick="App.go(\'income_list\')">'+yen(m.totalIncome)+'</div>'+
-        '<div class="muted" style="font-size:var(--text-sm);margin-top:6px">'+esc(s.husband)+' '+yen(m.hInc)+' / '+esc(s.wife)+' '+yen(m.wInc)+(m.oInc?(' / その他 '+yen(m.oInc)):'')+'</div></div>';
-    }
-    // savings available card
-    const availCard='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)">'+
-      '<p class="card-title" style="color:var(--color-primary-700)">✨ 今月の積立可能額</p>'+
-      '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
-      '<div class="row" style="margin-top:8px"><span class="muted" style="font-size:var(--text-sm)">貯蓄率</span><span class="'+srPill+' pill">'+m.savingsRate.toFixed(1)+'%（目標20%）</span></div>'+
-      (m.totalIncome>0?'<div class="prog lg" style="margin-top:6px"><span class="'+(m.savingsRate>=20?'fill-accent':(m.savingsRate>=10?'fill-warning':'fill-danger'))+'" style="width:'+Math.max(0,Math.min(100,m.savingsRate))+'%"></span></div>':'')+
+      incCard='<div class="card">'+
+        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'inc\')"><p class="card-title" style="margin:0">今月の収入</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</span>'+chev('inc')+'</span></div>'+
+        (this.dashOpen.inc?('<div class="divider"></div>'+
+          '<div class="row"><span>🧑 '+esc(s.husband)+'</span><span class="num" style="font-weight:700">'+yen(m.hInc)+'</span></div>'+
+          '<div class="row" style="margin-top:10px"><span>🧑 '+esc(s.wife)+'</span><span class="num" style="font-weight:700">'+yen(m.wInc)+'</span></div>'+
+          (m.oInc?('<div class="row" style="margin-top:10px"><span>その他</span><span class="num" style="font-weight:700">'+yen(m.oInc)+'</span></div>'):'')+
+          '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openIncome()">＋ 追加</span>　<span class="link" onclick="App.go(\'income_list\')">一覧 ›</span></div>'):'')+
       '</div>';
+    }
+    // 残り(貯金できる分)= 収入 − 確定支出
+    const balColor=m.balance>=0?'var(--color-accent-600)':'var(--color-danger)';
+    const remainCard='<div class="card" style="border:1.5px solid var(--color-accent-500)">'+
+      '<p class="card-title" style="margin:0;color:var(--color-accent-600)">残り（貯金できる分）</p>'+
+      '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
+      '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
+      (m.planned>0?'<div class="meta" style="margin-top:4px">📅 予定の支払い '+yen(m.planned)+' 後は '+yen(m.afterPlanned)+'</div>':'')+'</div>';
 
     // goals
     let goalsHtml="";
@@ -592,7 +601,7 @@ const App = {
     const wishCard='<div class="section-title">やりたい・欲しいもの<span class="link" onclick="App.go(\'share\')">すべて見る</span></div><div class="card">'+
       (wHtml||'<div class="empty"><span class="e-ic">✨</span>「共有」タブのフォルダに追加できます</div>')+'</div>';
 
-    return '<div class="dash-grid">'+expCard+incCard+'</div>'+plannedCard+availCard+goalsCard+tasksCard+wishCard;
+    return '<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
