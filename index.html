@@ -205,7 +205,7 @@ input[type=date],input[type=time]{min-width:0;max-width:100%;width:100%}
 .cd-pay{background:var(--color-danger)}.cd-task{background:var(--color-primary-500)}.cd-event{background:var(--color-secondary-400)}.cd-wish{background:#9C6ADE}.cd-income{background:var(--color-accent-500)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
-.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);max-width:calc(100% - 32px);box-sizing:border-box;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 a.tlink{color:var(--color-secondary-500)}
 .chev{display:inline-block;transition:transform .2s;color:var(--color-text-disabled);font-size:18px;font-weight:700;line-height:1}
@@ -533,6 +533,38 @@ const App = {
     this.state.events.forEach(e=>{const isInc=e.type==="income";if(e.amount>0&&isInc===isIncome){const hit=this.eventDatesInMonth(e,month).filter(d=>{const past=d<=today;if(mode==="confirmed"&&!past)return false;if(mode==="planned"&&past)return false;return true;});if(hit.length)list.push({id:e.id,title:e.title,n:hit.length,sum:hit.length*(+e.amount||0),next:hit.sort()[0]});}});
     return list.sort((a,b)=>b.sum-a.sum);
   },
+  remindersWithin(days){
+    const today=todayStr(),end=addDaysStr(today,days);
+    const months=[today.slice(0,7)];if(end.slice(0,7)!==months[0])months.push(end.slice(0,7));
+    const out=[];
+    this.state.events.forEach(e=>{const kind=e.type==="income"?"income":(e.type==="payment"?"payment":"event");months.forEach(mo=>this.eventDatesInMonth(e,mo).forEach(ds=>{if(ds>=today&&ds<=end)out.push({date:ds,kind,title:e.title,amount:e.amount||0});}));});
+    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"&&t.due>=today&&t.due<=end)out.push({date:t.due,kind:"task",title:t.title,amount:0});});
+    return out.sort((a,b)=>a.date<b.date?-1:1);
+  },
+  shareSummary(){
+    const m=this.metrics(this.curMonth),W=1080,H=1080,c=document.createElement("canvas");c.width=W;c.height=H;
+    const x=c.getContext("2d");
+    x.fillStyle="#FAFAF8";x.fillRect(0,0,W,H);
+    x.fillStyle="#E86A35";x.fillRect(0,0,W,190);
+    x.fillStyle="#fff";x.textAlign="left";x.font="bold 52px sans-serif";x.fillText("今岡家ライフプラン",64,98);
+    x.font="40px sans-serif";x.fillText(monthLabel(this.curMonth)+" の家計",64,158);
+    // 残り(中央・大)
+    x.textAlign="center";x.fillStyle="#6B6560";x.font="40px sans-serif";x.fillText("残り（貯金できる分）",W/2,360);
+    x.fillStyle=m.balance>=0?"#2B7358":"#D94F4F";x.font="bold 140px sans-serif";x.fillText(yen(m.balance),W/2,490);
+    if(m.totalIncome>0){x.fillStyle="#6B6560";x.font="38px sans-serif";x.fillText("貯蓄率 "+m.savingsRate.toFixed(0)+"%",W/2,560);}
+    // 収入/支出 2カラム
+    const card=(cx,label,val,col)=>{x.fillStyle="#fff";rr(x,cx,640,440,200,28);x.fillStyle="#6B6560";x.font="38px sans-serif";x.textAlign="center";x.fillText(label,cx+220,710);x.fillStyle=col;x.font="bold 62px sans-serif";x.fillText(yen(val),cx+220,790);};
+    function rr(ctx,X,Y,w,h,r){ctx.beginPath();ctx.moveTo(X+r,Y);ctx.arcTo(X+w,Y,X+w,Y+h,r);ctx.arcTo(X+w,Y+h,X,Y+h,r);ctx.arcTo(X,Y+h,X,Y,r);ctx.arcTo(X,Y,X+w,Y,r);ctx.closePath();ctx.fill();}
+    card(80,"今月の収入",m.totalIncome,"#E86A35");
+    card(560,"今月の支出",m.totalExpense,"#1A1714");
+    x.fillStyle="#ADA8A2";x.font="32px sans-serif";x.textAlign="center";x.fillText("夫婦の生活管理アプリ「今岡家ライフプラン」",W/2,1000);
+    c.toBlob((blob)=>{
+      if(!blob){this.toast("画像を作成できませんでした");return;}
+      const file=new File([blob],"kakei-"+this.curMonth+".png",{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:monthLabel(this.curMonth)+"の家計"}).catch(()=>{});}
+      else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="kakei-"+this.curMonth+".png";a.click();this.toast("画像を保存しました");}
+    },"image/png");
+  },
   eventExpense(month,mode){return this.eventSum(month,mode,false);},
   eventIncome(month,mode){return this.eventSum(month,mode,true);},
   eventExpenseList(month,mode){return this.eventList(month,mode,false);},
@@ -593,7 +625,8 @@ const App = {
       '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
       '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
       ((m.planned>0||m.plannedIncome>0)?'<div class="meta" style="margin-top:4px">📅 予定を反映した月末の見込み: '+yen(m.afterPlanned)+'</div>':'')+
-      warn+'</div>';
+      warn+
+      '<div style="margin-top:10px"><span class="link" onclick="App.shareSummary()">📤 今月を画像でシェア</span></div></div>';
 
     // goals
     let goalsHtml="";
@@ -628,7 +661,16 @@ const App = {
     const wishCard='<div class="section-title">やりたい・欲しいもの<span class="link" onclick="App.go(\'share\')">すべて見る</span></div><div class="card">'+
       (wHtml||'<div class="empty"><span class="e-ic">✨</span>「共有」タブのフォルダに追加できます</div>')+'</div>';
 
-    return '<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+goalsCard+tasksCard+wishCard;
+    // 🔔 もうすぐ(7日以内の支払い・入金・タスク期限)
+    const rem=this.remindersWithin(7);
+    let remindCard='';
+    if(rem.length){
+      const ic={payment:"💴",income:"💰",event:"📌",task:"✅"};
+      let r='';
+      rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ic[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
+      remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">🔔 もうすぐ（7日以内）</p>'+r+'</div>';
+    }
+    return remindCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -960,6 +1002,7 @@ const App = {
       h+='</div>';
     }
     if(l.memo)h+='<div class="meta" style="margin-top:10px;white-space:pre-wrap">'+esc(l.memo)+'</div>';
+    if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm" style="min-height:36px;padding:6px 14px" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">🛒 買った→支出に記録</button></div>';
     h+='</div>';
     return h;
   },
@@ -1135,7 +1178,8 @@ const App = {
     this.showSheet(h);
   },
   // ---- expense ----
-  openExpense(id){
+  buyItem(id){const it=this.state.items.find(x=>x.id===id);if(!it)return;this.openExpense(null,{label:it.title,amount:it.target,fromItem:id});},
+  openExpense(id,pre){
     const it=id?this.state.expenses.find(x=>x.id===id):null;
     const type=it?it.type:"variable";
     this.curExpType=type;
@@ -1145,8 +1189,8 @@ const App = {
         ['fixed:固定費','variable:変動費'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(type===v?"on":"")+'" onclick="App.segExpense(this)">'+l+'</button>'}).join("")+'</div>')+
       '<div id="cat-wrap">'+this.field("大項目（カテゴリ）",catSel)+'</div>'+
       this.field("中項目（任意）",'<input id="f-sub" placeholder="例: コンビニ / スーパー / 外食" value="'+esc(it&&it.sub?it.sub:"")+'">')+
-      this.field("名前・メモ（任意）",'<input id="f-label" placeholder="お店の名前など" value="'+esc(it?it.label:"")+'">')+
-      this.field("金額",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
+      this.field("名前・メモ（任意）",'<input id="f-label" placeholder="お店の名前など" value="'+esc(it?it.label:(pre&&pre.label?pre.label:""))+'">')+
+      this.field("金額",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it?it.amount:(pre&&pre.amount?pre.amount:""))+'" oninput="App.commaize(this)">')+
       this.field("日付",'<input id="f-date" type="date" value="'+(it&&it.date?it.date:todayStr())+'">')+
       this.actions(()=>{
         const amount=numv("f-amount");if(!amount){this.toast("金額を入力してください");return false;}
@@ -1154,6 +1198,7 @@ const App = {
         const date=val("f-date")||todayStr();
         const data={type:seg("f-etype"),catId:val("f-cat"),sub:val("f-sub"),label:val("f-label"),amount,date,month:date.slice(0,7)};
         if(it)Object.assign(it,data);else this.state.expenses.push({id:uid(),...data});
+        if(pre&&pre.fromItem){const item=this.state.items.find(x=>x.id===pre.fromItem);if(item)item.done=true;}
         return true;
       },it?()=>this.del("expenses",id):null);
     this.showSheet(h);
@@ -1338,6 +1383,7 @@ function cf(n){n=+n||0;return n?n.toLocaleString("en-US"):"";}
 function domainOf(url){if(!url)return "";try{let u=url;if(!/^https?:\/\//i.test(u))u="https://"+u;return new URL(u).hostname.replace(/^www\./,"");}catch(e){return "";}}
 function pad2(n){return String(n).padStart(2,"0");}
 function addDay(ymd){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y,m-1,d+1);return ""+dt.getFullYear()+pad2(dt.getMonth()+1)+pad2(dt.getDate());}
+function addDaysStr(ymd,n){const[y,m,d]=ymd.split("-").map(Number);const dt=new Date(y,m-1,d+n);return dt.getFullYear()+"-"+pad2(dt.getMonth()+1)+"-"+pad2(dt.getDate());}
 function readImage(file,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1280;let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);try{cb(c.toDataURL("image/jpeg",0.72));}catch(e){cb(r.result);}};img.src=r.result;};r.readAsDataURL(file);}
 
 matchMedia("(prefers-color-scheme:dark)").addEventListener("change",()=>{if(App.state&&App.state.settings.theme==="auto")App.applyTheme();});
