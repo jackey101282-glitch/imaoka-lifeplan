@@ -165,6 +165,10 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .back-btn{display:inline-flex;align-items:center;gap:5px;border:none;background:var(--color-bg-muted);color:var(--color-text-secondary);border-radius:var(--radius-full);padding:8px 14px 8px 10px;font-size:var(--text-base);font-weight:var(--fw-m);cursor:pointer;margin-bottom:14px;line-height:1;font-family:inherit}
 .back-btn:active{transform:scale(.96)}
 .back-btn .ico{flex-shrink:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.topbar .back-btn{margin-bottom:0}
+.top-add{flex:0 0 auto;width:40px;height:40px;border-radius:var(--radius-full);border:none;background:var(--color-primary-500);color:var(--color-text-on-primary);font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-primary);font-family:inherit}
+.top-add:active{transform:scale(.94)}
 /* FAB */
 .fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:28px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center;white-space:nowrap}
 .fab.wide{width:auto;height:52px;padding:0 22px;font-size:var(--text-md);font-weight:var(--fw-b);gap:4px}
@@ -1365,7 +1369,7 @@ const App = {
   view_folder(){
     const f=this.state.folders.find(x=>x.id===this.curFolderId);
     if(!f){this.shareView="home";return this.view_share();}
-    let h='<button class="back-btn" onclick="App.shareGo(\'home\')">'+ic('back',16)+'共有</button>';
+    let h='<div class="topbar"><button class="back-btn" onclick="App.shareGo(\'home\')">'+ic('back',16)+'共有</button><button class="top-add" onclick="App.openItem(null,\''+f.id+'\')" aria-label="このフォルダに追加">＋</button></div>';
     if(f.image)h+='<div style="height:160px;border-radius:var(--radius-lg);margin-bottom:12px;background-image:url(\''+f.image+'\');background-size:cover;background-position:center;box-shadow:var(--shadow-sm)"></div>';
     h+='<div class="section-title" style="margin-top:0"><span class="ttl-ico">'+(f.image?'':renderCatIc(f.icon,18))+esc(f.name)+'</span><span class="link" onclick="App.openFolderForm(\''+f.id+'\')">フォルダ編集</span></div>';
     const items=this.state.items.filter(i=>i.folderId===f.id).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
