@@ -880,7 +880,11 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    h+='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ タスク</span></div>';
+    h+='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
+    h+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
+      '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'){event.preventDefault();App.quickAddTask();}" style="flex:1;min-width:0">'+
+      '<button class="btn btn-primary" onclick="App.quickAddTask()" style="flex-shrink:0;min-height:42px;padding:0 16px">追加</button>'+
+      '</div></div>';
     h+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
     h+='<div class="card">';
     if(!list.length)h+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
@@ -942,6 +946,15 @@ const App = {
     this.showSheet(h);
   },
   toggleTask(id){const t=this.state.tasks.find(x=>x.id===id);if(t){t.status=t.status==="done"?"todo":"done";this.commit();}},
+  quickAddTask(){
+    const el=document.getElementById("quick-task");
+    const title=el?el.value.trim():"";
+    if(!title){this.toast("やることを入力してください");return;}
+    if(this.filters.tasks==="done")this.filters.tasks="open";
+    this.state.tasks.push({id:uid(),status:"todo",title,cat:"other",assignee:"both",projectId:null,subId:null,due:null,priority:"medium",memo:"",loc:"",url:"",image:null});
+    this.commit();
+    const n=document.getElementById("quick-task");if(n)n.focus();
+  },
   setFilter(view,val){
     const fb=document.querySelector(".filters");const sl=fb?fb.scrollLeft:0;
     this.filters[view]=val;this.render();
