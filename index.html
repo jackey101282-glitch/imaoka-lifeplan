@@ -38,12 +38,21 @@
   --shadow-primary:0 4px 12px rgba(196,113,74,.28);
 }
 html[data-theme="dark"]{
-  --color-bg-base:#17130F;--color-bg-surface:#221C16;--color-bg-muted:#2C251D;
-  --color-border:#3A332B;--color-border-strong:#524A40;
-  --color-text-primary:#F0EAE0;--color-text-secondary:#A89E92;--color-text-disabled:#5E574E;
-  --color-primary-50:#2A201A;--color-primary-500:#D4855E;--color-primary-600:#C4714A;
-  --color-secondary-300:#9DB5A0;--color-secondary-500:#8DB491;--color-accent-500:#62BF95;
-  --color-warning:#EBAA46;--color-danger:#E07060;
+  /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
+  --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
+  --color-border:#2C2F36;--color-border-strong:#3D424B;
+  --color-text-primary:#ECEEF1;--color-text-secondary:#99A0AB;--color-text-disabled:#565C66;
+  --color-primary-50:#2A201B;--color-primary-100:#3A2A22;--color-primary-200:#5C3F2E;
+  --color-primary-300:#C97E58;--color-primary-400:#D6885F;--color-primary-500:#E08A5E;
+  --color-primary-600:#E89C72;--color-primary-700:#F0B392;
+  --color-secondary-50:#1B2620;--color-secondary-100:#22332A;--color-secondary-200:#2E4A39;
+  --color-secondary-300:#5E8466;--color-secondary-400:#79A081;--color-secondary-500:#8FBE96;
+  --color-secondary-600:#A6D0AC;--color-secondary-700:#BCDCC0;
+  --color-accent-400:#57C08F;--color-accent-500:#5BC596;--color-accent-600:#86D6AE;
+  --color-warning:#E8B055;--color-danger:#E8705F;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.4);--shadow-sm:0 2px 8px rgba(0,0,0,.45);
+  --shadow-md:0 4px 16px rgba(0,0,0,.5);--shadow-lg:0 10px 36px rgba(0,0,0,.6);
+  --shadow-primary:0 4px 14px rgba(224,138,94,.28);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{overflow-x:hidden}
@@ -118,10 +127,20 @@ html[data-theme="dark"] .chip-over{background:#3a2020}
 .pill-ok{background:#E8F5EF;color:var(--color-accent-600)}
 .pill-warn{background:#FCEFD9;color:var(--color-warning)}
 .pill-bad{background:#FDECEC;color:var(--color-danger)}
+html[data-theme="dark"] .pill-ok{background:#16291F}
+html[data-theme="dark"] .pill-warn{background:#2E2412}
+html[data-theme="dark"] .pill-bad{background:#321C19}
+/* 警告トーンのカード(これからの予定/オフライン等)。ダークでも浮かない */
+.card-warn{background:#FCEFD9;border-color:#F3D9A8}
+.card-warn .lo{color:#9a6a1a}
+html[data-theme="dark"] .card-warn{background:#2A2114;border-color:#46381E}
+html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 /* list item */
 .li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border)}
 .li:last-child{border-bottom:none}
-.li .ic{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.li .ic{font-size:19px;width:40px;height:40px;border-radius:12px;background:var(--color-bg-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
+.ico{display:inline-block;vertical-align:-.18em;flex-shrink:0}
+.ttl-ico{display:inline-flex;align-items:center;gap:7px}
 .li .main{flex:1;min-width:0}
 .li .ttl{font-weight:var(--fw-m);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li .meta{font-size:var(--text-sm);color:var(--color-text-secondary)}
@@ -131,7 +150,7 @@ html[data-theme="dark"] .chip-over{background:#3a2020}
 .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--color-border-strong);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
 .check.on{background:var(--color-accent-500);border-color:var(--color-accent-500)}
 .empty{text-align:center;color:var(--color-text-secondary);padding:24px 8px;font-size:var(--text-base)}
-.empty .e-ic{font-size:34px;display:block;margin-bottom:8px}
+.empty .e-ic{font-size:30px;width:64px;height:64px;border-radius:20px;background:var(--color-bg-muted);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;line-height:1}
 /* buttons */
 .btn{border:none;border-radius:var(--radius-md);padding:12px 20px;font-size:var(--text-md);font-weight:var(--fw-b);min-height:48px;cursor:pointer;font-family:inherit;transition:all .12s ease-out;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn:active{transform:scale(.98)}
@@ -165,7 +184,8 @@ html[data-theme="dark"] .chip-over{background:#3a2020}
 .sheet.show{transform:translateY(0)}
 .sheet input,.sheet select,.sheet textarea{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){.sheet{max-width:560px;margin:0 auto}}
-.sheet .grip{width:38px;height:4px;background:var(--color-border-strong);border-radius:2px;margin:6px auto 12px}
+.sheet .grip{width:44px;height:5px;background:var(--color-border-strong);border-radius:3px;margin:8px auto 12px;cursor:grab;touch-action:none}
+.sheet .grip:active{cursor:grabbing}
 .sheet-close{position:absolute;top:12px;right:14px;width:34px;height:34px;border-radius:var(--radius-full);border:none;background:var(--color-bg-muted);color:var(--color-text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .sheet-close:active{background:var(--color-border)}
 .sheet h3{padding-right:40px}
@@ -215,16 +235,22 @@ input[type=date],input[type=time]{min-width:0;max-width:100%;width:100%}
 a.tlink{color:var(--color-secondary-500)}
 .chev{display:inline-block;transition:transform .2s;color:var(--color-text-disabled);font-size:18px;font-weight:700;line-height:1}
 .chev.open{transform:rotate(180deg)}
-.warn-box{margin-top:12px;background:#FDECEC;color:var(--color-danger);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.6}
+.warn-box{margin-top:12px;background:#FDECEC;color:var(--color-danger);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.6;display:flex;gap:7px;align-items:flex-start}
+.warn-box .ico{margin-top:2px}
 .authwrap{position:fixed;inset:0;z-index:100;background:var(--color-bg-base);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .authcard{width:100%;max-width:380px;margin:auto;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-md)}
 .authcard h2{font-size:var(--text-xl)}
+.auth-switch{text-align:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--color-border);font-size:var(--text-sm);color:var(--color-text-secondary)}
+.invite-note{background:var(--color-secondary-50);color:var(--color-secondary-600);border:1px solid var(--color-secondary-200);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);line-height:1.6;margin-bottom:16px;align-items:flex-start}
+.invite-note .ico{margin-top:2px;flex-shrink:0}
 .my-brand{text-align:center;margin-bottom:22px}
 .my-brand .ic{width:72px;height:72px;border-radius:18px;display:inline-block;object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.16)}
 .my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
 .my-tag{font-size:var(--text-sm);color:var(--color-text-secondary);margin:0}
 html[data-theme="dark"] .warn-box{background:#3a2020}
-/* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
+/* 共有ポケット: スマホ2列(PCでは下のメディアクエリで多列に) */
+.pocket-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* ===== PC(広い画面)用レイアウト: 左サイドバー + 横幅を活かした段組み ===== */
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
   .tabbar{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:230px;height:100vh;border-top:none;border-right:1px solid var(--color-border);padding:16px 14px;gap:4px;justify-content:flex-start;align-items:stretch}
@@ -235,16 +261,29 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
   .tab .ti{font-size:21px;width:24px;text-align:center}
   .tab .tl{font-size:var(--text-md);font-weight:var(--fw-m)}
   .tab .nbadge{position:static;margin-left:auto}
-  .app-header{max-width:840px;margin-left:auto;margin-right:auto}
-  main{max-width:840px;padding-top:24px}
+  .app-header{padding-left:32px;padding-right:32px}
+  /* 広いキャンバス。一覧/フォーム系は読みやすい幅にしぼる */
+  main{max-width:1180px;padding-top:24px;padding-left:32px;padding-right:32px}
+  main.view-settings,main.view-simulator,main.view-income_list,main.view-expense_list,main.narrow{max-width:760px}
   .sheet{left:230px;right:0;margin:0 auto}
-  .fab{right:max(20px, calc((100vw - 230px - 840px)/2 + 20px))}
-}
-@media (min-width:900px){
-  /* ダッシュボードのカードを2列に */
-  #view .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  #view .dash-grid > .card{margin-bottom:0}
-  #view .dash-grid > .dash-full{grid-column:1 / -1}
+  .fab{right:max(24px, calc((100vw - 230px - 1180px)/2 + 24px))}
+  /* ダッシュボード: 上部に主要3数字のヒーロー、その下は2列でゆったり */
+  main.view-dashboard{max-width:1040px}
+  main.view-dashboard .dash-hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;align-items:start}
+  main.view-dashboard .dash-hero > .card{margin-bottom:0}
+  main.view-dashboard .dash-hero > .card:nth-child(3){grid-column:1 / -1}
+  main.view-dashboard .dash-cols{column-count:2;column-gap:22px}
+  main.view-dashboard .dblk{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid}
+  main.view-dashboard .dblk > .section-title:first-child{margin-top:0}
+  main.view-dashboard .dblk > .card{margin-bottom:22px}
+  /* タスク: プロジェクトと個別タスクを左右2カラムに */
+  main.view-tasks .task-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start}
+  main.view-tasks .task-cols .section-title{margin-top:0}
+  /* カレンダー: 月表示を左、予定/集計を右に */
+  main.view-calendar .cal-layout{display:grid;grid-template-columns:minmax(420px,1.05fr) 1fr;gap:24px;align-items:start}
+  main.view-calendar .cal-side .section-title:first-child{margin-top:0}
+  /* 共有: ポケットを大きく(3つ並び目安) */
+  main.view-share .pocket-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
 }
 </style>
 </head>
@@ -255,7 +294,7 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
     <div class="sub" id="hd-sub"></div>
   </div>
   <div class="hd-right">
-    <button class="eye-btn" id="eye-btn" onclick="App.toggleHideAmt()" aria-label="金額の表示を切り替え" title="金額を隠す">👁</button>
+    <button class="eye-btn" id="eye-btn" onclick="App.toggleHideAmt()" aria-label="金額の表示を切り替え" title="金額を隠す"></button>
     <div class="month-nav" id="month-nav">
       <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
       <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
@@ -371,6 +410,47 @@ const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMo
 const thisMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
 function monthLabel(m){const[y,mo]=m.split("-");return (y+"年"+Number(mo)+"月")}
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+/* 装飾用ラインアイコン(Terreタブと同トーン)。currentColorで色は親に追従 */
+const _ICONS={
+  bell:'<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10.4 19a1.6 1.6 0 0 0 3.2 0"/>',
+  chart:'<path d="M4 20V11"/><path d="M10 20V4"/><path d="M16 20v-6"/>',
+  repeat:'<path d="m17 2 3 3-3 3"/><path d="M20 5H9a4 4 0 0 0-4 4"/><path d="m7 22-3-3 3-3"/><path d="M4 19h11a4 4 0 0 0 4-4"/>',
+  calendar:'<rect x="3.5" y="5.5" width="17" height="15" rx="3.5"/><path d="M3.5 10h17"/><path d="M8 3.4V7M16 3.4V7"/>',
+  share:'<path d="M12 15V3"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  alert:'<path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 9.5v4.5"/><path d="M12 17.4h.01"/>',
+  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="m3 3 18 18"/><path d="M10.6 6.1A9.6 9.6 0 0 1 12 6c6 0 9.5 6 9.5 6a13 13 0 0 1-3 3.6"/><path d="M6.5 6.6A12.7 12.7 0 0 0 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 4.1-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/>',
+  sparkle:'<path d="M12 4.5 13.7 9 18 10.7 13.7 12.4 12 17l-1.7-4.6L6 10.7 10.3 9z"/>',
+  check:'<path d="M5 12.5 10 17l9-10"/>',
+  trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 13v4M9 21h6M10 21v-2h4v2"/>',
+  wallet:'<rect x="3" y="6.5" width="18" height="12" rx="3"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1.1" fill="currentColor" stroke="none"/>',
+  trend:'<path d="M3 17 9 11l4 4 8-9"/><path d="M16 6h5v5"/>',
+  send:'<path d="M21 4 3 11l7 3 3 7z"/><path d="m10 14 4-4"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 13.5a5.5 5.5 0 0 1 3 5.5"/>',
+  link:'<path d="M10 13a4 4 0 0 0 5.7.3l2.6-2.6a4 4 0 0 0-5.7-5.7L11 6.6"/><path d="M14 11a4 4 0 0 0-5.7-.3L5.7 13.3a4 4 0 0 0 5.7 5.7L13 17.4"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5V5a2 2 0 0 1 2-2h8.5A1.5 1.5 0 0 1 15 4.5V5"/>',
+  heart:'<path d="M12 20S4 14.5 4 9a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 5.5-8 11-8 11z"/>',
+  rocket:'<path d="M5 15c-1.5 1-2 4-2 4s3-.5 4-2a2.1 2.1 0 0 0-2-2z"/><path d="M9 14.5 7 13a11 11 0 0 1 4-7c2-2 5-3 8-3 0 3-1 6-3 8a11 11 0 0 1-7 4l-1.5-2"/><circle cx="14.5" cy="9.5" r="1.4"/>',
+  lifebuoy:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/><path d="m6 6 3.6 3.6M14.4 14.4 18 18M18 6l-3.6 3.6M9.6 14.4 6 18"/>',
+  graduation:'<path d="M12 4 2.5 8.5 12 13l9.5-4.5z"/><path d="M6.5 11v4.5c0 1 2.5 2.5 5.5 2.5s5.5-1.5 5.5-2.5V11"/><path d="M21.5 8.5v5"/>',
+  house:'<path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/>',
+  person:'<circle cx="12" cy="7.5" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  palm:'<path d="M12 21V11"/><path d="M12 11c-2-3-6-3-7-1 3-1 5 0 7 1zM12 11c2-3 6-3 7-1-3-1-5 0-7 1zM12 11c0-3-2-6-5-6 1 3 2 5 5 6zM12 11c0-3 2-6 5-6-1 3-2 5-5 6z"/>',
+  car:'<path d="M4 16v-3.2l2-4.3A2 2 0 0 1 7.8 7h8.4a2 2 0 0 1 1.8 1.5l2 4.3V16"/><path d="M3 16h18v2.5h-3V16M6 18.5V16H3"/><circle cx="7.5" cy="16.2" r="1.4"/><circle cx="16.5" cy="16.2" r="1.4"/>',
+  sofa:'<path d="M4 11V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M3 11a2 2 0 0 1 2 2v3h14v-3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5H1v-5a2 2 0 0 1 2-2z"/><path d="M6 19v1.5M18 19v1.5"/>',
+  trash:'<path d="M4 7h16M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7M6.5 7l1 12a1.6 1.6 0 0 0 1.6 1.5h5.8A1.6 1.6 0 0 0 16.5 19l1-12"/>',
+  shield:'<path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.3 7 9 4.1-1.7 7-4.8 7-9V6z"/>',
+  baby:'<circle cx="12" cy="6.5" r="2.2"/><path d="M7 13a5 5 0 0 1 10 0M9 13v6.5M15 13v6.5M9 16.5h6"/>',
+  clipboard:'<rect x="6" y="5" width="12" height="16" rx="2.2"/><path d="M9.5 5a2.5 2.5 0 0 1 5 0"/><path d="M9 11h6M9 14.5h4"/>',
+  coins:'<ellipse cx="9" cy="7" rx="5" ry="2.4"/><path d="M4 7v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"/><path d="M10 14.4c.6 1 2.6 1.8 5 1.8 2.8 0 5-1.1 5-2.4V9.6c0-1.1-1.5-2-3.6-2.3"/>',
+  party:'<path d="M4 20 9 8l7 7z"/><path d="M9 8c1-2 3-2 4 0M14 4c.5 1.5 2 2 3.5 1.5M18 8c1.5 0 2.5 1 2.5 2.5M16 12c1.5-.5 3 .5 3 2"/>',
+  tag:'<path d="M4 11.5V5a1 1 0 0 1 1-1h6.5l8 8a1.4 1.4 0 0 1 0 2l-6.5 6.5a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.3"/>',
+  map:'<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/>'
+};
+function ic(name,sz){sz=sz||18;return '<svg class="ico" width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(_ICONS[name]||'')+'</svg>';}
+/* タスクのカテゴリ→ラインアイコン */
+const TASK_IC={insurance:'shield',child:'baby',admin:'clipboard',finance:'coins',home:'house',event:'party',other:'tag'};
 
 /* ============================================================ */
 /* ===== 自動同期の埋め込み設定 =====
@@ -386,7 +466,7 @@ const App = {
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
-  _user:null, householdId:null, _inviteCode:"", _authView:"login", hideAmt:false,
+  _user:null, householdId:null, _inviteCode:"", _pendingInvite:"", _authView:"login", hideAmt:false,
 
   init(){
     try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
@@ -394,8 +474,10 @@ const App = {
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
     this.hideAmt=localStorage.getItem("imaoka_hide_amt")==="1"; HIDE_AMT=this.hideAmt;
     this.applyTheme();
-    this.go("dashboard");
+    const _lt=localStorage.getItem("imaoka_tab");
+    this.go(["dashboard","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
     this.notifyPending();
+    this.sheetDrag();
     this.initCloud();
     window.addEventListener("beforeunload",()=>this.save());
     // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)
@@ -463,6 +545,7 @@ const App = {
   /* ---- navigation ---- */
   go(tab){
     this.tab=tab;
+    if(["dashboard","tasks","calendar","share","settings"].includes(tab)){try{localStorage.setItem("imaoka_tab",tab);}catch(e){}}
     if(tab==="share"){this.shareView="home";this.curFolderId=null;}
     if(tab==="tasks"){this.taskView="home";this.curProjectId=null;this.curSubId=null;}
     document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
@@ -499,8 +582,12 @@ const App = {
     }
     document.getElementById("hd-title").textContent=title;
     document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?(esc((this.state.settings.spaceName||"ふたりの家計"))+" "+this.dot()):this.dot(true);
-    const eb=document.getElementById("eye-btn");if(eb){eb.textContent=this.hideAmt?"🙈":"👁";eb.classList.toggle("on",this.hideAmt);eb.title=this.hideAmt?"金額を表示":"金額を隠す";}
+    const eb=document.getElementById("eye-btn");if(eb){eb.innerHTML=ic(this.hideAmt?"eyeoff":"eye",18);eb.classList.toggle("on",this.hideAmt);eb.title=this.hideAmt?"金額を表示":"金額を隠す";}
     const v=document.getElementById("view");
+    let cls="view-"+this.tab;
+    if(this.tab==="tasks"&&this.taskView!=="home")cls+=" narrow";
+    if(this.tab==="share"&&this.shareView!=="home")cls+=" narrow";
+    v.className=cls;
     v.innerHTML=this["view_"+this.tab]();
     this.updateBadges();
     this.updateFab();
@@ -625,22 +712,22 @@ const App = {
       expCard='<div class="card">'+
         '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'exp\')"><p class="card-title" style="margin:0">今月の支出</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num">'+yen(m.totalExpense)+'</span>'+chev('exp')+'</span></div>'+
         (this.dashOpen.exp?('<div class="divider"></div>'+
-          '<div class="row"><span>🏠 固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div><div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
-          '<div class="row" style="margin-top:14px"><span>🛒 変動費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
-          (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>📅 予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
+          '<div class="row"><span>固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div><div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
+          '<div class="row" style="margin-top:14px"><span>変動費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
+          (m.evConfirmed>0?('<div class="row" style="margin-top:14px"><span>予定・支払い(済)</span><span class="num" style="font-weight:700">'+yen(m.evConfirmed)+'</span></div><div class="prog"><span class="fill-warning" style="width:'+eventPct+'%"></span></div>'):'')+
           '<div class="row" style="margin-top:14px"><span class="muted" style="font-size:var(--text-sm)">収入に対する支出率</span><span class="pill '+(exRate>85?'pill-bad':(exRate>70?'pill-warn':'pill-ok'))+'">'+exRate.toFixed(1)+'%</span></div>'+
           '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openExpense()">＋ 追加</span>　<span class="link" onclick="App.go(\'expense_list\')">一覧 ›</span></div>'):'')+
       '</div>';
     }
     // ライフプラン・シミュレーターへの入口
-    const simCard='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-secondary-50);border-color:var(--color-secondary-200)" onclick="App.go(\'simulator\')"><div style="font-size:28px">🔮</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-secondary-600)">ライフプラン・シミュレーター</div><div class="meta">10年後・将来の貯蓄を見える化</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+    const simCard='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-secondary-50);border-color:var(--color-secondary-200)" onclick="App.go(\'simulator\')"><div class="ic" style="background:var(--color-secondary-100);color:var(--color-secondary-600);width:44px;height:44px">'+ic('rocket',22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-secondary-600)">ライフプラン・シミュレーター</div><div class="meta">10年後・将来の貯蓄を見える化</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
     // これからの予定(未来の入金・支払い)
     let plannedCard='';
     if(m.planned>0||m.plannedIncome>0){
-      plannedCard='<div class="card" style="border-color:#F3D9A8;background:#FCEFD9"><p class="card-title" style="margin:0;color:var(--color-warning)">📅 これからの予定(入出金)</p>'+
-        (m.plannedIncome>0?'<div class="row" style="margin-top:8px"><span>💰 入る予定</span><span class="num" style="font-weight:700;color:var(--color-accent-600)">＋'+yen(m.plannedIncome)+'</span></div>':'')+
-        (m.planned>0?'<div class="row" style="margin-top:8px"><span>💴 支払う予定</span><span class="num" style="font-weight:700;color:var(--color-danger)">－'+yen(m.planned)+'</span></div>':'')+
-        '<div class="meta" style="margin-top:8px;color:#9a6a1a">日付が来たら自動で今月の収入/支出に反映されます。月末の見込み残りは '+yen(m.afterPlanned)+'。</div></div>';
+      plannedCard='<div class="card card-warn"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('calendar',16)+'これからの予定(入出金)</p>'+
+        (m.plannedIncome>0?'<div class="row" style="margin-top:8px"><span>入る予定</span><span class="num" style="font-weight:700;color:var(--color-accent-600)">＋'+yen(m.plannedIncome)+'</span></div>':'')+
+        (m.planned>0?'<div class="row" style="margin-top:8px"><span>支払う予定</span><span class="num" style="font-weight:700;color:var(--color-danger)">－'+yen(m.planned)+'</span></div>':'')+
+        '<div class="meta lo" style="margin-top:8px">日付が来たら自動で今月の収入/支出に反映されます。月末の見込み残りは '+yen(m.afterPlanned)+'。</div></div>';
     }
     // 収入カード(合計+▼で内訳開閉)
     let incCard;
@@ -650,10 +737,10 @@ const App = {
       incCard='<div class="card">'+
         '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'inc\')"><p class="card-title" style="margin:0">今月の収入</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</span>'+chev('inc')+'</span></div>'+
         (this.dashOpen.inc?('<div class="divider"></div>'+
-          '<div class="row"><span>🧑 '+esc(s.husband)+'</span><span class="num" style="font-weight:700">'+yen(m.hInc)+'</span></div>'+
-          '<div class="row" style="margin-top:10px"><span>🧑 '+esc(s.wife)+'</span><span class="num" style="font-weight:700">'+yen(m.wInc)+'</span></div>'+
+          '<div class="row"><span>'+esc(s.husband)+'</span><span class="num" style="font-weight:700">'+yen(m.hInc)+'</span></div>'+
+          '<div class="row" style="margin-top:10px"><span>'+esc(s.wife)+'</span><span class="num" style="font-weight:700">'+yen(m.wInc)+'</span></div>'+
           (m.oInc?('<div class="row" style="margin-top:10px"><span>その他</span><span class="num" style="font-weight:700">'+yen(m.oInc)+'</span></div>'):'')+
-          (m.evIncConfirmed>0?('<div class="row" style="margin-top:10px"><span>📅 入金(済)</span><span class="num" style="font-weight:700">'+yen(m.evIncConfirmed)+'</span></div>'):'')+
+          (m.evIncConfirmed>0?('<div class="row" style="margin-top:10px"><span>入金(済)</span><span class="num" style="font-weight:700">'+yen(m.evIncConfirmed)+'</span></div>'):'')+
           '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openIncome()">＋ 追加</span>　<span class="link" onclick="App.go(\'income_list\')">一覧 ›</span></div>'):'')+
       '</div>';
     }
@@ -661,23 +748,23 @@ const App = {
     const negative=m.balance<0||m.afterPlanned<0;
     const balColor=m.balance>=0?'var(--color-accent-600)':'var(--color-danger)';
     let warn='';
-    if(m.balance<0)warn='<div class="warn-box">⚠️ 支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
-    else if(m.afterPlanned<0)warn='<div class="warn-box">⚠️ これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
+    if(m.balance<0)warn='<div class="warn-box">'+ic('alert',15)+'支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
+    else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
     const remainCard='<div class="card" style="border:1.5px solid '+(negative?'var(--color-danger)':'var(--color-accent-500)')+'">'+
       '<p class="card-title" style="margin:0;color:'+(negative?'var(--color-danger)':'var(--color-accent-600)')+'">残り（貯金できる分）</p>'+
       '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
       '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
-      ((m.planned>0||m.plannedIncome>0)?'<div class="meta" style="margin-top:4px">📅 予定を反映した月末の見込み: '+yen(m.afterPlanned)+'</div>':'')+
+      ((m.planned>0||m.plannedIncome>0)?'<div class="meta ttl-ico" style="margin-top:4px">'+ic('calendar',13)+'予定を反映した月末の見込み: '+yen(m.afterPlanned)+'</div>':'')+
       warn+
-      '<div style="margin-top:10px"><span class="link" onclick="App.shareSummary()">📤 今月を画像でシェア</span></div></div>';
+      '<div style="margin-top:10px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div></div>';
 
     // goals
+    const GOAL_IC={goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
     let goalsHtml="";
     this.state.goals.forEach(g=>{
-      const t=findCat("goalType",g.typeId);
       const pct=g.target>0?Math.min(100,g.current/g.target*100):0;
       goalsHtml+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer">'+
-        '<span class="ic">'+t.icon+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
+        '<span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
         '<div class="prog"><span class="fill-accent" style="width:'+pct+'%"></span></div></div>'+
         '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(pct)+'%</div><div class="meta">'+yen(g.current)+'</div></div></div>';
     });
@@ -708,10 +795,10 @@ const App = {
     const rem=this.remindersWithin(7);
     let remindCard='';
     if(rem.length){
-      const ic={payment:"💴",income:"💰",event:"📌",task:"✅",input:"✏️"};
+      const kindIc={payment:ic('wallet',15),income:ic('trend',15),event:ic('calendar',15),task:ic('check',15),input:ic('chart',15)};
       let r='';
-      rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ic[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
-      remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">🔔 もうすぐ（7日以内）</p>'+r+'</div>';
+      rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span class="muted" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-primary)">'+(kindIc[o.kind]||ic('calendar',15))+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
+      remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-500)">'+ic('bell',16)+'もうすぐ（7日以内）</p>'+r+'</div>';
     }
     // 🤝 承認待ちの支出
     const pend=this.pendingApprovals();
@@ -720,14 +807,14 @@ const App = {
       let r='';
       pend.forEach(e=>{const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);const mine=this.deviceOwner&&e.reqBy===this.deviceOwner;const lbl=this.seeDetail(e)?(c.label+(e.label?"・"+e.label:"")):"個人支出";const who=e.reqBy==="husband"?esc(s.husband):(e.reqBy==="wife"?esc(s.wife):"相手");
         r+='<div class="row" style="margin-top:8px"><div style="min-width:0;flex:1"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(lbl)+' '+yen(e.amount)+'</div><div class="meta">'+(mine?"相手の承認待ち":(who+"さんが登録"))+'</div></div>'+(mine?'<span class="chip chip-todo">確認中</span>':'<button class="btn btn-primary btn-sm" style="min-height:34px;padding:5px 14px;white-space:nowrap" onclick="App.approveExpense(\''+e.id+'\')">承認</button>')+'</div>';});
-      approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title" style="margin:0;color:var(--color-warning)">🤝 承認待ちの支出</p>'+r+'</div>';
+      approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('check',16)+'承認待ちの支出</p>'+r+'</div>';
     }
     // 🔁 定期（毎月の収入・固定費）
     const curM=this.curMonth;
     const recs=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
     let recRows='';
     recs.forEach(e=>{
-      const inc=e.type==="income", ic=inc?'💰':'💴';
+      const inc=e.type==="income", rIcon=inc?ic('trend',18):ic('wallet',18);
       const day=(+String(e.date).slice(8))||1;
       const dateUnknown=e.dayMode==="variable";
       const amtKnown=!e.variable||(e.byMonth&&e.byMonth[curM]!=null);
@@ -741,7 +828,7 @@ const App = {
       let sub;
       if(dateUnknown){const ds=(e.byMonthDate&&e.byMonthDate[curM]);sub=(ds?(ds.slice(5).replace("-","/")+'に確定'):'日付未定')+(e.variable?'・変動':'');}
       else{sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');}
-      recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
+      recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+rIcon+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
     const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">🔁</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
     // 📊 予算ペース管理レポート(当月のみ)
@@ -751,11 +838,11 @@ const App = {
       const short=pr.projBalance<0;
       const accent=short?'var(--color-danger)':'var(--color-secondary-500)';
       paceCard='<div class="card" style="border-color:'+(short?'var(--color-danger)':'var(--color-secondary-300)')+'">'+
-        '<div class="row"><p class="card-title" style="margin:0;color:'+accent+'">📊 今月の予算ペース</p><span class="meta num">経過 '+pr.d+'/'+pr.D+'日</span></div>'+
+        '<div class="row"><p class="card-title ttl-ico" style="margin:0;color:'+accent+'">'+ic('chart',16)+'今月の予算ペース</p><span class="meta num">経過 '+pr.d+'/'+pr.D+'日</span></div>'+
         '<div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+Math.round(pr.d/pr.D*100)+'%"></span></div>'+
         '<div class="row" style="margin-top:12px"><span>このペースだと月末の支出</span><span class="amt num">'+yen(pr.projExpense)+'</span></div>'+
         '<div class="row" style="margin-top:6px"><span>月末の残り見込み</span><span class="amt num" style="color:'+(short?'var(--color-danger)':'var(--color-accent-600)')+'">'+yen(pr.projBalance)+'</span></div>'+
-        '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:'+(short?'var(--color-danger)':'var(--color-text-secondary)')+'">'+(short?('⚠️ このペースだと月末に '+yen(-pr.projBalance)+' 足りなくなりそう。今月の変動費を見直しましょう。'):'✅ このペースなら予算内におさまりそうです。')+'</div>'+
+        '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:'+(short?'var(--color-danger)':'var(--color-text-secondary)')+'">'+(short?(ic('alert',14)+' このペースだと月末に '+yen(-pr.projBalance)+' 足りなくなりそう。今月の変動費を見直しましょう。'):(ic('check',14)+' このペースなら予算内におさまりそうです。'))+'</div>'+
         '</div>';
     }
     // 💳 口座・残高
@@ -776,11 +863,17 @@ const App = {
     const debts=this.state.debts||[];
     let debtRows='',debtRemain=0;
     debts.forEach(d=>{const total=+d.count||0,paid=+d.paid||0,left=Math.max(0,total-paid),remainAmt=(+d.monthly||0)*left,pct=total?Math.round(paid/total*100):0;debtRemain+=remainAmt;
-      debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full" style="background:var(--color-accent-500);color:#fff">完済 🎉</span>')+'</div></div>';});
+      debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'完済</span>')+'</div></div>';});
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">🧾</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
-    const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+acctCard+debtCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
+    const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
+    // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
+    const alerts=storeWarn+remindCard+approveCard;
+    // 主要3数字(支出/収入/残り)はヒーロー帯。残りは2列。スマホでは全て縦積み(従来通り)。
+    const hero='<div class="dash-hero">'+expCard+incCard+remainCard+'</div>';
+    const cards=[acctCard,debtCard,paceCard,plannedCard,recurCard,simCard,goalsCard,tasksCard,wishCard]
+      .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
+    return alerts+hero+'<div class="dash-cols">'+cards+'</div>';
   },
 
   /* ====== income / expense lists ====== */
@@ -898,13 +991,15 @@ const App = {
     const aChip=t.assignee==="husband"?'<span class="chip chip-full chip-h">'+esc(this.state.settings.husband)+'</span>':
       t.assignee==="wife"?'<span class="chip chip-full chip-w">'+esc(this.state.settings.wife)+'</span>':
       '<span class="chip chip-full chip-both">二人</span>';
-    const dueChip=t.due?('<span class="chip '+(overdue?'chip-over':'chip-todo')+'">📅 '+t.due.slice(5).replace("-","/")+'</span>'):'';
-    const att=(t.loc?'📍':'')+(t.url?'🔗':'')+(t.image?'🖼':'');
-    const attChip=att?('<span class="chip chip-todo">'+att+'</span>'):'';
+    const dueChip=t.due?('<span class="chip ttl-ico '+(overdue?'chip-over':'chip-todo')+'">'+ic('calendar',12)+t.due.slice(5).replace("-","/")+'</span>'):'';
+    const att=(t.loc?ic('map',13):'')+(t.url?ic('link',13):'');
+    const attChip=att?('<span class="chip chip-todo ttl-ico">'+att+'</span>'):'';
+    const cl=t.checklist||[];const clDone=cl.filter(c=>c.done).length;
+    const clChip=cl.length?('<span class="chip '+(clDone===cl.length?'chip-both':'chip-todo')+' ttl-ico">'+ic('check',12)+clDone+'/'+cl.length+'</span>'):'';
     return '<div class="li '+(t.status==="done"?"done":"")+'">'+
-      '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?"✓":"")+'</div>'+
-      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl">'+c.icon+' '+esc(t.title)+'</div>'+
-      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+attChip+'</div></div></div>';
+      '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?ic('check',14):'')+'</div>'+
+      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico">'+ic(TASK_IC[t.cat]||'tag',15)+esc(t.title)+'</div>'+
+      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div></div></div>';
   },
   projTasks(pid){return this.state.tasks.filter(t=>t.projectId===pid);},
   subTasks(sid){return this.state.tasks.filter(t=>t.subId===sid);},
@@ -914,15 +1009,15 @@ const App = {
   view_tasks(){
     if(this.taskView==="project")return this.view_taskproject();
     if(this.taskView==="sub")return this.view_tasksub();
-    let h='<div class="section-title" style="margin-top:0">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ プロジェクト</span></div>';
+    let left='<div class="section-title" style="margin-top:0">プロジェクト<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openProjectForm()">＋ 追加</button></div>';
     if(!this.state.projects.length){
-      h+='<div class="card"><div class="empty"><span class="e-ic">📂</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
+      left+='<div class="card"><div class="empty"><span class="e-ic">📂</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
     }
     this.state.projects.forEach(p=>{
       const ts=this.projTasks(p.id),done=ts.filter(t=>t.status==="done").length,pct=ts.length?Math.round(done/ts.length*100):0;
       const subCnt=this.state.subprojects.filter(s=>s.projectId===p.id).length;
       const comp=ts.length>0&&done===ts.length;
-      h+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openProject(\''+p.id+'\')">'+
+      left+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openProject(\''+p.id+'\')">'+
         '<div class="row" style="gap:12px"><div style="font-size:24px;flex-shrink:0;line-height:1">'+p.icon+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+(comp?' ✅':'')+'</div><div class="meta">'+subCnt+'グループ・'+done+'/'+ts.length+'完了</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>'+
         '<div class="prog" style="margin-top:10px"><span class="'+(comp?'fill-accent':'fill-primary')+'" style="width:'+pct+'%"></span></div></div>';
     });
@@ -935,17 +1030,17 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    h+='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
-    h+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
+    let right='<div class="section-title">個別タスク<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openTask()">＋ 詳しく追加</button></div>';
+    right+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
       '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}" style="flex:1;min-width:0">'+
       '<button class="btn btn-primary" onclick="App.quickAddTask()" style="flex-shrink:0;min-height:42px;padding:0 16px">追加</button>'+
       '</div></div>';
-    h+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
-    h+='<div class="card">';
-    if(!list.length)h+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
-    list.forEach(t=>h+=this.taskRow(t));
-    h+='</div>';
-    return h;
+    right+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
+    right+='<div class="card">';
+    if(!list.length)right+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
+    list.forEach(t=>right+=this.taskRow(t));
+    right+='</div>';
+    return '<div class="task-cols"><div>'+left+'</div><div>'+right+'</div></div>';
   },
   view_taskproject(){
     const p=this.state.projects.find(x=>x.id===this.curProjectId);
@@ -1087,16 +1182,18 @@ const App = {
       h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+c.d+'<div class="cal-dots">'+dots+'</div></div>';
     });
     h+='</div><div class="legend"><span><span class="cdot cd-income"></span>入金</span><span><span class="cdot cd-pay"></span>支払い</span><span><span class="cdot cd-task"></span>タスク</span><span><span class="cdot cd-event"></span>予定</span><span><span class="cdot cd-wish"></span>目標時期</span></div></div>';
+    // ↓ ここから先(予定リスト・カテゴリ別支出)はPCで右カラムに置く
+    let side='';
     // この月の予定リスト
-    h+='<div class="section-title">'+monthLabel(this.calMonth)+'の予定<span class="link" onclick="App.openEvent()">＋ 予定追加</span></div><div class="card">';
+    side+='<div class="section-title">'+monthLabel(this.calMonth)+'の予定<span class="link" onclick="App.openEvent()">＋ 予定追加</span></div><div class="card">';
     const flat=[];
     Object.keys(items).forEach(d=>{if(d.slice(0,7)===this.calMonth)items[d].forEach(it=>flat.push({...it,date:d}))});
     flat.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:((a.start||"")<(b.start||"")?-1:1)));
-    if(!flat.length)h+='<div class="empty"><span class="e-ic">📅</span>この月の予定はありません</div>';
+    if(!flat.length)side+='<div class="empty"><span class="e-ic">📅</span>この月の予定はありません</div>';
     flat.slice(0,50).forEach(it=>{
-      h+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
+      side+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
     });
-    h+='</div>';
+    side+='</div>';
     // この月のカテゴリ別支出
     const exp=this.state.expenses.filter(e=>e.month===this.calMonth);
     const evExp=this.eventExpense(this.calMonth,"confirmed"), evN=this.eventExpenseList(this.calMonth,"confirmed").reduce((s,x)=>s+x.n,0);
@@ -1106,14 +1203,16 @@ const App = {
       if(evExp>0)arr.push({icon:"📅",label:"予定・支払い(済)",sum:evExp,n:evN});
       arr.sort((a,b)=>b.sum-a.sum);
       const total=arr.reduce((s,x)=>s+x.sum,0);
-      h+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
+      side+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
       const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
-      let gsegs='';arr.forEach((c,i)=>{const p=total>0?(c.sum/total*100):0;if(p>0)gsegs+='<span style="width:'+p+'%;background:'+gpal[i%gpal.length]+';display:block"></span>';});
-      h+='<div style="display:flex;height:16px;border-radius:9px;overflow:hidden;margin-bottom:14px">'+gsegs+'</div>';
-      arr.forEach((c,i)=>{const pct=total>0?Math.round(c.sum/total*100):0;h+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span style="display:block;height:100%;border-radius:inherit;width:'+pct+'%;background:'+gpal[i%gpal.length]+'"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
-      h+='</div>';
+      // ドーナツ円グラフ(何がどのくらいを占めるか)
+      const R=54,CIRC=2*Math.PI*R; let _off=0,_segs='';
+      arr.forEach((c,i)=>{const frac=total>0?c.sum/total:0;if(frac<=0)return;const len=frac*CIRC;_segs+='<circle cx="80" cy="80" r="'+R+'" fill="none" stroke="'+gpal[i%gpal.length]+'" stroke-width="22" stroke-dasharray="'+len.toFixed(2)+' '+(CIRC-len).toFixed(2)+'" stroke-dashoffset="'+(-_off).toFixed(2)+'" transform="rotate(-90 80 80)"/>';_off+=len;});
+      side+='<div style="display:flex;justify-content:center;margin:4px 0 16px"><svg width="172" height="172" viewBox="0 0 160 160" role="img" aria-label="カテゴリ別支出の割合">'+_segs+'<text x="80" y="75" text-anchor="middle" font-size="12" fill="var(--color-text-secondary)">合計</text><text x="80" y="95" text-anchor="middle" font-size="14" font-weight="700" fill="var(--color-text-primary)" font-family="var(--font-family-number)">'+yen(total)+'</text></svg></div>';
+      arr.forEach((c,i)=>{const pct=total>0?Math.round(c.sum/total*100):0;side+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span style="display:block;height:100%;border-radius:inherit;width:'+pct+'%;background:'+gpal[i%gpal.length]+'"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
+      side+='</div>';
     }
-    return h;
+    return '<div class="cal-layout"><div class="cal-main">'+h+'</div><div class="cal-side">'+side+'</div></div>';
   },
   calItems(ym){
     ym=ym||this.calMonth;
@@ -1178,10 +1277,14 @@ const App = {
     let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 14px">「行きたい場所・やりたいこと・欲しい物・よく使うサイト」などをフォルダで整理。日付の決まっていない共有メモも残せます。</p>';
     h+=this.hubCard("📝","共有メモ","日付のない自由メモ。流れず残ります",this.state.notes.length+"件","notes");
     h+='<div class="section-title">フォルダ<span class="link" onclick="App.openFolderForm()">＋ フォルダ追加</span></div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    h+='<div class="pocket-grid">';
     this.state.folders.forEach(f=>{
       const cnt=this.state.items.filter(i=>i.folderId===f.id).length;
-      h+='<div onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:15px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div style="font-size:30px;line-height:1">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
+      if(f.image){
+        h+='<div class="pocket" onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;border-radius:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;overflow:hidden;background-image:linear-gradient(to top,rgba(0,0,0,.66),rgba(0,0,0,0) 58%),url(\''+f.image+'\');background-size:cover;background-position:center;box-shadow:var(--shadow-sm)"><div style="font-weight:700;font-size:var(--text-lg);color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div style="color:rgba(255,255,255,.88);font-size:var(--text-sm)">'+cnt+'件</div></div>';
+      }else{
+        h+='<div class="pocket" onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:16px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div class="ic" style="width:52px;height:52px;font-size:26px;border-radius:15px">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-lg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
+      }
     });
     h+='<div onclick="App.openFolderForm()" style="aspect-ratio:1;border:1.5px dashed var(--color-border-strong);border-radius:18px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--color-text-secondary)"><div style="font-size:28px;line-height:1;color:var(--color-primary-500)">＋</div><div style="font-size:var(--text-sm)">フォルダを追加</div></div>';
     h+='</div>';
@@ -1189,7 +1292,7 @@ const App = {
   },
   hubCard(icon,title,desc,count,view){
     return '<div class="card" style="padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px" onclick="App.shareGo(\''+view+'\')">'+
-      '<div style="font-size:30px;flex-shrink:0;line-height:1">'+icon+'</div>'+
+      '<div class="ic" style="width:46px;height:46px;font-size:23px;border-radius:14px">'+icon+'</div>'+
       '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md)">'+title+'</div><div class="meta" style="margin-top:2px">'+esc(desc)+'</div></div>'+
       '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px"><span class="chip chip-todo">'+count+'</span><span style="color:var(--color-text-disabled);font-size:22px">›</span></div></div>';
   },
@@ -1198,7 +1301,8 @@ const App = {
     const f=this.state.folders.find(x=>x.id===this.curFolderId);
     if(!f){this.shareView="home";return this.view_share();}
     let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:12px" onclick="App.shareGo(\'home\')">‹ 共有にもどる</button>';
-    h+='<div class="section-title" style="margin-top:0">'+f.icon+' '+esc(f.name)+'<span class="link" onclick="App.openFolderForm(\''+f.id+'\')">フォルダ編集</span></div>';
+    if(f.image)h+='<div style="height:160px;border-radius:var(--radius-lg);margin-bottom:12px;background-image:url(\''+f.image+'\');background-size:cover;background-position:center;box-shadow:var(--shadow-sm)"></div>';
+    h+='<div class="section-title" style="margin-top:0">'+(f.image?'':f.icon+' ')+esc(f.name)+'<span class="link" onclick="App.openFolderForm(\''+f.id+'\')">フォルダ編集</span></div>';
     const items=this.state.items.filter(i=>i.folderId===f.id).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
     if(!items.length){h+='<div class="card"><div class="empty"><span class="e-ic">'+f.icon+'</span>まだ何もありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openItem(null,\''+f.id+'\')">＋ 追加する</button></div></div>';return h;}
     items.forEach(it=>h+=this.itemCard(it));
@@ -1215,8 +1319,8 @@ const App = {
       (l.url?'<a class="btn btn-sec btn-sm" style="text-decoration:none;min-height:36px;padding:6px 12px;white-space:nowrap" href="'+esc(l.url)+'" target="_blank" rel="noopener">開く ↗</a>':'')+'</div>';
     if(l.target>0){
       h+='<div class="prog lg" style="margin-top:12px"><span class="fill-accent" style="width:'+pct+'%"></span></div>'+
-        '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(l.current||0)+' / '+yen(l.target)+'</span><span class="meta">'+(l.date?'🗓 '+esc(l.date):Math.round(pct)+'%')+'</span></div>';
-    }else if(l.date){h+='<div class="meta" style="margin-top:8px">🗓 '+esc(l.date)+'</div>';}
+        '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(l.current||0)+' / '+yen(l.target)+'</span><span class="meta ttl-ico">'+(l.date?ic('calendar',13)+esc(l.date):Math.round(pct)+'%')+'</span></div>';
+    }else if(l.date){h+='<div class="meta ttl-ico" style="margin-top:8px">'+ic('calendar',13)+esc(l.date)+'</div>';}
     if(l.loginId||l.password){
       h+='<div style="margin-top:12px;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:10px 12px">';
       if(l.loginId){h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">ID</div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.loginId)+'</div></div><button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 12px;white-space:nowrap" onclick="App.copyItem(\''+l.id+'\',\'loginId\')">コピー</button></div>';}
@@ -1224,7 +1328,7 @@ const App = {
       h+='</div>';
     }
     if(l.memo)h+='<div class="meta" style="margin-top:10px;white-space:pre-wrap">'+esc(l.memo)+'</div>';
-    if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm" style="min-height:36px;padding:6px 14px" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">🛒 買った→支出に記録</button></div>';
+    if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm ttl-ico" style="min-height:36px;padding:6px 14px;justify-content:center" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">'+ic('wallet',14)+'買った→支出に記録</button></div>';
     h+='</div>';
     return h;
   },
@@ -1233,13 +1337,15 @@ const App = {
   copy(text){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>this.toast("コピーしました")).catch(()=>this.toast("コピーできませんでした"));}else{this.toast("コピーできませんでした");}},
   openFolderForm(id){
     const it=id?this.state.folders.find(x=>x.id===id):null;
+    this._formImage=it&&it.image?it.image:null;
     const h='<h3>'+(it?"フォルダを編集":"新しいフォルダ")+'</h3>'+
       this.field("フォルダ名",'<input id="f-name" placeholder="例: 行ってみたいお店 / 泊まりたい宿" value="'+esc(it?it.name:"")+'">')+
       this.field("アイコン（絵文字）",'<input id="f-icon" placeholder="📁" value="'+esc(it?it.icon:"📁")+'">')+
+      this.field("カバー画像（任意）",'<div id="f-img-preview">'+this.imgPreview(it&&it.image)+'</div><input type="file" accept="image/*" onchange="App.pickImage(this)"><div class="meta" style="margin-top:6px">画像を設定するとポケットの表紙になります</div>')+
       this.actions(()=>{
         const name=val("f-name");if(!name){this.toast("フォルダ名を入力してください");return false;}
-        const icon=val("f-icon")||"📁";
-        if(it){it.name=name;it.icon=icon;}else{const nf={id:uid(),name,icon};this.state.folders.push(nf);this.curFolderId=nf.id;this.shareView="folder";}
+        const icon=val("f-icon")||"📁";const image=this._formImage||null;
+        if(it){it.name=name;it.icon=icon;it.image=image;}else{const nf={id:uid(),name,icon,image};this.state.folders.push(nf);this.curFolderId=nf.id;this.shareView="folder";}
         return true;
       },it?()=>{this.state.items=this.state.items.filter(x=>x.folderId!==id);this.state.folders=this.state.folders.filter(x=>x.id!==id);this.shareView="home";}:null);
     this.showSheet(h);
@@ -1341,10 +1447,10 @@ const App = {
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
-      '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">🗑 すべてのデータを消す</span></div></div>'+
+      '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab ttl-ico" style="color:var(--color-danger)">'+ic('trash',16)+'すべてのデータを消す</span></div></div>'+
       '<input type="file" id="importer" accept="application/json" style="display:none" onchange="App.importData(this.files[0])">';
 
-    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">Mietta（ミエッタ） v1.0<br>株式会社今岡勇成 制作</p>';
+    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">Mietta（ミエッタ） v1.0</p>';
     return h;
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
@@ -1367,7 +1473,21 @@ const App = {
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
   },
-  closeSheet(){document.getElementById("sheet").classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  // 下シートを掴んで下げると閉じる(グリップ/上部ハンドル領域から)
+  sheetDrag(){
+    const sh=document.getElementById("sheet");if(!sh)return;
+    let y0=null,dy=0;
+    sh.addEventListener("pointerdown",(e)=>{
+      const top=sh.getBoundingClientRect().top;
+      const inHandle=(e.target.classList&&e.target.classList.contains("grip"))||((e.clientY-top)<52);
+      if(!inHandle||(e.target.closest&&e.target.closest(".sheet-close")))return;
+      y0=e.clientY;dy=0;sh.style.transition="none";try{sh.setPointerCapture(e.pointerId);}catch(err){}
+    });
+    sh.addEventListener("pointermove",(e)=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);sh.style.transform="translateY("+dy+"px)";});
+    const end=()=>{if(y0===null)return;sh.style.transition="";if(dy>110){this.closeSheet();}else{sh.style.transform="";}y0=null;dy=0;};
+    sh.addEventListener("pointerup",end);sh.addEventListener("pointercancel",end);
+  },
   fabAction(){
     if(this.tab==="dashboard")this.openExpense();
     else if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
@@ -1445,6 +1565,7 @@ const App = {
   openTask(id,subId,projId,presetDue){
     const it=id?this.state.tasks.find(x=>x.id===id):null;
     this._formImage=it&&it.image?it.image:null;
+    this._formChecklist=it&&it.checklist?JSON.parse(JSON.stringify(it.checklist)):[];
     const presetSub=(typeof subId==="string"&&subId)?subId:(it?it.subId:null);
     const presetProj=presetSub?((this.state.subprojects.find(s=>s.id===presetSub)||{}).projectId):((typeof projId==="string"&&projId)?projId:(it?it.projectId:null));
     const h='<h3>'+(it?"タスクを編集":"タスクを追加")+'</h3>'+
@@ -1457,6 +1578,7 @@ const App = {
       '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:(presetDue||""))+'">')+
       this.field("優先度",'<select id="f-priority">'+['high:高','medium:中','low:低'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.priority:"medium")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+'</div>'+
       this.field("メモ",'<textarea id="f-memo" placeholder="詳細メモ">'+esc(it?it.memo:"")+'</textarea>')+
+      this.field("チェックリスト（任意）",'<div id="f-checklist">'+this.checklistEditorHtml()+'</div>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 区役所 / 自宅" value="'+esc(it&&it.loc?it.loc:"")+'">')+
       this.field("URL（任意）",'<input id="f-url" type="url" inputmode="url" placeholder="https://" value="'+esc(it&&it.url?it.url:"")+'">')+
       (it&&it.url?'<a class="tlink" href="'+esc(it.url)+'" target="_blank" rel="noopener" style="font-size:var(--text-sm);display:inline-block;margin:-10px 0 14px">リンクを開く ↗</a>':'')+
@@ -1466,12 +1588,24 @@ const App = {
         if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
         let projId=val("f-proj")||null,sub2=val("f-sub2")||null;
         if(sub2){const ss=this.state.subprojects.find(s=>s.id===sub2);projId=ss?ss.projectId:projId;}
-        const data={title,cat:val("f-cat"),assignee:seg("f-assignee"),projectId:projId,subId:sub2,due:val("f-due")||null,priority:val("f-priority"),memo:val("f-memo"),loc:val("f-loc"),url:val("f-url"),image:this._formImage||null};
+        const checklist=(this._formChecklist||[]).filter(c=>c.text&&c.text.trim()).map(c=>({text:c.text.trim(),done:!!c.done}));
+        const data={title,cat:val("f-cat"),assignee:seg("f-assignee"),projectId:projId,subId:sub2,due:val("f-due")||null,priority:val("f-priority"),memo:val("f-memo"),checklist:checklist,loc:val("f-loc"),url:val("f-url"),image:this._formImage||null};
         if(it)Object.assign(it,data);else this.state.tasks.push({id:uid(),status:"todo",...data});
         return true;
       },it?()=>this.del("tasks",id):null);
     this.showSheet(h);
   },
+  checklistEditorHtml(){
+    const arr=this._formChecklist||[];let h='';
+    arr.forEach((c,i)=>{h+='<div class="row" style="gap:8px;margin-bottom:8px"><div class="check '+(c.done?'on':'')+'" style="flex-shrink:0" onclick="App.toggleFormCheck('+i+')">'+(c.done?ic('check',14):'')+'</div><input value="'+esc(c.text)+'" oninput="App.editFormCheck('+i+',this.value)" placeholder="例: 牛乳 / 卵" style="flex:1;min-width:0">'+'<button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;min-height:42px;padding:0 12px" onclick="App.delFormCheck('+i+')">'+ic('trash',16)+'</button></div>';});
+    h+='<button type="button" class="btn btn-sec btn-sm btn-block ttl-ico" style="justify-content:center" onclick="App.addFormCheck()">＋ 項目を追加</button>';
+    return h;
+  },
+  _renderFormCheck(){const el=document.getElementById("f-checklist");if(el)el.innerHTML=this.checklistEditorHtml();},
+  addFormCheck(){this._formChecklist=this._formChecklist||[];this._formChecklist.push({text:"",done:false});this._renderFormCheck();const el=document.getElementById("f-checklist");if(el){const ins=el.querySelectorAll("input");if(ins.length)ins[ins.length-1].focus();}},
+  toggleFormCheck(i){const a=this._formChecklist;if(a&&a[i]){a[i].done=!a[i].done;this._renderFormCheck();}},
+  editFormCheck(i,v){const a=this._formChecklist;if(a&&a[i])a[i].text=v;},
+  delFormCheck(i){const a=this._formChecklist;if(a){a.splice(i,1);this._renderFormCheck();}},
   imgPreview(src){return src?('<div style="position:relative;display:inline-block;margin-bottom:10px"><img src="'+src+'" style="max-width:100%;max-height:180px;border-radius:var(--radius-md);display:block"><button type="button" class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;min-height:30px;padding:4px 10px" onclick="App.clearImage()">削除</button></div>'):'';},
   pickImage(input){const f=input.files&&input.files[0];if(!f)return;readImage(f,(d)=>{this._formImage=d;const p=document.getElementById("f-img-preview");if(p)p.innerHTML=this.imgPreview(d);});},
   clearImage(){this._formImage=null;const p=document.getElementById("f-img-preview");if(p)p.innerHTML="";},
@@ -1616,6 +1750,7 @@ const App = {
     try{
       await this.loadSb();
       this._client=window.supabase.createClient(APP_CONFIG.url,APP_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true}});
+      try{const p=new URLSearchParams(location.search).get("invite");if(p){this._pendingInvite=p.trim().toUpperCase();this._authView="signup";}}catch(e){}
       const {data:{session}}=await this._client.auth.getSession();
       if(session&&session.user){this._user=session.user;await this.afterAuth();}
       else{this.showAuth();}
@@ -1639,11 +1774,12 @@ const App = {
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
       if(error)throw error;
       if(mem&&mem.length){this.householdId=mem[0].household_id;await this.loadCloud();this.hideAuth();}
+      else if(this._pendingInvite){const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
       else{this._authView="household";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("はじめましょう!");}catch(e){console.error(e);this.toast("作成に失敗しました");}},
-  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("参加しました!");}catch(e){console.error(e);this.toast("招待コードが正しくありません");}},
+  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
       const{data,error}=await this._client.from("app_state").select("data,invite_code").eq("household_id",this.householdId).maybeSingle();
@@ -1690,12 +1826,26 @@ const App = {
   /* ---- 認証オーバーレイ ---- */
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
+  inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.toast("ようこそ！");},
+  async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
+    if(this._authView==="invite"){
+      const code=this._inviteCode||"",url=this.inviteUrl(code);
+      return '<div class="authcard">'+
+        '<div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('heart',40)+'</div>'+
+        '<h2 style="text-align:center;margin:0 0 4px">ふたりのスペースを作りました</h2>'+
+        '<p class="muted" style="text-align:center;margin:0 0 18px;line-height:1.7">下の招待リンクをパートナーに送ってください。<br>開くだけで登録でき、同じスペースに参加できます。</p>'+
+        '<label class="fld"><span class="lbl ttl-ico">'+ic('link',14)+'招待リンク</span><div style="display:flex;gap:8px"><input id="inv-url" readonly value="'+esc(url)+'" onclick="this.select()" style="flex:1;min-width:0;font-size:var(--text-sm)"><button class="btn btn-primary" style="flex-shrink:0;min-height:48px;padding:0 16px" onclick="App.copy(App.inviteUrl())">コピー</button></div></label>'+
+        '<div class="muted" style="text-align:center;margin:-6px 0 16px">招待コード: <b class="num" style="letter-spacing:2px">'+esc(code)+'</b></div>'+
+        '<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center" onclick="App.shareInvite()">'+ic('send',16)+'リンクを送る</button>'+
+        '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.finishInvite()">アプリを始める</button></div>';
+    }
     if(this._authView==="household"){
-      return '<div class="authcard"><div style="text-align:center;font-size:34px">👫</div><h2 style="text-align:center;margin:6px 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
-        '<button class="btn btn-primary btn-block" onclick="App.createHousehold()">新しく家計を始める</button>'+
-        '<div class="muted" style="text-align:center;margin:14px 0 10px">― または ―</div>'+
-        '<input id="au-code" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
+      return '<div class="authcard"><div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('users',40)+'</div><h2 style="text-align:center;margin:0 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.createHousehold()">新しくスペースを作る</button>'+
+        '<div class="muted" style="text-align:center;margin:16px 0 12px;display:flex;align-items:center;gap:10px"><span style="flex:1;height:1px;background:var(--color-border)"></span>または<span style="flex:1;height:1px;background:var(--color-border)"></span></div>'+
+        '<input id="au-code" value="'+esc(this._pendingInvite||"")+'" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
         '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.joinHousehold(document.getElementById(\'au-code\').value)">招待コードで参加</button>'+
         '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.doLogout()">ログアウト</span></div></div>';
     }
@@ -1704,10 +1854,11 @@ const App = {
       '<img class="ic" src="icon-192.png" alt="Mietta" />'+
       '<h2 class="my-wordmark">Miett<span style="color:var(--color-accent-500)">a</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
+      (this._pendingInvite?'<div class="invite-note ttl-ico">'+ic('heart',15)+'パートナーから招待されています。登録するとふたりのスペースに参加できます。</div>':'')+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
-      '<button class="btn btn-primary btn-block" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録":"ログイン")+'</button>'+
-      '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"すでにアカウントがある → ログイン":"はじめての方 → 新規登録")+'</span></div></div>';
+      '<button class="btn btn-primary btn-block" style="margin-top:4px" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録ではじめる":"ログイン")+'</button>'+
+      '<div class="auth-switch">'+(su?"すでにアカウントをお持ちですか？":"アカウントをお持ちでない方")+'<button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"ログインに切り替え":"新規登録に切り替え")+'</button></div></div>';
   }
 };
 // helpers used inside form callbacks
