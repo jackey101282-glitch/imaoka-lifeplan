@@ -420,13 +420,13 @@ const CATS = {
     {id:"home",label:"住居・車",icon:"🏠"},{id:"event",label:"イベント",icon:"🎉"},{id:"other",label:"その他",icon:"📌"}
   ],
   goalType:[
-    {id:"goal_wedding",label:"結婚式",icon:"💒",bench:1430000,note:"総額 平均344万円（ご祝儀差引後の目安・ゼクシィ2024）"},
+    {id:"goal_wedding",label:"結婚式",icon:"💒",bench:2214000,note:"ご祝儀差引後の安全めな目安（ゼクシィ2024ベース）"},
     {id:"goal_honeymoon",label:"新婚旅行",icon:"✈️",bench:350000,note:"国内 平均31万円／海外 約91万円"},
-    {id:"goal_moving",label:"引っ越し・新生活",icon:"🏠",bench:910000,note:"賃貸初期費用＋引越し＋家具家電（二人暮らし目安）"},
-    {id:"goal_birth",label:"出産準備",icon:"👶",bench:290000,note:"用品＋自己負担。出産育児一時金50万円あり"},
+    {id:"goal_moving",label:"引っ越し・新生活",icon:"🏠",bench:1273000,note:"賃貸初期費用＋引越し＋家具家電（二人暮らしの安全め目安）"},
+    {id:"goal_birth",label:"出産準備",icon:"👶",bench:505000,note:"用品＋自己負担。出産育児一時金50万円あり"},
     {id:"goal_emergency",label:"緊急予備資金",icon:"🆘",bench:1800000,note:"生活費の約6ヶ月分"},
-    {id:"goal_car",label:"車の購入・買替",icon:"🚘",bench:2476000,note:"新車 乗り出し 約248万円（本体200万＋諸費用）"},
-    {id:"goal_housing",label:"住宅の頭金",icon:"🏡",bench:7546000,note:"頭金＋購入諸費用（中古4,000万円・仲介の目安）"},
+    {id:"goal_car",label:"車の購入・買替",icon:"🚘",bench:2880000,note:"新車 乗り出しの安全め目安（本体＋諸費用）"},
+    {id:"goal_housing",label:"住宅の頭金",icon:"🏡",bench:10626000,note:"頭金＋購入諸費用（中古4,000万円・仲介の安全め目安）"},
     {id:"goal_school",label:"入学・進学費用",icon:"📖",bench:0,note:"入学金・制服・教材など。テンプレは順次追加"},
     {id:"goal_exam",label:"受験費用",icon:"📋",bench:0,note:"受験料・塾・併願など。テンプレは順次追加"},
     {id:"goal_edu",label:"教育資金",icon:"🎓",bench:3000000,note:"大学入学資金の目安。幼〜大の総額は約942万円"},
@@ -439,34 +439,39 @@ const CATS = {
 /* ライフイベント内訳テンプレ（リサーチ準拠の平均額・目安。金額は編集前提。amountは負値可=補助/援助/一時金） */
 const GOAL_TEMPLATES={
   goal_birth:[
-    {label:"出産・入院費用",amount:520000},{label:"出産育児一時金（補助）",amount:-500000},
-    {label:"ベビーカー",amount:50000},{label:"チャイルドシート",amount:30000},{label:"ベビーベッド",amount:30000},
-    {label:"抱っこ紐",amount:20000},{label:"哺乳・授乳用品（3ヶ月）",amount:30000},{label:"ベビー服・肌着",amount:30000},
-    {label:"おむつ・消耗品（3ヶ月）",amount:20000},{label:"沐浴・ケア用品",amount:10000},{label:"ベビー寝具",amount:20000},
-    {label:"その他（体温計・爪切り等）",amount:15000},{label:"マタニティ・授乳関連",amount:15000}
+    {label:"出産・入院費用（個室等含む）",amount:600000},{label:"出産育児一時金（補助）",amount:-500000},
+    {label:"ベビーカー",amount:60000},{label:"チャイルドシート",amount:45000},{label:"ベビーベッド",amount:40000},
+    {label:"抱っこ紐",amount:25000},{label:"哺乳・授乳用品（3ヶ月）",amount:35000},{label:"ベビー服・肌着",amount:35000},
+    {label:"おむつ・消耗品（3ヶ月）",amount:25000},{label:"沐浴・ケア用品",amount:15000},{label:"ベビー寝具",amount:25000},
+    {label:"ベビーモニター・便利家電",amount:20000},{label:"マタニティ用品（授乳服・骨盤ベルト等）",amount:20000},
+    {label:"内祝い・お宮参り等",amount:30000},{label:"予備費",amount:30000}
   ],
   goal_wedding:[
-    {label:"挙式料",amount:420000},{label:"料理・飲物",amount:1067000},{label:"新婦衣装",amount:509000},{label:"新郎衣装",amount:176000},
-    {label:"会場装花",amount:191000},{label:"ブーケ",amount:47000},{label:"スナップ写真",amount:211000},{label:"ビデオ撮影",amount:227000},
-    {label:"映像演出",amount:116000},{label:"引出物・引菓子・プチギフト",amount:236000},{label:"ペーパーアイテム",amount:45000},
-    {label:"ヘアメイク・着付け",amount:75000},{label:"ブライダルエステ",amount:99000},{label:"司会者",amount:70000},
+    {label:"挙式料",amount:450000},{label:"料理・飲物",amount:1150000},{label:"新婦衣装",amount:550000},{label:"新郎衣装",amount:190000},
+    {label:"会場装花",amount:220000},{label:"ブーケ",amount:55000},{label:"スナップ写真",amount:230000},{label:"ビデオ撮影",amount:250000},
+    {label:"映像演出（ムービー等）",amount:130000},{label:"引出物・引菓子・プチギフト",amount:260000},{label:"ペーパーアイテム",amount:55000},
+    {label:"ヘアメイク・着付け",amount:90000},{label:"ブライダルエステ",amount:110000},{label:"司会者",amount:80000},
+    {label:"音響・照明・演出",amount:80000},{label:"前撮り・後撮り",amount:150000},{label:"二次会費用",amount:120000},{label:"予備費",amount:100000},
     {label:"ご祝儀（見込み・52名）",amount:-2056000}
   ],
   goal_moving:[
-    {label:"敷金（1ヶ月）",amount:80000},{label:"礼金（1ヶ月）",amount:80000},{label:"前家賃（1ヶ月）",amount:80000},
-    {label:"仲介手数料（1ヶ月＋税）",amount:88000},{label:"火災保険（2年）",amount:20000},{label:"保証会社利用料",amount:40000},
-    {label:"鍵交換代",amount:20000},{label:"引越し業者代（二人・通常期）",amount:103000},{label:"家具・家電一式",amount:350000},
-    {label:"雑費・生活用品",amount:50000}
+    {label:"敷金（2ヶ月）",amount:160000},{label:"礼金（1ヶ月）",amount:80000},{label:"前家賃（1ヶ月）",amount:80000},{label:"日割り家賃",amount:40000},
+    {label:"仲介手数料（1ヶ月＋税）",amount:88000},{label:"火災保険（2年）",amount:25000},{label:"保証会社利用料",amount:45000},{label:"鍵交換代",amount:25000},
+    {label:"室内清掃・消臭",amount:30000},{label:"引越し業者代（二人・繁忙期想定）",amount:140000},
+    {label:"家電一式（冷蔵庫/洗濯機/レンジ/炊飯器等）",amount:250000},{label:"家具一式（ベッド/ソファ/テーブル等）",amount:200000},
+    {label:"カーテン・照明・生活雑貨",amount:60000},{label:"予備費",amount:50000}
   ],
   goal_car:[
-    {label:"車両本体価格",amount:2000000},{label:"消費税",amount:200000},{label:"環境性能割",amount:30000},
-    {label:"自動車重量税（3年）",amount:37000},{label:"自賠責保険（37ヶ月）",amount:24000},{label:"登録・車庫証明代行",amount:30000},
-    {label:"リサイクル料",amount:15000},{label:"納車費用",amount:10000},{label:"任意保険（初年度）",amount:80000},{label:"オプション・用品",amount:50000}
+    {label:"車両本体価格",amount:2200000},{label:"消費税",amount:220000},{label:"環境性能割",amount:40000},{label:"自動車重量税（3年）",amount:40000},
+    {label:"自賠責保険（37ヶ月）",amount:25000},{label:"自動車税（初年度）",amount:40000},{label:"登録・車庫証明代行",amount:35000},
+    {label:"リサイクル料",amount:15000},{label:"納車費用",amount:15000},{label:"任意保険（初年度）",amount:100000},
+    {label:"オプション・用品（マット/ドラレコ/ETC/コーティング）",amount:120000},{label:"予備費",amount:30000}
   ],
   goal_housing:[
-    {label:"頭金（物件価格の10%）",amount:4000000},{label:"仲介手数料",amount:1386000},{label:"印紙税（売買＋ローン）",amount:30000},
-    {label:"登記費用（登録免許税＋司法書士）",amount:400000},{label:"ローン事務手数料（融資額×2.2%）",amount:880000},
-    {label:"火災・地震保険（5年）",amount:350000},{label:"固定資産税精算",amount:50000},{label:"引越し・家具家電",amount:450000}
+    {label:"頭金（物件価格の15%）",amount:6000000},{label:"仲介手数料",amount:1386000},{label:"印紙税（売買＋ローン）",amount:30000},
+    {label:"登記費用（登録免許税＋司法書士）",amount:500000},{label:"ローン事務手数料",amount:880000},{label:"ローン保証料",amount:400000},
+    {label:"火災・地震保険（5年）",amount:400000},{label:"不動産取得税（目安）",amount:150000},{label:"固定資産税精算",amount:80000},
+    {label:"引越し・家具家電",amount:600000},{label:"予備費",amount:200000}
   ]
 };
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
@@ -1835,6 +1840,7 @@ const App = {
       this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(tgt0)+'" oninput="App.commaize(this);App.updateGoalTotal()">')+
       '<div id="f-goal-pace" class="meta" style="margin:-6px 0 12px;line-height:1.6;color:var(--color-secondary-600)"></div>'+
       this.field("内訳（任意・合計が目標額になります）",'<div id="f-goal-items">'+this.goalItemsEditorHtml()+'</div>')+
+      '<div class="meta" style="margin:-4px 0 12px;line-height:1.55"><span style="color:var(--color-secondary-600)">'+ic('alert',13)+' 金額は相場より<b>少し高めの安全めな目安</b>です（オーバーしても安心なように）。実際に合わせて編集してください。</span></div>'+
       this.field("現在の積立額",'<input id="f-current" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.current)+'" oninput="App.commaize(this);App.updateGoalTotal()">')+
       (it?'<div class="form-row"><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',10000)">+1万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',30000)">+3万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',50000)">+5万</button></div>':'')+
       this.actions(()=>{
