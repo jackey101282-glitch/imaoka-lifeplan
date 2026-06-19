@@ -14,17 +14,17 @@
 <link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png" />
 <style>
 :root{
-  --color-primary-50:#FFF4EF;--color-primary-100:#FFE4D6;--color-primary-200:#FFCAAD;
-  --color-primary-300:#FFA880;--color-primary-400:#FF8050;--color-primary-500:#E86A35;
-  --color-primary-600:#C4521F;--color-primary-700:#9E3E10;
-  --color-secondary-50:#EEF1F8;--color-secondary-100:#D5DCEE;--color-secondary-200:#A8B7DC;
-  --color-secondary-300:#6E89C4;--color-secondary-400:#3B5FAB;--color-secondary-500:#1E3F8A;
-  --color-secondary-600:#162E66;--color-secondary-700:#0E1E44;
-  --color-accent-400:#5DAE8B;--color-accent-500:#3D9170;--color-accent-600:#2B7358;
-  --color-warning:#F0A030;--color-danger:#D94F4F;
-  --color-bg-base:#FAFAF8;--color-bg-surface:#FFFFFF;--color-bg-muted:#F2F0ED;
-  --color-border:#E4E0DA;--color-border-strong:#C8C2B8;
-  --color-text-primary:#1A1714;--color-text-secondary:#6B6560;--color-text-disabled:#ADA8A2;
+  --color-primary-50:#F7ECE5;--color-primary-100:#EFD6C8;--color-primary-200:#E2B49E;
+  --color-primary-300:#D49274;--color-primary-400:#CC8059;--color-primary-500:#C4714A;
+  --color-primary-600:#A85C38;--color-primary-700:#8A4A2C;
+  --color-secondary-50:#EDF2ED;--color-secondary-100:#D9E4DA;--color-secondary-200:#BACBBC;
+  --color-secondary-300:#9DB5A0;--color-secondary-400:#89A68C;--color-secondary-500:#7A9E7E;
+  --color-secondary-600:#5E7E63;--color-secondary-700:#46624A;
+  --color-accent-400:#6BB394;--color-accent-500:#4E9C78;--color-accent-600:#37785C;
+  --color-warning:#D9952F;--color-danger:#CC5B4E;
+  --color-bg-base:#F7F3EE;--color-bg-surface:#FDFBF8;--color-bg-muted:#EFE9E0;
+  --color-border:#E5DFD6;--color-border-strong:#CFC7BA;
+  --color-text-primary:#2A2218;--color-text-secondary:#7A6E63;--color-text-disabled:#B0A89E;
   --color-text-on-primary:#FFFFFF;
   --font-family-base:'Hiragino Sans','Hiragino Kaku Gothic ProN','BIZ UDGothic','Noto Sans JP',sans-serif;
   --font-family-number:'DIN Alternate','SF Mono','Noto Sans JP',sans-serif;
@@ -36,15 +36,15 @@
   --radius-sm:6px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
   --shadow-xs:0 1px 2px rgba(0,0,0,.06);--shadow-sm:0 2px 8px rgba(0,0,0,.08);
   --shadow-md:0 4px 16px rgba(0,0,0,.10);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
-  --shadow-primary:0 4px 12px rgba(232,106,53,.30);
+  --shadow-primary:0 4px 12px rgba(196,113,74,.28);
 }
 html[data-theme="dark"]{
-  --color-bg-base:#141210;--color-bg-surface:#1E1C1A;--color-bg-muted:#2A2724;
-  --color-border:#3A3632;--color-border-strong:#504C48;
-  --color-text-primary:#F0EDE8;--color-text-secondary:#A09890;--color-text-disabled:#5C5854;
-  --color-primary-50:#2A211C;--color-primary-500:#F07A48;--color-primary-600:#E86A35;
-  --color-secondary-300:#8AAAD8;--color-secondary-500:#4A72C4;--color-accent-500:#52B88E;
-  --color-warning:#F5B040;--color-danger:#E86060;
+  --color-bg-base:#17130F;--color-bg-surface:#221C16;--color-bg-muted:#2C251D;
+  --color-border:#3A332B;--color-border-strong:#524A40;
+  --color-text-primary:#F0EAE0;--color-text-secondary:#A89E92;--color-text-disabled:#5E574E;
+  --color-primary-50:#2A201A;--color-primary-500:#D4855E;--color-primary-600:#C4714A;
+  --color-secondary-300:#9DB5A0;--color-secondary-500:#8DB491;--color-accent-500:#62BF95;
+  --color-warning:#EBAA46;--color-danger:#E07060;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{overflow-x:hidden}
@@ -271,11 +271,11 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
 <button class="fab" id="fab" onclick="App.fabAction()">＋</button>
 
 <nav class="tabbar">
-  <button class="tab" data-tab="dashboard" onclick="App.go('dashboard')"><span class="ti">🏠</span><span class="tl">ホーム</span></button>
-  <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti">✅</span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
-  <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti">📅</span><span class="tl">カレンダー</span></button>
-  <button class="tab" data-tab="share" onclick="App.go('share')"><span class="ti">🗂️</span><span class="tl">共有</span></button>
-  <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti">⚙️</span><span class="tl">設定</span></button>
+  <button class="tab" data-tab="dashboard" onclick="App.go('dashboard')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/></svg></span><span class="tl">ホーム</span></button>
+  <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.4 12.3 2.4 2.4 4.8-5.4"/></svg></span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
+  <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="3.5"/><path d="M3.5 10h17"/><path d="M8 3.4V7M16 3.4V7"/></svg></span><span class="tl">カレンダー</span></button>
+  <button class="tab" data-tab="share" onclick="App.go('share')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5a2 2 0 0 1 2-2h3.2l1.8 2H18a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11.2c-1-1.4-3.2-.7-3.2 1 0 1.3 1.7 2.4 3.2 3.4 1.5-1 3.2-2.1 3.2-3.4 0-1.7-2.2-2.4-3.2-1z"/></svg></span><span class="tl">共有</span></button>
+  <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5h7"/><path d="M16 7.5h4"/><circle cx="13" cy="7.5" r="2.3"/><path d="M4 16.5h4"/><path d="M13 16.5h7"/><circle cx="10" cy="16.5" r="2.3"/></svg></span><span class="tl">設定</span></button>
 </nav>
 
 <div class="scrim" id="scrim" onclick="App.closeSheet()"></div>
