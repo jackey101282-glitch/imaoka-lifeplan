@@ -225,7 +225,9 @@ a.tlink{color:var(--color-secondary-500)}
 .my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
 .my-tag{font-size:var(--text-sm);color:var(--color-text-secondary);margin:0}
 html[data-theme="dark"] .warn-box{background:#3a2020}
-/* ===== PC(広い画面)用レイアウト: 左サイドバー + 中央寄せ ===== */
+/* 共有ポケット: スマホ2列(PCでは下のメディアクエリで多列に) */
+.pocket-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* ===== PC(広い画面)用レイアウト: 左サイドバー + 横幅を活かした段組み ===== */
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
   .tabbar{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:230px;height:100vh;border-top:none;border-right:1px solid var(--color-border);padding:16px 14px;gap:4px;justify-content:flex-start;align-items:stretch}
@@ -236,16 +238,28 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
   .tab .ti{font-size:21px;width:24px;text-align:center}
   .tab .tl{font-size:var(--text-md);font-weight:var(--fw-m)}
   .tab .nbadge{position:static;margin-left:auto}
-  .app-header{max-width:840px;margin-left:auto;margin-right:auto}
-  main{max-width:840px;padding-top:24px}
+  .app-header{padding-left:32px;padding-right:32px}
+  /* 広いキャンバス。一覧/フォーム系は読みやすい幅にしぼる */
+  main{max-width:1180px;padding-top:24px;padding-left:32px;padding-right:32px}
+  main.view-settings,main.view-simulator,main.view-income_list,main.view-expense_list,main.narrow{max-width:760px}
   .sheet{left:230px;right:0;margin:0 auto}
-  .fab{right:max(20px, calc((100vw - 230px - 840px)/2 + 20px))}
+  .fab{right:max(24px, calc((100vw - 230px - 1180px)/2 + 24px))}
+  /* ダッシュボード: カードを段組み(マソンリー)にして横幅を使う */
+  main.view-dashboard .dash-cols{column-count:2;column-gap:18px}
+  main.view-dashboard .dblk{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid}
+  main.view-dashboard .dblk > .section-title:first-child{margin-top:0}
+  main.view-dashboard .dblk > .card{margin-bottom:18px}
+  /* タスク: プロジェクトと個別タスクを左右2カラムに */
+  main.view-tasks .task-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start}
+  main.view-tasks .task-cols .section-title{margin-top:0}
+  /* カレンダー: 月表示を左、予定/集計を右に */
+  main.view-calendar .cal-layout{display:grid;grid-template-columns:minmax(420px,1.05fr) 1fr;gap:24px;align-items:start}
+  main.view-calendar .cal-side .section-title:first-child{margin-top:0}
+  /* 共有: ポケットを横に多く並べる */
+  main.view-share .pocket-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 }
-@media (min-width:900px){
-  /* ダッシュボードのカードを2列に */
-  #view .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-  #view .dash-grid > .card{margin-bottom:0}
-  #view .dash-grid > .dash-full{grid-column:1 / -1}
+@media (min-width:1280px){
+  main.view-dashboard .dash-cols{column-count:3}
 }
 </style>
 </head>
@@ -503,6 +517,10 @@ const App = {
     document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?(esc((this.state.settings.spaceName||"ふたりの家計"))+" "+this.dot()):this.dot(true);
     const eb=document.getElementById("eye-btn");if(eb){eb.textContent=this.hideAmt?"🙈":"👁";eb.classList.toggle("on",this.hideAmt);eb.title=this.hideAmt?"金額を表示":"金額を隠す";}
     const v=document.getElementById("view");
+    let cls="view-"+this.tab;
+    if(this.tab==="tasks"&&this.taskView!=="home")cls+=" narrow";
+    if(this.tab==="share"&&this.shareView!=="home")cls+=" narrow";
+    v.className=cls;
     v.innerHTML=this["view_"+this.tab]();
     this.updateBadges();
     this.updateFab();
@@ -782,7 +800,11 @@ const App = {
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">🧾</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+acctCard+debtCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
+    // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
+    const alerts=storeWarn+remindCard+approveCard;
+    const cards=[expCard,incCard,remainCard,acctCard,debtCard,paceCard,plannedCard,recurCard,simCard,goalsCard,tasksCard,wishCard]
+      .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
+    return alerts+'<div class="dash-cols">'+cards+'</div>';
   },
 
   /* ====== income / expense lists ====== */
@@ -916,15 +938,15 @@ const App = {
   view_tasks(){
     if(this.taskView==="project")return this.view_taskproject();
     if(this.taskView==="sub")return this.view_tasksub();
-    let h='<div class="section-title" style="margin-top:0">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ プロジェクト</span></div>';
+    let left='<div class="section-title" style="margin-top:0">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ プロジェクト</span></div>';
     if(!this.state.projects.length){
-      h+='<div class="card"><div class="empty"><span class="e-ic">📂</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
+      left+='<div class="card"><div class="empty"><span class="e-ic">📂</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
     }
     this.state.projects.forEach(p=>{
       const ts=this.projTasks(p.id),done=ts.filter(t=>t.status==="done").length,pct=ts.length?Math.round(done/ts.length*100):0;
       const subCnt=this.state.subprojects.filter(s=>s.projectId===p.id).length;
       const comp=ts.length>0&&done===ts.length;
-      h+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openProject(\''+p.id+'\')">'+
+      left+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openProject(\''+p.id+'\')">'+
         '<div class="row" style="gap:12px"><div style="font-size:24px;flex-shrink:0;line-height:1">'+p.icon+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+(comp?' ✅':'')+'</div><div class="meta">'+subCnt+'グループ・'+done+'/'+ts.length+'完了</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>'+
         '<div class="prog" style="margin-top:10px"><span class="'+(comp?'fill-accent':'fill-primary')+'" style="width:'+pct+'%"></span></div></div>';
     });
@@ -937,17 +959,17 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    h+='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
-    h+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
+    let right='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
+    right+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
       '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}" style="flex:1;min-width:0">'+
       '<button class="btn btn-primary" onclick="App.quickAddTask()" style="flex-shrink:0;min-height:42px;padding:0 16px">追加</button>'+
       '</div></div>';
-    h+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
-    h+='<div class="card">';
-    if(!list.length)h+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
-    list.forEach(t=>h+=this.taskRow(t));
-    h+='</div>';
-    return h;
+    right+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
+    right+='<div class="card">';
+    if(!list.length)right+='<div class="empty"><span class="e-ic">✅</span>該当するタスクはありません</div>';
+    list.forEach(t=>right+=this.taskRow(t));
+    right+='</div>';
+    return '<div class="task-cols"><div>'+left+'</div><div>'+right+'</div></div>';
   },
   view_taskproject(){
     const p=this.state.projects.find(x=>x.id===this.curProjectId);
@@ -1089,16 +1111,18 @@ const App = {
       h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+c.d+'<div class="cal-dots">'+dots+'</div></div>';
     });
     h+='</div><div class="legend"><span><span class="cdot cd-income"></span>入金</span><span><span class="cdot cd-pay"></span>支払い</span><span><span class="cdot cd-task"></span>タスク</span><span><span class="cdot cd-event"></span>予定</span><span><span class="cdot cd-wish"></span>目標時期</span></div></div>';
+    // ↓ ここから先(予定リスト・カテゴリ別支出)はPCで右カラムに置く
+    let side='';
     // この月の予定リスト
-    h+='<div class="section-title">'+monthLabel(this.calMonth)+'の予定<span class="link" onclick="App.openEvent()">＋ 予定追加</span></div><div class="card">';
+    side+='<div class="section-title">'+monthLabel(this.calMonth)+'の予定<span class="link" onclick="App.openEvent()">＋ 予定追加</span></div><div class="card">';
     const flat=[];
     Object.keys(items).forEach(d=>{if(d.slice(0,7)===this.calMonth)items[d].forEach(it=>flat.push({...it,date:d}))});
     flat.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:((a.start||"")<(b.start||"")?-1:1)));
-    if(!flat.length)h+='<div class="empty"><span class="e-ic">📅</span>この月の予定はありません</div>';
+    if(!flat.length)side+='<div class="empty"><span class="e-ic">📅</span>この月の予定はありません</div>';
     flat.slice(0,50).forEach(it=>{
-      h+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
+      side+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
     });
-    h+='</div>';
+    side+='</div>';
     // この月のカテゴリ別支出
     const exp=this.state.expenses.filter(e=>e.month===this.calMonth);
     const evExp=this.eventExpense(this.calMonth,"confirmed"), evN=this.eventExpenseList(this.calMonth,"confirmed").reduce((s,x)=>s+x.n,0);
@@ -1108,14 +1132,14 @@ const App = {
       if(evExp>0)arr.push({icon:"📅",label:"予定・支払い(済)",sum:evExp,n:evN});
       arr.sort((a,b)=>b.sum-a.sum);
       const total=arr.reduce((s,x)=>s+x.sum,0);
-      h+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
+      side+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
       const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
       let gsegs='';arr.forEach((c,i)=>{const p=total>0?(c.sum/total*100):0;if(p>0)gsegs+='<span style="width:'+p+'%;background:'+gpal[i%gpal.length]+';display:block"></span>';});
-      h+='<div style="display:flex;height:16px;border-radius:9px;overflow:hidden;margin-bottom:14px">'+gsegs+'</div>';
-      arr.forEach((c,i)=>{const pct=total>0?Math.round(c.sum/total*100):0;h+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span style="display:block;height:100%;border-radius:inherit;width:'+pct+'%;background:'+gpal[i%gpal.length]+'"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
-      h+='</div>';
+      side+='<div style="display:flex;height:16px;border-radius:9px;overflow:hidden;margin-bottom:14px">'+gsegs+'</div>';
+      arr.forEach((c,i)=>{const pct=total>0?Math.round(c.sum/total*100):0;side+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span style="display:block;height:100%;border-radius:inherit;width:'+pct+'%;background:'+gpal[i%gpal.length]+'"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
+      side+='</div>';
     }
-    return h;
+    return '<div class="cal-layout"><div class="cal-main">'+h+'</div><div class="cal-side">'+side+'</div></div>';
   },
   calItems(ym){
     ym=ym||this.calMonth;
@@ -1180,7 +1204,7 @@ const App = {
     let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 14px">「行きたい場所・やりたいこと・欲しい物・よく使うサイト」などをフォルダで整理。日付の決まっていない共有メモも残せます。</p>';
     h+=this.hubCard("📝","共有メモ","日付のない自由メモ。流れず残ります",this.state.notes.length+"件","notes");
     h+='<div class="section-title">フォルダ<span class="link" onclick="App.openFolderForm()">＋ フォルダ追加</span></div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    h+='<div class="pocket-grid">';
     this.state.folders.forEach(f=>{
       const cnt=this.state.items.filter(i=>i.folderId===f.id).length;
       h+='<div onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:15px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div style="font-size:30px;line-height:1">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
