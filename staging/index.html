@@ -292,6 +292,11 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
   main.view-dashboard .dblk{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid}
   main.view-dashboard .dblk > .section-title:first-child{margin-top:0}
   main.view-dashboard .dblk > .card{margin-bottom:22px}
+  main.view-lifeplan{max-width:1040px}
+  main.view-lifeplan .dash-cols{column-count:2;column-gap:22px}
+  main.view-lifeplan .dblk{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid}
+  main.view-lifeplan .dblk > .section-title:first-child{margin-top:0}
+  main.view-lifeplan .dblk > .card{margin-bottom:22px}
   /* タスク: プロジェクトと個別タスクを左右2カラムに */
   main.view-tasks .task-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start}
   main.view-tasks .task-cols .section-title{margin-top:0}
@@ -343,6 +348,7 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
   </div>
   <div class="hd-right">
     <button class="eye-btn" id="eye-btn" onclick="App.toggleHideAmt()" aria-label="金額の表示を切り替え" title="金額を隠す"></button>
+    <button class="eye-btn" id="gear-btn" onclick="App.go('settings')" aria-label="設定" title="設定"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1M18.4 18.4l-2.1-2.1M7.7 7.7 5.6 5.6"/></svg></button>
     <div class="month-nav" id="month-nav">
       <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
       <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
@@ -357,10 +363,10 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
 
 <nav class="tabbar">
   <button class="tab" data-tab="dashboard" onclick="App.go('dashboard')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/></svg></span><span class="tl">ホーム</span></button>
+  <button class="tab" data-tab="lifeplan" onclick="App.go('lifeplan')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 10 11l3.5 3.5L20 7.5"/><path d="M15 7.5h5v5"/></svg></span><span class="tl">ライフプラン</span></button>
   <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.4 12.3 2.4 2.4 4.8-5.4"/></svg></span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
   <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="3.5"/><path d="M3.5 10h17"/><path d="M8 3.4V7M16 3.4V7"/></svg></span><span class="tl">カレンダー</span></button>
   <button class="tab" data-tab="share" onclick="App.go('share')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5a2 2 0 0 1 2-2h3.2l1.8 2H18a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11.2c-1-1.4-3.2-.7-3.2 1 0 1.3 1.7 2.4 3.2 3.4 1.5-1 3.2-2.1 3.2-3.4 0-1.7-2.2-2.4-3.2-1z"/></svg></span><span class="tl">共有</span></button>
-  <button class="tab" data-tab="settings" onclick="App.go('settings')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5h7"/><path d="M16 7.5h4"/><circle cx="13" cy="7.5" r="2.3"/><path d="M4 16.5h4"/><path d="M13 16.5h7"/><circle cx="10" cy="16.5" r="2.3"/></svg></span><span class="tl">設定</span></button>
 </nav>
 
 <div class="scrim" id="scrim" onclick="App.closeSheet()"></div>
@@ -658,7 +664,7 @@ const App = {
   /* ---- navigation ---- */
   go(tab){
     this.tab=tab;
-    if(["dashboard","tasks","calendar","share","settings"].includes(tab)){try{localStorage.setItem("imaoka_tab",tab);}catch(e){}}
+    if(["dashboard","lifeplan","tasks","calendar","share","settings"].includes(tab)){try{localStorage.setItem("imaoka_tab",tab);}catch(e){}}
     if(tab==="share"){this.shareView="home";this.curFolderId=null;}
     if(tab==="tasks"){this.taskView="home";this.curProjectId=null;this.curSubId=null;}
     document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
@@ -681,7 +687,7 @@ const App = {
   render(){
     document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
     document.getElementById("month-nav").classList.toggle("off",this.curMonth!==thisMonth());
-    const titles={dashboard:"ホーム",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定",income_list:"収入",expense_list:"支出",simulator:"ライフプラン"};
+    const titles={dashboard:"ホーム",lifeplan:"ライフプラン",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定",income_list:"収入",expense_list:"支出",simulator:"将来シミュレーション"};
     let title=titles[this.tab]||"";
     if(this.tab==="share"){
       if(this.shareView==="notes")title="共有メモ";
@@ -706,7 +712,7 @@ const App = {
     this.updateFab();
     if(this.tab==="dashboard")this.animateDashNums();
   },
-  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
+  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ 目的";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
   dot(plain){
@@ -858,19 +864,12 @@ const App = {
           '<div style="text-align:right;margin-top:12px"><span class="link" onclick="App.openIncome()">＋ 追加</span>　<span class="link" onclick="App.go(\'income_list\')">一覧 ›</span></div>'):'')+
       '</div>';
     }
-    // 残り(貯金できる分)= 収入 − 確定支出
-    const negative=m.balance<0||m.afterPlanned<0;
-    const balColor=m.balance>=0?'var(--color-accent-600)':'var(--color-danger)';
+    // 赤字/不足の警告のみ残す(「残り＝貯金できる分」カードは廃止:完璧入力前提の数字で誤解を招くため)
     let warn='';
     if(m.balance<0)warn='<div class="warn-box">'+ic('alert',15)+'支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
     else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
-    const remainCard='<div class="card" style="border:1.5px solid '+(negative?'var(--color-danger)':'var(--color-accent-500)')+'">'+
-      '<p class="card-title" style="margin:0;color:'+(negative?'var(--color-danger)':'var(--color-accent-600)')+'">残り（貯金できる分）</p>'+
-      '<div class="big-num cnum" data-k="bal" data-v="'+m.balance+'" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
-      '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
-      ((m.planned>0||m.plannedIncome>0)?'<div class="meta ttl-ico" style="margin-top:4px">'+ic('calendar',13)+'予定を反映した月末の見込み: '+yen(m.afterPlanned)+'</div>':'')+
-      warn+
-      '<div style="margin-top:10px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div></div>';
+    const remainCard='';
+    const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<div style="text-align:center;margin:4px 0 2px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div>':'';
 
     // ふたりの航路（ライフゴールのロードマップ）
     const GOAL_IC={goal_wedding:'heart',goal_honeymoon:'plane',goal_birth:'baby',goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
@@ -912,7 +911,7 @@ const App = {
         body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic('check',18)+'</span><div class="main"><div class="ttl" style="color:var(--color-text-secondary);text-decoration:line-through">'+esc(g.label)+'</div></div><span class="chip chip-both" style="white-space:nowrap">達成</span></div>';
       });
     }
-    const goalsCard='<div class="section-title">ふたりの航路<span class="link" onclick="App.openGoal()">＋ 目的を追加</span></div><div class="card">'+body+'</div>';
+    const goalsCard='<div class="section-title">ふたりの目標<span class="link" onclick="App.openGoal()">＋ 目的を追加</span></div><div class="card">'+body+'</div>';
 
     // tasks short
     const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
@@ -1011,12 +1010,22 @@ const App = {
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">'+ic('wallet',30)+'</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
-    const alerts=storeWarn+remindCard+approveCard;
-    // 主要3数字(支出/収入/残り)はヒーロー帯。残りは2列。スマホでは全て縦積み(従来通り)。
-    const hero='<div class="dash-hero">'+expCard+incCard+remainCard+'</div>';
-    const cards=[goalsCard,acctCard,debtCard,paceCard,plannedCard,recurCard,simCard,tasksCard,wishCard]
+    // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
+    this._lpCards={goalsCard,simCard,acctCard,debtCard,wishCard};
+    // ホーム＝今月のお金(フロー)だけ。支出/収入はヒーロー帯。
+    const alerts=storeWarn+warn+remindCard+approveCard;
+    const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
+    const cards=[plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return alerts+hero+'<div class="dash-cols">'+cards+'</div>';
+    return alerts+hero+'<div class="dash-cols">'+cards+'</div>'+shareLink;
+  },
+  // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
+  view_lifeplan(){
+    this.view_dashboard();
+    const c=this._lpCards||{};
+    const cards=[c.goalsCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
+      .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
+    return '<div class="dash-cols">'+cards+'</div>';
   },
 
   /* ====== income / expense lists ====== */
@@ -1635,6 +1644,7 @@ const App = {
   },
   fabAction(){
     if(this.tab==="dashboard")this.openExpense();
+    else if(this.tab==="lifeplan")this.openGoal();
     else if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
     else if(this.tab==="calendar")this.openEvent();
     else if(this.tab==="share"){if(this.shareView==="notes")this.openNote();else if(this.shareView==="folder")this.openItem(null,this.curFolderId);else this.openFolderForm();}
