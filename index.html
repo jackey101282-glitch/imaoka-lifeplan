@@ -539,6 +539,8 @@ const App = {
     this.load();
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
     this.hideAmt=localStorage.getItem("imaoka_hide_amt")==="1"; HIDE_AMT=this.hideAmt;
+    // 既存ユーザー移行(初回1回だけ): 端末に旧初期値"auto"が残っている場合はlightへ。以後ユーザーが選び直したautoは尊重
+    try{if(!localStorage.getItem("imaoka_theme_mig")){if(localStorage.getItem("imaoka_theme")==="auto")localStorage.setItem("imaoka_theme","light");localStorage.setItem("imaoka_theme_mig","1");}}catch(e){}
     this.applyTheme();
     const _lt=localStorage.getItem("imaoka_tab");
     this.go(["dashboard","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
