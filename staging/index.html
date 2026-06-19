@@ -432,7 +432,7 @@ function seedState(){
   return {
     v:2,
     _foldersMigrated:true,
-    settings:{spaceName:"",husband:"夫",wife:"妻",theme:"auto",sync:{enabled:false,url:"",key:"",space:""}},
+    settings:{spaceName:"",husband:"夫",wife:"妻",theme:"light",sync:{enabled:false,url:"",key:"",space:""}},
     customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
     incomes:[], expenses:[],
     accounts:[],
@@ -1559,7 +1559,7 @@ const App = {
   setSpaceName(v){this.state.settings.spaceName=(v||"").trim();this.commit();},
   setApproveThreshold(v){this.state.settings.approveThreshold=+String(v).replace(/[^0-9.]/g,"")||0;this.save(true);},
   // テーマは端末ごと(localStorage)。相手には同期されない
-  getDeviceTheme(){let t=localStorage.getItem("imaoka_theme");if(!t){t=(this.state&&this.state.settings&&this.state.settings.theme)||"auto";localStorage.setItem("imaoka_theme",t);}return t;},
+  getDeviceTheme(){let t=localStorage.getItem("imaoka_theme");if(!t){t="light";localStorage.setItem("imaoka_theme",t);}return t;},  // localStorageが消えても固定lightに戻す(クラウドのsettings.themeには追従しない=勝手にダーク化を防ぐ)
   setTheme(v){localStorage.setItem("imaoka_theme",v);this.applyTheme();this.render();},
   applyTheme(){
     const t=this.getDeviceTheme();
