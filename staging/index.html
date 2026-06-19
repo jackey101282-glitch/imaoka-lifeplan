@@ -248,6 +248,9 @@ a.tlink{color:var(--color-secondary-500)}
 .auth-switch{text-align:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--color-border);font-size:var(--text-sm);color:var(--color-text-secondary)}
 .invite-note{background:var(--color-secondary-50);color:var(--color-secondary-600);border:1px solid var(--color-secondary-200);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);line-height:1.6;margin-bottom:16px;align-items:flex-start}
 .invite-note .ico{margin-top:2px;flex-shrink:0}
+.auth-err{background:#FDECEC;color:var(--color-danger);border:1px solid #F3C9C4;border-radius:var(--radius-md);padding:10px 13px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.5;margin-bottom:14px}
+html[data-theme="dark"] .auth-err{background:#321C19;border-color:#5a322c}
+@keyframes authshake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
 .my-brand{text-align:center;margin-bottom:22px}
 .my-brand .ic{width:72px;height:72px;border-radius:18px;display:inline-block;object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.16)}
 .my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
@@ -1817,19 +1820,30 @@ const App = {
       else{this.showAuth();}
     }catch(e){console.error(e);this.toast("接続に問題が発生しました");}
   },
+  setAuthErr(msg){const el=document.getElementById("au-err");if(el){el.textContent=msg||"";el.style.display=msg?"block":"none";if(msg){el.style.animation="none";void el.offsetWidth;el.style.animation="authshake .3s";}}},
+  authErrMsg(raw,mode){const m=(raw||"").toLowerCase();
+    if(m.includes("invalid login")||m.includes("invalid credentials"))return "メールアドレスまたはパスワードが違います";
+    if(m.includes("email not confirmed"))return "メール確認が完了していません。届いたメールのリンクを開いてください";
+    if(m.includes("already registered")||m.includes("already been registered")||m.includes("user already"))return "このメールアドレスは登録済みです。「ログインに切り替え」からお進みください";
+    if(m.includes("unable to validate email")||m.includes("invalid format")||m.includes("invalid email"))return "メールアドレスの形式が正しくありません";
+    if(m.includes("password")&&m.includes("6"))return "パスワードは6文字以上にしてください";
+    if(m.includes("for security")||m.includes("rate")||m.includes("too many")||m.includes("429"))return "回数が多すぎます。少し時間をおいて再度お試しください";
+    if(m.includes("network")||m.includes("fetch")||m.includes("failed to"))return "通信エラーです。電波の良い場所で再度お試しください";
+    return mode==="signup"?"登録に失敗しました。入力内容をご確認ください":"ログインに失敗しました。入力内容をご確認ください";},
   async doAuth(mode){
+    this.setAuthErr("");
     const email=val("au-email"),pw=val("au-pw");
-    if(!email||!pw){this.toast("メールとパスワードを入力してください");return;}
-    if(pw.length<6){this.toast("パスワードは6文字以上にしてください");return;}
+    if(!email||!pw){this.setAuthErr("メールアドレスとパスワードを入力してください");return;}
+    if(pw.length<6){this.setAuthErr("パスワードは6文字以上にしてください");return;}
     try{
       const r=mode==="signup"?await this._client.auth.signUp({email,password:pw}):await this._client.auth.signInWithPassword({email,password:pw});
-      if(r.error){this.toast(r.error.message||"認証に失敗しました");return;}
+      if(r.error){this.setAuthErr(this.authErrMsg(r.error.message,mode));return;}
       if(!r.data.session){this.toast("確認メールを送信しました。メールのリンクを開いてから再度ログインしてください");return;}
       this._user=r.data.user;await this.afterAuth();
-    }catch(e){console.error(e);this.toast("認証エラー");}
+    }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
   async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.showAuth();},
-  switchAuth(v){this._authView=v;this.showAuth();},
+  switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
   async afterAuth(){
     try{
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
@@ -1916,7 +1930,8 @@ const App = {
       '<h2 class="my-wordmark">Miett<span style="color:var(--color-accent-500)">a</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
       (this._pendingInvite?'<div class="invite-note ttl-ico">'+ic('heart',15)+'パートナーから招待されています。登録するとふたりのスペースに参加できます。</div>':'')+
-      '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
+      '<div id="au-err" class="auth-err" style="display:none"></div>'+
+      '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com" oninput="App.setAuthErr(\'\')"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
       '<button class="btn btn-primary btn-block" style="margin-top:4px" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録ではじめる":"ログイン")+'</button>'+
       '<div class="auth-switch">'+(su?"すでにアカウントをお持ちですか？":"アカウントをお持ちでない方")+'<button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"ログインに切り替え":"新規登録に切り替え")+'</button></div></div>';
