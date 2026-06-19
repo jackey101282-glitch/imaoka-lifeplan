@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mietta（ミエッタ）— ふたりの暮らしと未来が、見えた。</title>
+<meta name="description" content="夫婦・カップルのための生活管理アプリ Mietta（ミエッタ）。家計・カレンダー・タスク・やりたいこと・将来のお金まで、2人でひとつの画面に。広告ゼロ。" />
+<meta property="og:title" content="Mietta（ミエッタ）— 夫婦の家計、ちゃんと見てますか。" />
+<meta property="og:description" content="家計・予定・夢・将来のお金を2人でひとつに。広告ゼロの夫婦向けアプリ。7/15リリース、先行登録受付中。" />
+<meta property="og:image" content="icon-512.png" />
+<style>
+  :root{
+    --coral:#E86A35; --coral-d:#C4521F; --coral-l:#FF8E5E;
+    --green:#3D9170; --green-d:#2B7358;
+    --ink:#23201c; --muted:#7a7268; --line:#ece5d8;
+    --cream:#FBF7EE; --card:#ffffff; --lav:#EEF0FF; --warn:#fff5e8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--cream);line-height:1.7;overflow-x:hidden}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  a{color:inherit;text-decoration:none}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--coral);color:#fff;font-weight:800;font-size:17px;border:none;border-radius:999px;padding:16px 30px;cursor:pointer;box-shadow:0 10px 24px rgba(232,106,53,.32);transition:transform .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.lg{font-size:18px;padding:18px 38px}
+  .eyebrow{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--coral-d);background:#fff3ec;border:1px solid #f6d6c4;padding:6px 14px;border-radius:999px}
+
+  header{position:sticky;top:0;z-index:30;background:rgba(251,247,238,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+  .brand img{width:34px;height:34px;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.12)}
+  .brand .kana{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+
+  /* hero */
+  .hero{padding:52px 0 24px}
+  .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center}
+  .hero h1{font-size:41px;line-height:1.22;letter-spacing:-.03em;font-weight:900}
+  .hero h1 .hl{color:var(--coral)}
+  .hero p.sub{font-size:18px;color:#5d564d;margin:20px 0 28px;max-width:600px}
+  .hero .cta-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .hero .note{font-size:13px;color:var(--muted)}
+  .trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px}
+  .trust span{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:#4a4439}
+  .trust .ic{width:22px;height:22px;border-radius:50%;background:#e7f3ec;color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:13px}
+
+  /* phone */
+  .phone{width:288px;border-radius:42px;background:#1a1a1a;padding:10px;box-shadow:0 26px 56px rgba(60,40,20,.22),0 8px 18px rgba(0,0,0,.12);position:relative;flex:0 0 auto}
+  .phone .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:116px;height:25px;background:#1a1a1a;border-radius:0 0 16px 16px;z-index:5}
+  .screen{border-radius:33px;overflow:hidden;background:var(--cream);height:600px;position:relative}
+  .hero-phones{display:flex;justify-content:center;align-items:center;min-height:560px}
+  .hero-phones .phone{width:240px}
+  .hero-phones .pL{transform:rotate(-8deg) scale(.72);margin-right:-58px;z-index:1}
+  .hero-phones .pR{transform:rotate(8deg) scale(.72);margin-left:-66px;z-index:1}
+  .hero-phones .p1{z-index:2}
+
+  .app{font-size:13px;height:100%;display:flex;flex-direction:column;background:var(--cream)}
+  .app-hd{padding:32px 17px 11px;display:flex;justify-content:space-between;align-items:flex-end}
+  .app-hd .t{font-size:18px;font-weight:800}
+  .app-hd .s{font-size:11px;color:var(--green-d);font-weight:700;display:flex;align-items:center;gap:5px;margin-top:2px}
+  .app-hd .s::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+  .app-hd .mo{font-size:12px;font-weight:800;color:var(--coral-d);background:#fff3ec;border:1px solid #f6d6c4;border-radius:999px;padding:4px 11px}
+  .app-body{flex:1;overflow:hidden;padding:4px 14px 14px;display:flex;flex-direction:column;gap:10px}
+  .c{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:12px 13px}
+  .c .lab{font-size:11px;color:var(--muted);font-weight:700}
+  .c .big{font-size:24px;font-weight:900;letter-spacing:-.02em;margin-top:1px}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .pill{font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px}
+  .green-c{background:#eaf6ef;border-color:#cfe9da}.green-c .big{color:var(--green-d)}
+  .warn-c{background:var(--warn);border-color:#f3d9a8}
+  .mini{display:flex;justify-content:space-between;font-size:11.5px;color:#6a6258;margin-top:6px}
+  .lav{background:var(--lav);border-color:#dfe3ff}.lav .tt{font-weight:800;color:#4b4fa6;font-size:13.5px}.lav .ss{font-size:10.5px;color:#7b7fc0}
+  .goal .bar{height:7px;border-radius:99px;background:#eee7d8;margin-top:7px;overflow:hidden}
+  .goal .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--coral-l),var(--coral))}
+  .tab{display:flex;justify-content:space-around;padding:9px 0 12px;border-top:1px solid var(--line);background:#fff}
+  .tab .ti{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:#b3aa9c;font-weight:700}
+  .tab .ti.on{color:var(--coral)}.tab .ti b{font-size:17px;font-weight:400;line-height:1}
+
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+  .cal d{font-size:9px;color:#b3aa9c;text-align:center}
+  .cal s{font-size:11px;text-align:center;padding:6px 0;border-radius:8px;background:#faf6ee}
+  .cal s.ev{background:#fff3ec;color:var(--coral-d);font-weight:800}.cal s.gr{background:#eaf6ef;color:var(--green-d);font-weight:800}
+  .evlist{margin-top:9px;display:flex;flex-direction:column;gap:7px}
+  .ev{display:flex;gap:9px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+  .ev .e-ic{font-size:16px}.ev .e-t{font-weight:700;font-size:12.5px}.ev .e-m{font-size:10.5px;color:var(--muted)}
+  .chart .cap{font-size:11px;color:var(--muted);font-weight:700}.chart .amt{font-size:23px;font-weight:900;color:var(--green-d);letter-spacing:-.02em}
+  .tk{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:6px}
+  .tk.sub{margin-left:15px;background:#fffdf8;padding:8px 10px}
+  .tk .ck{width:19px;height:19px;border-radius:6px;border:2px solid #d9cfbe;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+  .tk .ck.on{background:var(--green);border-color:var(--green)}
+  .tk .nm{font-weight:700;font-size:12px;flex:1}.tk .nm.done{text-decoration:line-through;color:#b3aa9c}
+  .who{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px}
+  .who.h{background:#e6eefb;color:#3f63b5}.who.w{background:#fde6ef;color:#c2497e}
+  .proj{font-size:12px;font-weight:800;margin:3px 2px 8px;display:flex;align-items:center;gap:6px}
+  .proj .tag{font-size:9px;font-weight:800;color:#fff;background:var(--coral);border-radius:6px;padding:2px 6px}
+  .midl{font-size:11px;color:var(--coral-d);font-weight:800;margin:8px 2px 5px}
+  .fold{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:8px}
+  .fold .fi{width:36px;height:36px;border-radius:11px;background:#fff3ec;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .fold .fn{font-weight:800;font-size:12.5px}.fold .fc{font-size:10.5px;color:var(--muted)}
+  .chipline{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+  .chip{font-size:10px;background:#faf6ee;border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:#6a6258}
+  .memo{background:#fffdf6;border:1px solid #efe6cf;border-radius:13px;padding:11px 12px;margin-bottom:8px}
+  .memo h4{font-size:12px;margin-bottom:3px}.memo p{font-size:11px;color:#6a6258;white-space:pre-line}
+
+  section{padding:58px 0}
+  .sec-head{text-align:center;max-width:680px;margin:0 auto 34px}
+  .sec-head h2{font-size:31px;font-weight:900;letter-spacing:-.02em;line-height:1.32}
+  .sec-head p{color:#5d564d;margin-top:10px;font-size:16px}
+
+  /* problem: real-talk quote cards, 3col */
+  .pain{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .pain .p{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:6px}
+  .pain .p .em{font-size:24px}
+  .pain .p h3{font-size:15.5px;line-height:1.55;font-weight:800}
+  .pain .p span{color:#9a9286;font-size:12.5px}
+  .appsrow{display:flex;gap:6px;flex-wrap:wrap}
+  .appsrow b{width:36px;height:36px;border-radius:10px;background:#faf6ee;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:400}
+
+  /* interactive tabs */
+  .tabs{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+  .tg{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:10px 18px;font-weight:800;font-size:14.5px;cursor:pointer;color:#6a6258;transition:.15s}
+  .tg.on{background:var(--coral);color:#fff;border-color:var(--coral);box-shadow:0 6px 16px rgba(232,106,53,.28)}
+  .panel{display:grid;grid-template-columns:300px 1fr;gap:52px;align-items:center}
+  .panel .txt h3{font-size:25px;font-weight:900;letter-spacing:-.01em;line-height:1.4}
+  .panel .txt p{color:#5d564d;margin-top:12px;font-size:15.5px}
+  .panel .txt .tag{display:inline-block;margin-top:14px;background:#eaf6ef;color:var(--green-d);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:800}
+  .panel .txt ul{list-style:none;margin-top:14px}
+  .panel .txt li{display:flex;gap:9px;font-size:14.5px;margin-bottom:9px;color:#4a4439}
+  .panel .txt li::before{content:"✓";color:var(--green);font-weight:900}
+  .panel .ph{display:flex;justify-content:center}
+  .ba{margin-top:14px;display:flex;flex-direction:column;gap:9px}
+  .ba .b,.ba .a{border-radius:13px;padding:12px 15px;font-size:14px}
+  .ba .b{background:#f4eee2;color:#7a7268}
+  .ba .a{background:#eaf6ef;color:var(--green-d);font-weight:700;border:1px solid #cfe9da}
+  .ba .l{font-size:11px;font-weight:900;display:block;margin-bottom:4px;letter-spacing:.04em}
+  .ba .b .l{color:#b1a795}.ba .a .l{color:var(--green)}
+  .hint{text-align:center;font-size:13px;color:var(--muted);margin-top:18px}
+
+  .ctabar{margin:44px 0}
+  .ctabar .in{display:flex;align-items:center;justify-content:center;gap:22px;background:#fff;border:1.5px dashed #f1c9b4;border-radius:20px;padding:20px 26px;flex-wrap:wrap;text-align:center}
+  .ctabar .in p{font-weight:800;font-size:17px}.ctabar .in .s{font-size:13px;color:var(--muted);font-weight:600}
+
+  .diff{background:linear-gradient(180deg,#fff,#fbf3ec)}
+  .diff-row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+  .diff .d{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 24px;min-width:230px;text-align:center}
+  .diff .d .big{font-size:20px;font-weight:900;color:var(--coral-d)}.diff .d p{font-size:13px;color:#6a6258;margin-top:4px}
+
+  .cta{background:linear-gradient(135deg,var(--coral),var(--coral-d));color:#fff;border-radius:28px;padding:44px 28px;text-align:center}
+  .cta h2{font-size:29px;font-weight:900;letter-spacing:-.02em}
+  .cta p{margin-top:9px;opacity:.95;font-size:15px}
+  .survey{max-width:540px;margin:22px auto 0;background:rgba(255,255,255,.14);border-radius:18px;padding:20px}
+  .srow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+  .survey select,.survey input{width:100%;border:none;border-radius:11px;padding:13px 14px;font-size:14.5px;font-family:inherit;background:#fff;color:var(--ink)}
+  .survey .full{grid-column:1/-1}
+  .survey button{width:100%;background:#23201c;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:800;font-size:16px;cursor:pointer;margin-top:4px}
+  .cta .small{font-size:12px;opacity:.85;margin-top:12px}
+
+  .faq details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 18px;margin-bottom:10px}
+  .faq summary{font-weight:800;font-size:15.5px;padding:14px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .faq summary::after{content:"+";color:var(--coral);font-size:22px}.faq details[open] summary::after{content:"−"}
+  .faq p{padding:0 0 16px;color:#5d564d;font-size:14.5px}
+
+  footer{padding:40px 0;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+  /* countdown */
+  .cdown{margin:8px 0 0}
+  .cdown .in2{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,#fff3ec,#ffe6d8);border:1px solid #f6d6c4;border-radius:18px;padding:16px 22px}
+  .cdown .lab2{font-weight:800;color:var(--coral-d);font-size:15px}
+  .cdt{display:flex;gap:8px}
+  .cdt b{background:#fff;border:1px solid #f1c9b4;border-radius:10px;min-width:56px;padding:6px 4px;font-size:21px;font-weight:900;color:var(--coral-d);display:flex;flex-direction:column;align-items:center;line-height:1.05}
+  .cdt b span{font-size:9px;font-weight:700;color:var(--muted)}
+  .cdown .bonus{font-size:13px;color:#7a5c00;font-weight:700}
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;text-align:center}
+  .step .no{width:32px;height:32px;border-radius:50%;background:var(--coral);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+  .step .em{font-size:30px;margin-bottom:6px}.step h3{font-size:17px;margin-bottom:5px}.step p{font-size:13.5px;color:#6a6258}
+  /* timeline */
+  .tl{max-width:600px;margin:0 auto;position:relative;padding-left:30px}
+  .tl::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:#f0d9c6}
+  .tlrow{position:relative;margin-bottom:14px}
+  .tlrow::before{content:"";position:absolute;left:-29px;top:4px;width:13px;height:13px;border-radius:50%;background:var(--coral);border:3px solid var(--cream)}
+  .tlrow .tm{font-weight:900;color:var(--coral-d);font-size:13px}
+  .tlrow .tc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 15px;margin-top:4px;font-size:14px}
+  /* compare */
+  .cmp{overflow-x:auto}
+  .cmp table{width:100%;border-collapse:separate;border-spacing:0;min-width:560px}
+  .cmp th,.cmp td{padding:13px 12px;text-align:center;font-size:14px;border-bottom:1px solid var(--line)}
+  .cmp th:first-child,.cmp td:first-child{text-align:left;font-weight:700;color:#4a4439}
+  .cmp thead th{font-weight:800;font-size:13.5px;color:var(--muted)}
+  .cmp .mecol{background:#fff6f0}
+  .cmp thead .mecol{color:var(--coral-d);font-weight:900;border-top:2px solid var(--coral);border-left:2px solid var(--coral);border-right:2px solid var(--coral);border-radius:12px 12px 0 0}
+  .cmp tbody .mecol{border-left:2px solid var(--coral);border-right:2px solid var(--coral)}
+  .cmp tbody tr:last-child .mecol{border-bottom:2px solid var(--coral);border-radius:0 0 12px 12px}
+  .cmp .o{color:var(--green-d);font-weight:900;font-size:17px}.cmp .x{color:#c9bdab;font-weight:800}
+  /* pricing */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:740px;margin:0 auto}
+  .plan{border-radius:20px;padding:26px;border:1px solid var(--line);background:#fff}
+  .plan.pro{background:linear-gradient(135deg,var(--coral),var(--coral-d));color:#fff;border:none;position:relative;box-shadow:0 14px 30px rgba(232,106,53,.3)}
+  .plan .pn{font-weight:800;font-size:15px}.plan .pp{font-size:30px;font-weight:900;margin:6px 0;letter-spacing:-.02em}.plan .pp small{font-size:14px;font-weight:700}
+  .plan ul{list-style:none;margin-top:10px}.plan li{font-size:13.5px;padding:6px 0;display:flex;gap:8px}.plan li::before{content:"✓";font-weight:900}
+  .plan.free li::before{color:var(--green)}
+  .plan .badge{position:absolute;top:-12px;right:18px;background:#23201c;color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border-radius:999px}
+  /* fit */
+  .fit{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:820px;margin:0 auto}
+  .fit .col{border-radius:18px;padding:24px}.fit .col.no{background:#f4eee2}.fit .col.yes{background:#eaf6ef;border:1px solid #cfe9da}
+  .fit h3{font-size:16px;margin-bottom:10px}.fit ul{list-style:none}.fit li{font-size:13.5px;margin-bottom:7px;display:flex;gap:8px}
+  .fit .no li::before{content:"–";color:#b1a795;font-weight:900}.fit .yes li::before{content:"○";color:var(--green-d);font-weight:900}
+  /* story */
+  .story{max-width:680px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:32px}
+  .story .q{font-size:21px;font-weight:900;line-height:1.5;letter-spacing:-.01em}
+  .story p{margin-top:13px;color:#5d564d;font-size:15px}
+  .story .sign{margin-top:18px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-weight:700}
+  .story .sign img{width:34px;height:34px;border-radius:9px}
+  /* interactive panel: image LEFT, text RIGHT */
+  .panel .ph{order:-1}
+  /* free-first pricing */
+  .freecard{max-width:660px;margin:0 auto;background:linear-gradient(135deg,#eaf6ef,#f4faf6);border:1px solid #cfe9da;border-radius:22px;padding:30px;text-align:center}
+  .freecard .ftitle{font-weight:900;font-size:18px;color:var(--green-d)}
+  .fgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:16px 0}
+  .fgrid span{background:#fff;border:1px solid #cfe9da;border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;color:#3a5e4e}
+  .fnote{font-size:13px;color:#6a6258;line-height:1.75;margin-top:6px}.fnote b{color:var(--coral-d)}
+  .fit .punch{margin-top:12px;font-size:13px;font-weight:800;color:var(--coral-d)}
+  @media(max-width:860px){.steps,.fit{grid-template-columns:1fr}}
+  @media(max-width:680px){.panel{grid-template-columns:1fr;gap:24px}.panel .txt{order:1;text-align:center}.panel .ph{order:2}}
+
+  @media(max-width:860px){
+    .hero-grid{grid-template-columns:1fr;gap:14px}
+    .hero h1{font-size:35px}
+    .hero-phones{transform:scale(.82);min-height:500px}
+    .pain{grid-template-columns:1fr 1fr;gap:10px}
+    .pain .p h3{font-size:13.5px}
+    .ba{text-align:left}
+    .sec-head h2,.cta h2{font-size:24px}
+    .diff-row .d{min-width:0;flex:1 1 100%}
+    .srow{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header><div class="wrap nav">
+  <div class="brand"><img src="icon-192.png" alt="Mietta"/>Mietta <span class="kana">ミエッタ</span></div>
+  <a href="#waitlist" class="btn" style="padding:11px 22px;font-size:15px">先行登録</a>
+</div></header>
+
+<!-- HERO (3 phones) -->
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <span class="eyebrow">Mietta（ミエッタ）・ 7/15リリース予定</span>
+    <h1 style="margin-top:18px">夫婦の家計、<br><span class="hl">ちゃんと見てますか。</span></h1>
+    <p class="sub">家計・カレンダー・やりたいこと・将来のお金まで。<br>2人の暮らしが「見えた」に変わる。広告は一切なし。</p>
+    <div class="cta-row">
+      <a href="#waitlist" class="btn lg">先行登録する（無料）</a>
+      <span class="note">登録した方に、公開初日に<br>いちばん早くお知らせします。</span>
+    </div>
+    <div class="trust"><span><i class="ic">✓</i>広告ゼロ</span><span><i class="ic">✓</i>2人でリアルタイム共有</span><span><i class="ic">✓</i>作った夫婦が毎日使用</span></div>
+  </div>
+  <div class="hero-phones">
+    <div class="phone pL"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ライフプラン</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="c chart"><div class="cap">20年後の予想貯蓄</div><div class="amt">¥38,400,000</div>
+          <svg viewBox="0 0 250 88" style="width:100%;margin-top:8px"><defs><linearGradient id="g0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D9170" stop-opacity=".35"/><stop offset="1" stop-color="#3D9170" stop-opacity="0"/></linearGradient></defs><path d="M0 80 C55 74 85 56 125 42 C168 26 205 15 250 7 L250 88 L0 88 Z" fill="url(#g0)"/><path d="M0 80 C55 74 85 56 125 42 C168 26 205 15 250 7" fill="none" stroke="#3D9170" stroke-width="3"/></svg></div>
+        <div class="c"><div class="row"><span class="lab">月の貯蓄ペース</span><span style="font-weight:900;color:var(--green-d)">¥160,000</span></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti on"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+    <div class="phone pR"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">カレンダー</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+      <div class="app-body">
+        <div class="c" style="padding:11px"><div class="cal"><d>日</d><d>月</d><d>火</d><d>水</d><d>木</d><d>金</d><d>土</d><s>1</s><s>2</s><s class="gr">3</s><s>4</s><s>5</s><s class="ev">6</s><s>7</s><s>8</s><s>9</s><s>10</s><s class="ev">11</s><s>12</s><s>13</s><s>14</s></div></div>
+        <div class="evlist"><div class="ev"><span class="e-ic">🎉</span><div><div class="e-t">結婚記念日ディナー</div><div class="e-m">6/6 ・ 19:00</div></div></div><div class="ev"><span class="e-ic">💴</span><div><div class="e-t">家賃 引き落とし</div><div class="e-m">6/3 ・ ¥98,000</div></div></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti on"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+    <div class="phone p1"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">2026年6月</div></div>
+      <div class="app-body">
+        <div class="c"><div class="row"><span class="lab">今月の支出</span><span class="pill" style="background:#fdeee6;color:var(--coral-d)">食費・固定費ほか</span></div><div class="big">¥182,400</div></div>
+        <div class="c"><div class="lab">今月の収入</div><div class="big">¥520,000</div></div>
+        <div class="c green-c"><span class="lab">残り（貯金できる分）</span><div class="big">¥337,600</div><div class="mini"><span>収入 − 支出</span><span style="font-weight:800;color:var(--green-d)">貯蓄率 65%</span></div></div>
+        <div class="c lav"><div class="row"><div style="display:flex;gap:9px;align-items:center"><span style="font-size:20px">🔮</span><div><div class="tt">ライフプラン・シミュレーター</div><div class="ss">将来の貯蓄を見える化</div></div></div><span style="color:#9a9ed6;font-size:18px">›</span></div></div>
+        <div class="c goal"><div class="row"><span style="font-weight:800;font-size:13px">🏖 家族旅行</span><span style="font-size:11px;color:var(--muted)">¥204,000 / ¥300,000</span></div><div class="bar"><i style="width:68%"></i></div></div>
+      </div>
+      <div class="tab"><div class="ti on"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+</div></section>
+
+<!-- countdown -->
+<div class="wrap cdown"><div class="in2">
+  <span class="lab2">🎉 7/15 App Storeリリースまで</span>
+  <div class="cdt"><b id="cd-d">--<span>日</span></b><b id="cd-h">--<span>時間</span></b><b id="cd-m">--<span>分</span></b></div>
+  <span class="bonus">先行登録の方に、特別なお知らせを準備中。</span>
+</div></div>
+
+<!-- inline CTA 1 -->
+<div class="wrap ctabar"><div class="in"><div><p>Miettaは7/15リリース。</p><div class="s">公開を見逃さないよう、先に登録だけ済ませておきましょう。</div></div><a href="#waitlist" class="btn">先行登録する（無料）</a></div></div>
+
+<!-- PROBLEM: real talk, 3col, visual -->
+<section style="background:#fff"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">2人の、あるある</span><h2 style="margin-top:14px">こんな会話、ありませんか。</h2></div>
+  <div class="pain">
+    <div class="p"><span class="em">💸</span><h3>「今月、なんでこんなにお金ないの？」</h3><span>何に使ったか、思い出せない。</span></div>
+    <div class="p"><span class="em">🍜</span><h3>「あのお店行きたいねって言ってたの、忘れてた」</h3><span>2人の“やりたい”が、流れていく。</span></div>
+    <div class="p"><span class="em">💬</span><h3>「あれ、やってくれた？」</h3><span>LINEで送ったタスクが、もう見当たらない。</span></div>
+    <div class="p"><span class="em">🔗</span><h3>「あのサイトのログイン、どこ行った？」</h3><span>大事な情報を、毎回さがしてる。</span></div>
+    <div class="p"><div class="appsrow"><b>📅</b><b>💰</b><b>✅</b><b>📝</b><b>🔗</b></div><h3>予定・家計・タスク…アプリがバラバラ</h3><span>行き来するうちに、どれも続かない。</span></div>
+    <div class="p"><span class="em">🔮</span><h3>「老後って、いくらあれば大丈夫…？」</h3><span>不安だけど、2人で話せていない。</span></div>
+  </div>
+</div></section>
+
+<!-- INTERACTIVE: features -->
+<section id="features"><div class="wrap">
+  <div class="sec-head"><h2>Miettaを、ちょっとさわってみる。</h2><p>気になる機能をタップ。実際の画面が出てきます。</p></div>
+  <div class="tabs">
+    <button class="tg on" data-tab="feat" onclick="pick('feat',0)">💰 家計</button>
+    <button class="tg" data-tab="feat" onclick="pick('feat',1)">📅 予定</button>
+    <button class="tg" data-tab="feat" onclick="pick('feat',2)">✅ タスク</button>
+    <button class="tg" data-tab="feat" onclick="pick('feat',3)">✨ やりたい</button>
+    <button class="tg" data-tab="feat" onclick="pick('feat',4)">🔮 ライフプラン</button>
+  </div>
+
+  <!-- panel 0 家計 -->
+  <div class="panel" data-panel="feat">
+    <div class="txt"><h3>あといくら使える？が、ひと目で。</h3><p>支出はワンタップで簡単登録。赤字になりそうな月は、事前に教えてくれます。</p><ul><li>レシート撮影も口座連携も不要</li><li>固定費・変動費を自動で振り分け</li><li>2人の入力がリアルタイムで合算</li></ul><span class="tag">かんたん登録・自動で振り分け</span></div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+      <div class="app-body">
+        <div class="c warn-c"><div class="row"><span style="font-weight:800;font-size:13px;color:#b4530a">⚠️ このままだと今月 −¥12,000</span></div><div class="mini" style="color:#b4530a"><span>大きな支出が続いています。見直しましょう</span></div></div>
+        <div class="c"><div class="lab">今月の支出</div><div class="big">¥182,400</div><div class="chipline"><span class="chip">🏠 家賃 ¥98,000</span><span class="chip">🛒 食費 ¥41,200</span><span class="chip">💡 光熱費 ¥18,500</span></div></div>
+        <div class="c green-c"><span class="lab">残り（貯金できる分）</span><div class="big">¥337,600</div></div>
+      </div>
+      <div class="tab"><div class="ti on"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- panel 1 予定 -->
+  <div class="panel" data-panel="feat" style="display:none">
+    <div class="txt"><h3>予定も支払い日も、2人で共有。</h3><p>記念日も、家賃の引き落としも。入力した瞬間、相手のカレンダーにも反映されます。</p><ul><li>記念日や誕生日も2人で共有</li><li>家賃の引き落とし日も、もう忘れない</li><li>Googleカレンダーにも追加できる</li></ul><span class="tag">記念日・支払い・予定をまとめて</span></div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">カレンダー</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+      <div class="app-body">
+        <div class="c" style="padding:11px"><div class="cal"><d>日</d><d>月</d><d>火</d><d>水</d><d>木</d><d>金</d><d>土</d><s>1</s><s>2</s><s class="gr">3</s><s>4</s><s>5</s><s class="ev">6</s><s>7</s><s>8</s><s>9</s><s>10</s><s class="ev">11</s><s>12</s><s>13</s><s>14</s></div></div>
+        <div class="evlist"><div class="ev"><span class="e-ic">🎉</span><div><div class="e-t">結婚記念日ディナー</div><div class="e-m">6/6 ・ 19:00</div></div></div><div class="ev"><span class="e-ic">💴</span><div><div class="e-t">家賃 引き落とし</div><div class="e-m">6/3 ・ ¥98,000</div></div></div><div class="ev"><span class="e-ic">📅</span><div><div class="e-t">2人で旅行の計画</div><div class="e-m">6/11</div></div></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti on"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- panel 2 タスク -->
+  <div class="panel" data-panel="feat" style="display:none">
+    <div class="txt"><h3>大きな「やること」を、サクサク。</h3><p>結婚式も引っ越しも、大→中→小に分解。担当を決めて、メモも残せる。「言った／言わない」がなくなります。</p><ul><li>大きな準備を大→中→小に分解</li><li>夫・妻の担当をひと目で色分け</li><li>各タスクに持ち物やURLのメモも</li></ul><span class="tag">大→中→小・担当・メモ</span></div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">タスク</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="proj"><span class="tag">大</span>結婚式の準備</div>
+        <div class="midl">中｜招待状の準備</div>
+        <div class="tk sub"><span class="ck on">✓</span><span class="nm done">招待者リストを作る</span><span class="who w">妻</span></div>
+        <div class="tk sub"><span class="ck"></span><span class="nm">招待者へLINEを送る</span><span class="who h">夫</span></div>
+        <div class="midl">中｜前撮り</div>
+        <div class="tk sub"><span class="ck"></span><span class="nm">衣装を選ぶ 📝メモあり</span><span class="who w">妻</span></div>
+        <div class="tk sub"><span class="ck"></span><span class="nm">スタジオを予約</span><span class="who h">夫</span></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti on"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- panel 3 やりたい -->
+  <div class="panel" data-panel="feat" style="display:none">
+    <div class="txt"><h3>「いつか行きたいね」を、叶う形に。</h3><p>いつまでに・いくらあれば行けるかが見えて、行きたい旅館まで2人で貯めておける。今のペースなら、いつ叶うかも。</p><ul><li>行きたい場所に目標金額＆積立を設定</li><li>買ったら、そのまま家計に記録</li><li>サイトのURLやログインもメモに残せる</li></ul><span class="tag">行きたい場所・欲しいもの・メモ</span></div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">やりたいこと</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="c goal" style="background:#eaf6ef;border-color:#cfe9da"><div class="row"><span style="font-weight:800;font-size:13px">🏝 沖縄旅行</span><span class="pill" style="background:#fff;color:var(--green-d)">あと3ヶ月で達成</span></div><div class="mini"><span>¥204,000 / ¥300,000</span><span style="color:var(--green-d);font-weight:800">月¥32,000ペース</span></div><div class="bar"><i style="width:68%"></i></div></div>
+        <div class="fold"><div class="fi">🗺</div><div style="flex:1"><div class="fn">行きたい場所</div><div class="chipline"><span class="chip">沖縄の旅館🔖</span><span class="chip">箱根 温泉</span></div></div></div>
+        <div class="fold"><div class="fi">🎁</div><div style="flex:1"><div class="fn">欲しいもの</div><div class="fc">ソファ ¥120,000 ・ 目標まで 68%</div></div></div>
+        <div class="memo"><h4>📝 買い物リスト・メモ</h4><p>牛乳 / たまご / 洗剤
+Wi-Fi・サイトのURLもここに</p></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti on"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- panel 4 ライフプラン -->
+  <div class="panel" data-panel="feat" style="display:none">
+    <div class="txt"><h3>このペースで過ごしたら、10年後どうなる？</h3><p>将来いくら貯まるかを自動で試算。「こうなりたい」から逆算して、毎月いくら貯めればいいかまで分かります。</p><ul><li>5年後・10年後・20年後を自動で試算</li><li>「こうなりたい」から毎月の貯金額を逆算</li><li>教育費・老後も含めて見通せる</li></ul><span class="tag">2人で見るから、未来が動き出す</span></div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ライフプラン</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="c chart"><div class="cap">このまま過ごすと、20年後</div><div class="amt">¥38,400,000</div>
+          <svg viewBox="0 0 260 100" style="width:100%;margin-top:8px"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D9170" stop-opacity=".35"/><stop offset="1" stop-color="#3D9170" stop-opacity="0"/></linearGradient></defs><path d="M0 92 C60 85 90 64 130 48 C175 31 210 17 260 8 L260 100 L0 100 Z" fill="url(#g)"/><path d="M0 92 C60 85 90 64 130 48 C175 31 210 17 260 8" fill="none" stroke="#3D9170" stroke-width="3"/><path d="M0 92 C70 82 150 68 260 40" fill="none" stroke="#C4521F" stroke-width="2.4" stroke-dasharray="5 5"/></svg>
+          <div class="mini"><span>今</span><span>10年後</span><span>20年後</span></div></div>
+        <div class="c warn-c"><div class="tt" style="color:#b4530a;font-size:12.5px;font-weight:800">🎯 目標「マイホーム」まで</div><div class="mini" style="color:#b4530a"><span>達成するには</span><span style="font-weight:900">月 +¥30,000</span></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti on"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+  <div class="hint">👆 タブを切り替えて、ぜんぶの画面をのぞいてみてください</div>
+</div></section>
+
+<!-- STEPS -->
+<section style="background:#fff"><div class="wrap">
+  <div class="sec-head"><h2>3分で、2人のアプリに。</h2><p>むずかしい設定も、アカウント移行もありません。</p></div>
+  <div class="steps">
+    <div class="step"><div class="no">1</div><div class="em">✉️</div><h3>メールで登録</h3><p>メールアドレスとパスワードだけ。30秒で完了。</p></div>
+    <div class="step"><div class="no">2</div><div class="em">💌</div><h3>パートナーを招待</h3><p>招待コードを送るだけ。相手も登録すれば2人で共有。</p></div>
+    <div class="step"><div class="no">3</div><div class="em">✨</div><h3>一緒に使いはじめる</h3><p>その日から、家計も予定もリアルタイムで同期。</p></div>
+  </div>
+</div></section>
+
+<!-- inline CTA 2 -->
+<div class="wrap ctabar"><div class="in"><div><p>あとで探さなくて済むように。</p><div class="s">忘れないうちに、先行登録だけ済ませておきませんか。</div></div><a href="#waitlist" class="btn">先行登録する（無料）</a></div></div>
+
+<!-- INTERACTIVE: personas before/after -->
+<section style="background:#fff"><div class="wrap">
+  <div class="sec-head"><h2>あなたたちなら、どう使う？</h2><p>当てはまる2人をタップ。「今まで」と「Miettaなら」を見比べてください。</p></div>
+  <div class="tabs">
+    <button class="tg on" data-tab="per" onclick="pick('per',0)">💕 同棲カップル</button>
+    <button class="tg" data-tab="per" onclick="pick('per',1)">👫 共働き夫婦</button>
+    <button class="tg" data-tab="per" onclick="pick('per',2)">💍 これから結婚</button>
+    <button class="tg" data-tab="per" onclick="pick('per',3)">👶 子育て世帯</button>
+  </div>
+
+  <!-- p0 同棲 -->
+  <div class="panel" data-panel="per">
+    <div class="txt"><h3>「折半、どうしてる？」のモヤモヤをゼロに。</h3>
+      <div class="ba"><div class="b"><span class="l">今まで</span>「家賃は俺、食費は私」。どっちがいくら払ったか曖昧で、なんとなくモヤモヤ。</div><div class="a"><span class="l">Miettaなら</span>払った人・金額が記録されて、負担が一目瞭然。お金で揉めない関係に。</div></div>
+    </div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">家計</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+      <div class="app-body">
+        <div class="c green-c"><span class="lab">2人の負担、今のところ</span><div class="mini" style="margin-top:4px"><span style="font-weight:800;color:#3f63b5">夫 ¥96,400</span><span style="font-weight:800;color:#c2497e">妻 ¥86,000</span></div></div>
+        <div class="ev"><span class="e-ic">🛒</span><div style="flex:1"><div class="e-t">スーパー</div><div class="e-m">6/5 ・ ¥6,820</div></div><span class="who w">妻</span></div>
+        <div class="ev"><span class="e-ic">🏠</span><div style="flex:1"><div class="e-t">家賃</div><div class="e-m">6/3 ・ ¥98,000</div></div><span class="who h">夫</span></div>
+        <div class="ev"><span class="e-ic">🍜</span><div style="flex:1"><div class="e-t">外食デート</div><div class="e-m">6/8 ・ ¥5,400</div></div><span class="who h">夫</span></div>
+      </div>
+      <div class="tab"><div class="ti on"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- p1 共働き -->
+  <div class="panel" data-panel="per" style="display:none">
+    <div class="txt"><h3>口座が別々でも、世帯のお金は一画面。</h3>
+      <div class="ba"><div class="b"><span class="l">今まで</span>お互いの口座がバラバラで、世帯でいくら貯まっているのか誰も把握できていない。</div><div class="a"><span class="l">Miettaなら</span>2人の収支を合算して表示。世帯の貯蓄率がひと目で分かり、貯まるスピードが上がる。</div></div>
+    </div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+      <div class="app-body">
+        <div class="c green-c"><span class="lab">世帯の残り（貯金できる分）</span><div class="big">¥337,600</div><div class="mini"><span>夫 ¥290,000 ＋ 妻 ¥230,000</span><span style="font-weight:800;color:var(--green-d)">貯蓄率 65%</span></div></div>
+        <div class="c"><div class="row"><span class="lab">今月の収入（合算）</span><span style="font-weight:900">¥520,000</span></div></div>
+        <div class="c"><div class="row"><span class="lab">今月の支出（合算）</span><span style="font-weight:900">¥182,400</span></div></div>
+      </div>
+      <div class="tab"><div class="ti on"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- p2 結婚 -->
+  <div class="panel" data-panel="per" style="display:none">
+    <div class="txt"><h3>式も新生活も、抜け漏れなく準備。</h3>
+      <div class="ba"><div class="b"><span class="l">今まで</span>式・引っ越しのToDoがLINEで流れて、誰が何をやるか分からず抜け漏れ。</div><div class="a"><span class="l">Miettaなら</span>大→中→小タスクで分担、費用は積立ゴールで一緒に貯める。準備がワクワクに。</div></div>
+    </div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">タスク</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="proj"><span class="tag">大</span>結婚式の準備 ・ 4/9</div>
+        <div class="tk sub"><span class="ck on">✓</span><span class="nm done">式場を決める</span><span class="who w">妻</span></div>
+        <div class="tk sub"><span class="ck"></span><span class="nm">招待状を送る</span><span class="who h">夫</span></div>
+        <div class="c goal" style="margin-top:9px"><div class="row"><span style="font-weight:800;font-size:12.5px">💐 挙式費用</span><span style="font-size:11px;color:var(--muted)">¥620,000 / ¥1,000,000</span></div><div class="bar"><i style="width:62%"></i></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti on"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+
+  <!-- p3 子育て -->
+  <div class="panel" data-panel="per" style="display:none">
+    <div class="txt"><h3>教育費を含めた将来が、はっきり見える。</h3>
+      <div class="ba"><div class="b"><span class="l">今まで</span>教育費や老後が不安だけど、結局いくら必要なのか分からないまま先送り。</div><div class="a"><span class="l">Miettaなら</span>将来まで試算して、毎月いくら備えればいいかが明確に。早く始めるほどラクに。</div></div>
+    </div>
+    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+      <div class="app-hd"><div><div class="t">ライフプラン</div><div class="s">ふたりで同期中</div></div></div>
+      <div class="app-body">
+        <div class="c chart"><div class="cap">教育費・老後まで含めた試算</div><div class="amt">¥38,400,000</div>
+          <svg viewBox="0 0 240 80" style="width:100%;margin-top:6px"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D9170" stop-opacity=".3"/><stop offset="1" stop-color="#3D9170" stop-opacity="0"/></linearGradient></defs><path d="M0 72 C60 64 110 46 240 9 L240 80 L0 80 Z" fill="url(#g3)"/><path d="M0 72 C60 64 110 46 240 9" fill="none" stroke="#3D9170" stroke-width="3"/></svg></div>
+        <div class="c warn-c"><div class="mini" style="color:#b4530a"><span>安心のために、毎月</span><span style="font-weight:900">+¥30,000</span></div></div>
+      </div>
+      <div class="tab"><div class="ti"><b>🏠</b>ホーム</div><div class="ti"><b>✅</b>タスク</div><div class="ti"><b>📅</b>予定</div><div class="ti"><b>📁</b>共有</div><div class="ti on"><b>⚙️</b>設定</div></div>
+    </div></div></div>
+  </div>
+  </div>
+</div></section>
+
+<!-- TIMELINE -->
+<section><div class="wrap">
+  <div class="sec-head"><h2>こんな1日が、ふつうになる。</h2><p>会話しなくても、お互いの状況が分かる。</p></div>
+  <div class="tl">
+    <div class="tlrow"><div class="tm">7:30</div><div class="tc">出勤前。今日の予定とお互いの帰宅時間を、カレンダーでサッと確認。</div></div>
+    <div class="tlrow"><div class="tm">12:30</div><div class="tc">昼休み。ランチ代をワンタップで記録。ついでに週末の予定も追加して共有。</div></div>
+    <div class="tlrow"><div class="tm">18:30</div><div class="tc">帰り道。共有メモの買い物リストを見ながらスーパーへ。買ったものはそのまま支出に。</div></div>
+    <div class="tlrow"><div class="tm">22:00</div><div class="tc">寝る前。2人で今月の残りをチェック。来月の旅行費も、一緒に積み立て。</div></div>
+  </div>
+</div></section>
+
+<!-- STORY -->
+<section style="background:#fff"><div class="wrap">
+  <div class="story">
+    <div class="q">「自分たちが困っていたから、作りました。」</div>
+    <p>毎月の支出を共有したくてスプレッドシートを使っても、入力が続かない。家計アプリは広告だらけで、開く気にならない。気づけば“なんとなく”でお金を使っていました。</p>
+    <p>Miettaは、僕たち夫婦の実際の困りごとから生まれたアプリです。毎日2人で使いながら、毎週改善しています。広告ゼロにこだわったのは——お金と向き合うアプリに広告が出るのが、自分たちにとって気持ち悪かったから。ただ、それだけです。</p>
+    <div class="sign"><img src="icon-192.png" alt=""/>Mietta 開発チーム（夫婦で開発中）</div>
+  </div>
+</div></section>
+
+<!-- DIFF -->
+<section class="diff"><div class="wrap">
+  <div class="sec-head"><h2>なぜ、Miettaなのか。</h2></div>
+  <div class="diff-row">
+    <div class="d"><div class="big">広告ゼロ</div><p>うるさいバナーで気が散らない。将来と向き合う時間を、邪魔しません。</p></div>
+    <div class="d"><div class="big">2台でリアルタイム</div><p>あなたが入力した瞬間、相手の画面にも反映。連絡いらず。</p></div>
+    <div class="d"><div class="big">将来のお金まで</div><p>家計簿で終わらない。2人の10年後まで見通せる唯一のアプリ。</p></div>
+  </div>
+</div></section>
+
+<!-- COMPARE -->
+<section style="background:#fff"><div class="wrap">
+  <div class="sec-head"><h2>家計アプリとも、カレンダーアプリとも違う。</h2><p>“全部まとめて見える”のが、Miettaの価値です。</p></div>
+  <div class="cmp"><table>
+    <thead><tr><th></th><th class="mecol">Mietta</th><th>家計簿アプリ</th><th>カレンダー/タスク</th></tr></thead>
+    <tbody>
+      <tr><td>家計の共有</td><td class="mecol"><span class="o">○</span></td><td><span class="o">○</span></td><td><span class="x">×</span></td></tr>
+      <tr><td>予定・カレンダー</td><td class="mecol"><span class="o">○</span></td><td><span class="x">×</span></td><td><span class="o">○</span></td></tr>
+      <tr><td>タスク・やりたいこと</td><td class="mecol"><span class="o">○</span></td><td><span class="x">×</span></td><td><span class="o">○</span></td></tr>
+      <tr><td>将来のお金の試算</td><td class="mecol"><span class="o">○</span></td><td><span class="x">×</span></td><td><span class="x">×</span></td></tr>
+      <tr><td>2人でリアルタイム共有</td><td class="mecol"><span class="o">○</span></td><td>△</td><td>△</td></tr>
+      <tr><td>広告なし</td><td class="mecol"><span class="o">○</span></td><td><span class="x">×</span></td><td><span class="x">×</span></td></tr>
+    </tbody>
+  </table></div>
+  <p style="text-align:center;margin-top:16px;color:#6a6258;font-size:14px">家計で管理、カレンダーで調整、メモで共有——その3つを、ひとつに。</p>
+</div></section>
+
+<!-- FIT (light) -->
+<section><div class="wrap">
+  <div class="sec-head"><h2>Miettaの、向き・不向き。</h2></div>
+  <div class="fit">
+    <div class="col no"><h3>あまり向いていないかも</h3><ul><li>1人でサッと家計を管理したい人</li><li>パートナーと一緒に使う予定がない人</li><li>すでにお金の管理がうまくいっている2人</li></ul></div>
+    <div class="col yes"><h3>こんな2人には、自信を持って</h3><ul><li>お金の話を、もっと気軽にしたい</li><li>家計だけでなく将来も一緒に考えたい</li><li>広告のないクリーンなアプリがいい</li></ul></div>
+  </div>
+</div></section>
+
+<!-- PRICING (free-first) -->
+<section style="background:#fff"><div class="wrap">
+  <div class="sec-head"><h2>まずは、ぜんぶ無料で。</h2><p>家計も予定もタスクも、2人で無料で使えます。</p></div>
+  <div class="freecard">
+    <div class="ftitle">🎉 無料でできること</div>
+    <div class="fgrid"><span>💰 家計の共有</span><span>📅 カレンダー</span><span>✅ タスク</span><span>✨ やりたいこと</span><span>📝 共有メモ</span><span>👫 2人でリアルタイム同期</span></div>
+    <div class="fnote">※ <b>一部の機能のみ有料</b>（ペアで月¥980）。それ以外は、ずっと無料で使えます。</div>
+  </div>
+</div></section>
+
+<!-- WAITLIST survey -->
+<section id="waitlist"><div class="wrap">
+  <div class="cta">
+    <h2>いちばん早く、使ってみませんか。</h2>
+    <p>30秒のアンケートで先行登録。公開初日にお知らせします。</p>
+    <!-- ▼ Formspreeのエンドポイントに置き換え（action="https://formspree.io/f/xxxxxx"） -->
+    <form class="survey" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+      <div class="srow">
+        <select name="gender"><option value="" disabled selected>性別</option><option>男性</option><option>女性</option><option>その他・回答しない</option></select>
+        <select name="age"><option value="" disabled selected>年代</option><option>20代</option><option>30代</option><option>40代</option><option>50代以上</option></select>
+        <select name="status"><option value="" disabled selected>今の状況</option><option>交際中</option><option>同棲中</option><option>結婚している</option><option>独身</option></select>
+        <select name="type"><option value="" disabled selected>使い方</option><option>夫婦・パートナーと使いたい</option><option>まず一人で試したい</option><option>まだ検討中</option></select>
+      </div>
+      <input class="full" type="email" name="email" placeholder="メールアドレス" required />
+      <button type="submit">先行登録する（無料）</button>
+    </form>
+    <div class="small">メールはリリースのお知らせにのみ使用します。いつでも解除できます。</div>
+  </div>
+</div></section>
+
+<!-- FAQ -->
+<section class="faq" style="background:#fff"><div class="wrap" style="max-width:720px">
+  <div class="sec-head"><h2>よくある質問</h2></div>
+  <details open><summary>夫婦2人で同期できますか？</summary><p>はい。片方が招待コードを送るだけで、2人の家計・予定・タスクがリアルタイムに共有されます。入力した瞬間に相手の画面へ反映されます。</p></details>
+  <details><summary>パートナーが乗り気じゃなくても使えますか？</summary><p>まずは一人で使い始めて、相手をあとから招待することもできます。「便利だよ」と見せれば、自然と2人で使うようになります。</p></details>
+  <details><summary>入力って面倒じゃないですか？</summary><p>支出はワンタップで数秒。レシート撮影や口座連携は不要です。家計簿が苦手な方でも続けやすい設計です。</p></details>
+  <details><summary>料金はかかりますか？</summary><p>基本機能はずっと無料です。将来のお金を試算する「ライフプラン・シミュレーター」などは、ペアで月額¥980の有料プランを予定しています。</p></details>
+  <details><summary>広告は表示されますか？</summary><p>いっさい表示しません。お金や将来と向き合う時間を、広告で邪魔したくないからです。</p></details>
+  <details><summary>機種変更してもデータは残りますか？</summary><p>はい。データはアカウントに紐づくので、新しい端末でもログインすればそのまま使えます。</p></details>
+  <details><summary>Androidでも使えますか？</summary><p>まずiPhoneでリリースし、Android版も順次対応予定です。先行登録いただくと対応時にお知らせします。</p></details>
+</div></section>
+
+<footer>
+  <div class="brand" style="justify-content:center;margin-bottom:10px"><img src="icon-192.png" alt=""/>Mietta <span class="kana">ミエッタ</span></div>
+  夫婦・カップルのための生活管理アプリ ・ 2026 ・ 7/15リリース予定
+</footer>
+
+<script>
+  function pick(group,i){
+    document.querySelectorAll('[data-tab="'+group+'"]').forEach(function(t,n){t.classList.toggle('on',n===i);});
+    document.querySelectorAll('[data-panel="'+group+'"]').forEach(function(p,n){p.style.display=(n===i)?'grid':'none';});
+  }
+  (function(){
+    var target=new Date('2026-07-15T00:00:00+09:00').getTime();
+    function set(id,v,u){var el=document.getElementById(id);if(el)el.innerHTML=v+'<span>'+u+'</span>';}
+    function upd(){var d=Math.max(0,target-new Date().getTime());
+      set('cd-d',Math.floor(d/86400000),'日');set('cd-h',Math.floor(d%86400000/3600000),'時間');set('cd-m',Math.floor(d%3600000/60000),'分');}
+    upd();setInterval(upd,60000);
+  })();
+</script>
+</body>
+</html>
