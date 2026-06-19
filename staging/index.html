@@ -489,7 +489,7 @@ function goalPace(g){
 }
 /* ライフフェーズ（貯めどき・使いどき）— FP定説ベース。kind=save:貯めフェーズ / spend:使いフェーズ */
 const PHASES=[
-  {key:"newlywed",label:"新婚期",kind:"save",guidance:"二人の収入が高く、人生でいちばん貯めやすい時期。次の目的に向けて種をまこう。",next:["goal_honeymoon","goal_emergency","goal_birth","goal_housing"]},
+  {key:"newlywed",label:"新婚期",kind:"save",guidance:"二人の収入が高く、人生でいちばん貯めやすい時期。次のゴールに向けて種をまこう。",next:["goal_honeymoon","goal_emergency","goal_birth","goal_housing"]},
   {key:"baby",label:"子育て前期（乳幼児）",kind:"save",guidance:"教育費がまだ軽い「貯めどき」。将来の使う時期に備えて貯めるチャンス。",next:["goal_birth","goal_edu","goal_car","goal_housing"]},
   {key:"edu",label:"教育費期",kind:"spend",guidance:"支出のピーク。貯蓄ペースを守りながら乗り切る時期。",next:["goal_edu","goal_emergency"]},
   {key:"preretire",label:"定年前（子の独立後）",kind:"save",guidance:"教育費を終えた最後の貯めどき。老後とご褒美に備えよう。",next:["goal_retirement","goal_travel"]}
@@ -767,7 +767,7 @@ const App = {
     this.updateFab();
     if(this.tab==="dashboard")this.animateDashNums();
   },
-  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ 目的";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
+  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
   dot(plain){
@@ -942,13 +942,13 @@ const App = {
       '<span class="link" style="white-space:nowrap" onclick="App.openPhase()">変更</span></div>';
     let body=phaseBanner;
     if(allg.length===0){
-      body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>二人の目的を決めて、航路をつくりましょう</div>'+
-        '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 最初の目的を決める</button></div>';
+      body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>二人のゴールを決めて、航路をつくりましょう</div>'+
+        '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 最初のゴールを決める</button></div>';
     }else{
       justWon.forEach(g=>{
         body+='<div style="background:var(--color-secondary-50);border:1.5px solid var(--color-secondary-400);border-radius:12px;padding:13px 14px;margin-bottom:12px">'+
           '<div class="row"><span style="font-weight:700;color:var(--color-secondary-600);display:flex;align-items:center;gap:7px">'+ic('trophy',18)+'達成！'+esc(g.label)+'</span><span class="num" style="font-weight:700">'+yen(goalAmt(g))+'</span></div>'+
-          '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.achieveGoal(\''+g.id+'\')">'+ic('sparkle',15)+' 達成を祝って、次の目的へ</button></div>';
+          '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.achieveGoal(\''+g.id+'\')">'+ic('sparkle',15)+' 達成を祝って、次のゴールへ</button></div>';
       });
       const hero=active[0];
       if(hero){
@@ -967,7 +967,7 @@ const App = {
         body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic('check',18)+'</span><div class="main"><div class="ttl" style="color:var(--color-text-secondary);text-decoration:line-through">'+esc(g.label)+'</div></div><span class="chip chip-both" style="white-space:nowrap">達成</span></div>';
       });
     }
-    const goalsCard='<div class="section-title">ふたりの目標<span class="link" onclick="App.openGoal()">＋ 目的を追加</span></div><div class="card">'+body+'</div>';
+    const goalsCard='<div class="section-title">ふたりのゴール<span class="link" onclick="App.openGoal()">＋ ゴールを追加</span></div><div class="card">'+body+'</div>';
 
     // tasks short
     const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
@@ -1832,7 +1832,7 @@ const App = {
     this._formItems=it&&it.items?JSON.parse(JSON.stringify(it.items)):[];
     const t0=findCat("goalType",type0);
     const tgt0=it?it.target:(t0.bench||"");
-    const h='<h3>'+(it?"目的を編集":"目的を追加")+'</h3>'+
+    const h='<h3>'+(it?"ゴールを編集":"ゴールを追加")+'</h3>'+
       this.field("種類",'<select id="f-type" onchange="App.gtypeChange(this)">'+this.opts("goalType",type0)+'</select>')+
       '<div id="f-note" class="meta" style="margin:-6px 0 12px;line-height:1.5">'+(t0.note?esc(t0.note):"")+'</div>'+
       this.field("名前",'<input id="f-label" value="'+esc(it?it.label:t0.label)+'">')+
@@ -1855,12 +1855,12 @@ const App = {
   },
   goalItemsEditorHtml(){
     const arr=this._formItems||[];let h='';
+    if(GOAL_TEMPLATES[this.curGoalType])h+='<button type="button" class="btn btn-primary btn-sm btn-block ttl-ico" style="justify-content:center;margin-bottom:10px" onclick="App.applyGoalTemplate()">'+ic('sparkle',14)+' 平均の内訳を入れる</button>';
     arr.forEach((it,i)=>{h+='<div class="row" style="gap:6px;margin-bottom:6px">'+
       '<input value="'+esc(it.label||"")+'" oninput="App.editFormItemLabel('+i+',this.value)" placeholder="項目名" style="flex:1;min-width:0">'+
       '<input value="'+(it.amount==null||it.amount===""?"":it.amount)+'" inputmode="numeric" oninput="App.editFormItemAmount('+i+',this.value)" placeholder="0" style="width:92px;flex-shrink:0;text-align:right">'+
       '<button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;min-height:42px;padding:0 9px" onclick="App.delFormItem('+i+')">'+ic('trash',16)+'</button></div>';});
     h+='<button type="button" class="btn btn-sec btn-sm btn-block ttl-ico" style="justify-content:center;margin-top:2px" onclick="App.addFormItem()">＋ 項目を追加</button>';
-    if(GOAL_TEMPLATES[this.curGoalType])h+='<button type="button" class="btn btn-ghost btn-sm btn-block ttl-ico" style="justify-content:center;margin-top:6px" onclick="App.applyGoalTemplate()">'+ic('sparkle',14)+' 平均の内訳を入れる</button>';
     return h;
   },
   _renderGoalItems(){const el=document.getElementById("f-goal-items");if(el)el.innerHTML=this.goalItemsEditorHtml();this.updateGoalTotal();},
@@ -1880,7 +1880,7 @@ const App = {
   editFormItemLabel(i,v){const a=this._formItems;if(a&&a[i])a[i].label=v;},
   editFormItemAmount(i,v){const a=this._formItems;if(a&&a[i]){a[i].amount=parseInt(String(v).replace(/[^0-9-]/g,""),10)||0;this.updateGoalTotal();}},
   delFormItem(i){const a=this._formItems;if(a){a.splice(i,1);this._renderGoalItems();}},
-  applyGoalTemplate(){const t=GOAL_TEMPLATES[this.curGoalType];if(t){this._formItems=t.map(x=>({label:x.label,amount:x.amount}));this._renderGoalItems();this.toast("平均の内訳を入れました");}},
+  applyGoalTemplate(){const t=GOAL_TEMPLATES[this.curGoalType];if(!t)return;const hasItems=(this._formItems&&this._formItems.length);const manual=!hasItems&&numv("f-target")>0;if((hasItems||manual)&&!confirm("入力中の内訳・目標額を、平均の内訳で置き換えますか？"))return;this._formItems=t.map(x=>({label:x.label,amount:x.amount}));this._renderGoalItems();this.toast("平均の内訳を入れました");},
   gtypeChange(sel){
     this.curGoalType=sel.value;
     const t=findCat("goalType",sel.value);
@@ -1891,10 +1891,10 @@ const App = {
   },
   glabel(typeId){const t=findCat("goalType",typeId);return t?t.label:"";},
   addToGoal(id,amt){const g=this.state.goals.find(x=>x.id===id);if(g){const T=goalAmt(g);const before=(T>0&&(g.current||0)>=T);g.current=(+g.current||0)+amt;const el=document.getElementById("f-current");if(el)el.value=cf(g.current);this.save();this.updateGoalTotal();const after=(T>0&&g.current>=T);this.toast(!before&&after?"目標達成！おめでとう":yen(amt)+"を積立");}},
-  // ---- 航路: フェーズと「次の目的」 ----
+  // ---- 航路: フェーズと「次のゴール」 ----
   openPhase(){
     const cur=this.state.settings.phase;
-    let h='<h3>いまの時期は？</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">人生のフェーズに合わせて、Miettaが「今は貯めどき／使いどき」とおすすめの目的を案内します。</div>';
+    let h='<h3>いまの時期は？</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">人生のフェーズに合わせて、Miettaが「今は貯めどき／使いどき」とおすすめのゴールを案内します。</div>';
     PHASES.forEach(p=>{
       h+='<div class="li" onclick="App.setPhase(\''+p.key+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-secondary-600)">'+(p.kind==="save"?ic('coins',18):ic('wallet',18))+'</span><div class="main"><div class="ttl">'+esc(p.label)+(p.key===cur?' <span class="chip chip-both">今</span>':'')+'</div><div class="meta" style="line-height:1.5">'+(p.kind==="save"?"貯めフェーズ":"使いフェーズ")+'・'+esc(p.guidance)+'</div></div></div>';
     });
@@ -1912,11 +1912,11 @@ const App = {
     const ph=findPhase(this.state.settings.phase);
     const have=this.state.goals.filter(g=>!(goalAmt(g)>0&&(g.current||0)>=goalAmt(g))).map(g=>g.typeId);
     const recs=ph.next.filter(tid=>have.indexOf(tid)<0);
-    let h='<h3>次の目的を決めよう</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">'+(prev?esc(prev.label)+'、達成おめでとう！ ':'')+'「'+esc(ph.label)+'」のいま、こんな目的がおすすめです。</div>';
+    let h='<h3>次のゴールを決めよう</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">'+(prev?esc(prev.label)+'、達成おめでとう！ ':'')+'「'+esc(ph.label)+'」のいま、こんなゴールがおすすめです。</div>';
     (recs.length?recs:ph.next).forEach(tid=>{const t=findCat("goalType",tid);
       h+='<div class="li" onclick="App.closeSheet();App.openGoal(null,\''+tid+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic(GI[tid]||"target",20)+'</span><div class="main"><div class="ttl">'+esc(t.label)+'</div><div class="meta" style="line-height:1.5">'+(t.bench?"目安 "+yen(t.bench):"")+(t.note?((t.bench?" ・ ":"")+esc(t.note)):"")+'</div></div><span style="color:var(--color-text-disabled)">›</span></div>';
     });
-    h+='<button class="btn btn-sec btn-block" style="margin-top:14px" onclick="App.closeSheet();App.openGoal()">自分で目的を決める</button>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:14px" onclick="App.closeSheet();App.openGoal()">自分でゴールを決める</button>';
     this.showSheet(h);
   },
   // ---- event ----
