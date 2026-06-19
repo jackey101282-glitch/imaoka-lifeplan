@@ -1218,6 +1218,19 @@ const App = {
       '<div class="set-cell"><span class="lab">夫の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.husband)+'" onchange="App.setName(\'husband\',this.value)"></div>'+
       '<div class="set-cell"><span class="lab">妻の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.wife)+'" onchange="App.setName(\'wife\',this.value)"></div></div>';
 
+    // 定期の収入・固定費（毎月）— 一度登録すれば毎月カレンダー＆家計に自動計上
+    const fx=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
+    const fxInc=fx.filter(e=>e.type==="income").reduce((a,b)=>a+(+b.amount||0),0);
+    const fxExp=fx.filter(e=>e.type!=="income").reduce((a,b)=>a+(+b.amount||0),0);
+    h+='<p class="set-head">定期の収入・固定費（毎月）</p><div class="set-group">'+
+      '<div class="set-cell" style="display:block"><div class="desc">給料・家賃・カード引落・サブスクなど毎月決まったものを登録すると、毎月この日に自動でカレンダーと家計に計上されます。</div></div>';
+    fx.forEach(e=>{const day=(+String(e.date).slice(8))||1,inc=e.type==="income";
+      h+='<div class="set-cell" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><div><span class="lab">'+(inc?'💰':'💴')+' '+esc(e.title)+'</span><div class="desc">毎月'+day+'日</div></div><span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.amount)+'</span></div>';});
+    if(!fx.length)h+='<div class="set-cell"><span class="desc">まだ登録がありません</span></div>';
+    h+='<div class="set-cell" onclick="App.openRecurring()" style="cursor:pointer"><span class="lab" style="color:var(--color-primary-600)">＋ 追加</span></div>';
+    if(fx.length)h+='<div class="set-cell"><span class="desc">固定収入 +'+yen(fxInc)+'／固定費 −'+yen(fxExp)+'（毎月）</span></div>';
+    h+='</div>';
+
     // この端末の本人・承認・通知(夫婦で巻き込む)
     h+='<p class="set-head">この端末・通知</p><div class="set-group">'+
       '<div class="set-cell" style="display:block"><span class="lab">この端末を使うのは?</span><div class="desc">お小遣いの非公開・承認・通知に使われます(この端末だけの設定)</div><div class="seg" style="margin-top:8px">'+
@@ -1421,6 +1434,27 @@ const App = {
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
         const data={title,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),memo:val("f-memo"),amount:numv("f-amount")||null};
+        if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("events",id):null);
+    this.showSheet(h);
+  },
+  openRecurring(id){
+    const it=id?this.state.events.find(x=>x.id===id):null;
+    const curDay=(it&&it.date)?((+String(it.date).slice(8))||1):1;
+    const curType=it?it.type:"payment";
+    const h='<h3>'+(it?"定期項目を編集":"定期の収入・固定費を追加")+'</h3>'+
+      this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:"")+'">')+
+      this.field("種別",'<div class="seg" id="f-rtype">'+
+        [['payment','支出（固定費）'],['income','収入']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curType===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
+      '<div class="form-row">'+this.field("毎月の日",'<select id="f-rday">'+Array.from({length:31},(_,i)=>i+1).map(d=>'<option value="'+d+'" '+(d===curDay?"selected":"")+'>'+d+'日</option>').join("")+'</select>')+
+      this.field("金額",'<input id="f-ramount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+'</div>'+
+      '<div class="desc" style="margin:-6px 2px 14px">登録すると毎月この日に、自動でカレンダーと家計に計上されます。</div>'+
+      this.actions(()=>{
+        const title=val("f-rtitle");if(!title){this.toast("名前を入力してください");return false;}
+        const amount=numv("f-ramount");if(!amount){this.toast("金額を入力してください");return false;}
+        const day=(+val("f-rday"))||1;
+        const data={title,type:seg("f-rtype")||"payment",date:thisMonth()+"-"+pad2(day),recurrence:"monthly_date",amount,fixed:true,start:null,end:null,loc:"",memo:""};
         if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
         return true;
       },it?()=>this.del("events",id):null);
