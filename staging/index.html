@@ -553,6 +553,20 @@ const App = {
     const oInc=manualIncome-hInc-wInc;
     return {totalIncome,manualIncome,fixed,variable,evConfirmed,evIncConfirmed,planned,plannedIncome,totalExpense,balance,afterPlanned,savingsRate,hInc,wInc,oInc,inc,exp};
   },
+  // 予算ペース: 変動費を日割りで月末まで延長し、固定費・予定を足して月末予測を出す
+  paceReport(month){
+    const m=this.metrics(month);
+    const today=todayStr();
+    const isCur=month===today.slice(0,7);
+    const [y,mo]=month.split("-").map(Number);
+    const D=new Date(y,mo,0).getDate();
+    const d=isCur?(+today.slice(8)):D;
+    const pacedVariable=(isCur&&d>0)?Math.round(m.variable/d*D):m.variable;
+    const projExpense=pacedVariable+m.fixed+m.evConfirmed+m.planned;
+    const projIncome=m.totalIncome+m.plannedIncome;
+    const projBalance=projIncome-projExpense;
+    return {isCur,d,D,pacedVariable,projExpense,projIncome,projBalance,m};
+  },
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
   // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
   eventAmountForMonth(e,ym){ if(e&&e.variable)return (e.byMonth&&e.byMonth[ym]!=null)?(+e.byMonth[ym]||0):0; return +(e&&e.amount)||0; },
@@ -740,8 +754,22 @@ const App = {
       recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
     const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">🔁</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
+    // 📊 予算ペース管理レポート(当月のみ)
+    let paceCard='';
+    const pr=this.paceReport(this.curMonth);
+    if(pr.isCur){
+      const short=pr.projBalance<0;
+      const accent=short?'var(--color-danger)':'var(--color-secondary-500)';
+      paceCard='<div class="card" style="border-color:'+(short?'var(--color-danger)':'var(--color-secondary-300)')+'">'+
+        '<div class="row"><p class="card-title" style="margin:0;color:'+accent+'">📊 今月の予算ペース</p><span class="meta num">経過 '+pr.d+'/'+pr.D+'日</span></div>'+
+        '<div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+Math.round(pr.d/pr.D*100)+'%"></span></div>'+
+        '<div class="row" style="margin-top:12px"><span>このペースだと月末の支出</span><span class="amt num">'+yen(pr.projExpense)+'</span></div>'+
+        '<div class="row" style="margin-top:6px"><span>月末の残り見込み</span><span class="amt num" style="color:'+(short?'var(--color-danger)':'var(--color-accent-600)')+'">'+yen(pr.projBalance)+'</span></div>'+
+        '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:'+(short?'var(--color-danger)':'var(--color-text-secondary)')+'">'+(short?('⚠️ このペースだと月末に '+yen(-pr.projBalance)+' 足りなくなりそう。今月の変動費を見直しましょう。'):'✅ このペースなら予算内におさまりそうです。')+'</div>'+
+        '</div>';
+    }
     const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
+    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
