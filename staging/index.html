@@ -558,8 +558,8 @@ const App = {
     const evIncPlanned=this.eventIncome(month,"planned");
     const totalIncome=manualIncome+evIncConfirmed; // 確定収入(入金済の予定を含む)
     const totalExpense=fixed+variable+evConfirmed; // 確定支出
-    const planned=evPlanned;                       // これから支払う予定
-    const plannedIncome=evIncPlanned;              // これから入る予定
+    const planned=evPlanned+this.floatingSum(month,false);        // これから支払う予定(日付未定の固定費を含む)
+    const plannedIncome=evIncPlanned+this.floatingSum(month,true); // これから入る予定(日付未定の収入を含む)
     const balance=totalIncome-totalExpense;         // 残り(確定ベース)
     const afterPlanned=totalIncome-totalExpense-planned+plannedIncome; // 月末見込み
     const savingsRate=totalIncome>0?(balance/totalIncome*100):0;
@@ -571,6 +571,8 @@ const App = {
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
   // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
   eventAmountForMonth(e,ym){ if(e&&e.variable)return (e.byMonth&&e.byMonth[ym]!=null)?(+e.byMonth[ym]||0):0; return +(e&&e.amount)||0; },
+  // 日付未定(dayMode=variable)で当月の日付がまだ確定していないもの → 金額既知ぶんを「予定」に加算
+  floatingSum(month,isIncome){let s=0;this.state.events.forEach(e=>{if(!e.fixed||e.dayMode!=="variable")return;if(e.byMonthDate&&e.byMonthDate[month])return;const isInc=e.type==="income";if(isInc!==isIncome)return;const amt=this.eventAmountForMonth(e,month);if(amt>0)s+=amt;});return s;},
   eventSum(month,mode,isIncome){
     const today=todayStr(); let sum=0;
     this.state.events.forEach(e=>{const isInc=e.type==="income";if(isInc!==isIncome)return;const amt=this.eventAmountForMonth(e,month);if(!(amt>0))return;this.eventDatesInMonth(e,month).forEach(ds=>{const past=ds<=today;if(mode==="confirmed"&&!past)return;if(mode==="planned"&&past)return;sum+=amt;});});
@@ -736,17 +738,20 @@ const App = {
     const recs=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
     let recRows='';
     recs.forEach(e=>{
-      const day=(+String(e.date).slice(8))||1, inc=e.type==="income", ic=inc?'💰':'💴';
+      const inc=e.type==="income", ic=inc?'💰':'💴';
+      const day=(+String(e.date).slice(8))||1;
+      const dateUnknown=e.dayMode==="variable";
+      const amtKnown=!e.variable||(e.byMonth&&e.byMonth[curM]!=null);
+      const amtVal=e.variable?(e.byMonth&&e.byMonth[curM]):e.amount;
+      const dateSet=!dateUnknown||(e.byMonthDate&&e.byMonthDate[curM]);
+      const amtSpan='<span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(amtVal)+'</span>';
       let right;
-      if(e.variable){
-        const entered=e.byMonth&&e.byMonth[curM]!=null;
-        right=entered
-          ?'<span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.byMonth[curM])+'</span>'
-          :'<button class="btn btn-primary btn-sm" style="min-height:32px;padding:4px 12px;white-space:nowrap" onclick="event.stopPropagation();App.enterRecurAmount(\''+e.id+'\')">金額を入力</button>';
-      }else{
-        right='<span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.amount)+'</span>';
-      }
-      const sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');
+      if(!amtKnown){right='<button class="btn btn-primary btn-sm" style="min-height:32px;padding:4px 12px;white-space:nowrap" onclick="event.stopPropagation();App.enterRecurAmount(\''+e.id+'\')">金額を入力</button>';}
+      else if(!dateSet){right='<div style="display:flex;align-items:center;gap:6px">'+amtSpan+'<button class="btn btn-sec btn-sm" style="min-height:32px;padding:4px 10px;white-space:nowrap" onclick="event.stopPropagation();App.enterRecurDate(\''+e.id+'\')">日付を確定</button></div>';}
+      else{right=amtSpan;}
+      let sub;
+      if(dateUnknown){const ds=(e.byMonthDate&&e.byMonthDate[curM]);sub=(ds?(ds.slice(5).replace("-","/")+'に確定'):'日付未定')+(e.variable?'・変動':'');}
+      else{sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');}
       recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
     const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">🔁</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
@@ -1059,6 +1064,7 @@ const App = {
   },
   eventDatesInMonth(e,ym){
     if(!e.date)return [];
+    if(e.dayMode==="variable")return (e.byMonthDate&&e.byMonthDate[ym])?[e.byMonthDate[ym]]:[]; // 日付未定: 確定済の月だけカレンダーに乗る
     const [y,m]=ym.split("-").map(Number);
     const r=e.recurrence||"none";
     const b=e.date.split("-").map(Number);
@@ -1462,15 +1468,16 @@ const App = {
         [['payment','支出（固定費）'],['income','収入']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curType===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
       this.field("金額タイプ",'<div class="seg" id="f-rvar">'+
         [['fixed','毎月同じ金額'],['variable','毎月入力（変動）']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curVar===o[0]?"on":"")+'" onclick="App.segRecurType(this)">'+o[1]+'</button>').join("")+'</div>')+
-      this.field("毎月の日（引落・発生日）",'<select id="f-rday">'+dayOptions(curDay)+'</select>')+
+      this.field("毎月の日（引落・発生日）",'<select id="f-rday"><option value="0" '+((it&&it.dayMode==="variable")?"selected":"")+'>未定（毎月あとで確定）</option>'+dayOptions((it&&it.dayMode==="variable")?0:curDay)+'</select>')+
       '<div id="recur-amt-wrap" style="display:'+(curVar==="variable"?"none":"block")+'">'+this.field("金額",'<input id="f-ramount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+'</div>'+
       '<div id="recur-close-wrap" style="display:'+(curVar==="variable"?"block":"none")+'">'+this.field("締め日（任意・金額が確定する目安日）",'<select id="f-rclose"><option value="">なし</option>'+dayOptions(curClose)+'</select>')+
         '<div class="desc" style="margin:-6px 2px 8px">金額は毎月ホームの「定期」欄から入力します（締め日が近づくとお知らせ）。</div></div>'+
       this.actions(()=>{
         const title=val("f-rtitle");if(!title){this.toast("名前を入力してください");return false;}
-        const day=(+val("f-rday"))||1;
+        const dayVal=(+val("f-rday"))||0;
+        const dayUnknown=dayVal===0;
         const isVar=(seg("f-rvar")||"fixed")==="variable";
-        const base={title,type:seg("f-rtype")||"payment",date:thisMonth()+"-"+pad2(day),recurrence:"monthly_date",fixed:true,start:null,end:null,loc:"",memo:""};
+        const base={title,type:seg("f-rtype")||"payment",recurrence:"monthly_date",fixed:true,dayMode:(dayUnknown?"variable":"fixed"),date:(dayUnknown?(thisMonth()+"-01"):(thisMonth()+"-"+pad2(dayVal))),start:null,end:null,loc:"",memo:""};
         if(isVar){base.variable=true;base.amount=null;base.closeDay=(+val("f-rclose"))||null;}
         else{const amount=numv("f-ramount");if(!amount){this.toast("金額を入力してください");return false;}base.variable=false;base.amount=amount;base.closeDay=null;}
         if(it)Object.assign(it,base);else this.state.events.push({id:uid(),...base});
@@ -1486,6 +1493,15 @@ const App = {
     const h='<h3>'+esc(it.title)+'</h3><div class="desc" style="margin:0 2px 12px">'+monthLabel(ym)+'分の金額を入力</div>'+
       this.field("金額",'<input id="f-vamount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(cur)+'" oninput="App.commaize(this)">')+
       this.actions(()=>{const a=numv("f-vamount");it.byMonth=it.byMonth||{};if(a>0)it.byMonth[ym]=a;else delete it.byMonth[ym];return true;});
+    this.showSheet(h);
+  },
+  enterRecurDate(id){
+    const it=this.state.events.find(x=>x.id===id);if(!it)return;
+    const ym=this.curMonth||thisMonth();
+    const cur=(it.byMonthDate&&it.byMonthDate[ym])?it.byMonthDate[ym]:(ym+"-15");
+    const h='<h3>'+esc(it.title)+'</h3><div class="desc" style="margin:0 2px 12px">'+monthLabel(ym)+'分の実際の日付を入力（確定するとカレンダーに乗ります）</div>'+
+      this.field("日付",'<input id="f-vdate" type="date" value="'+cur+'">')+
+      this.actions(()=>{const d=val("f-vdate");if(!d){this.toast("日付を選んでください");return false;}it.byMonthDate=it.byMonthDate||{};it.byMonthDate[ym]=d;return true;});
     this.showSheet(h);
   },
   gcalUrl(ev){
