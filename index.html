@@ -349,7 +349,7 @@ function seedState(){
   return {
     v:2,
     _foldersMigrated:true,
-    settings:{husband:"夫",wife:"妻",theme:"auto",sync:{enabled:false,url:"",key:"",space:""}},
+    settings:{spaceName:"",husband:"夫",wife:"妻",theme:"auto",sync:{enabled:false,url:"",key:"",space:""}},
     customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
     incomes:[], expenses:[],
     goals:[
@@ -457,6 +457,7 @@ const App = {
   normalize(){
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0; if(s.settings.notify==null)s.settings.notify=false;
+    if(s.settings.spaceName==null)s.settings.spaceName="";
     ["incomes","expenses","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
@@ -520,7 +521,7 @@ const App = {
       else title="タスク";
     }
     document.getElementById("hd-title").textContent=title;
-    document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?("今岡家 "+this.dot()):this.dot(true);
+    document.getElementById("hd-sub").innerHTML=this.tab==="dashboard"?(esc((this.state.settings.spaceName||"ふたりの家計"))+" "+this.dot()):this.dot(true);
     const eb=document.getElementById("eye-btn");if(eb){eb.textContent=this.hideAmt?"🙈":"👁";eb.classList.toggle("on",this.hideAmt);eb.title=this.hideAmt?"金額を表示":"金額を隠す";}
     const v=document.getElementById("view");
     v.innerHTML=this["view_"+this.tab]();
@@ -1201,6 +1202,8 @@ const App = {
   view_settings(){
     const s=this.state.settings, sy=s.sync;
     let h='';
+    h+='<p class="set-head">スペース名</p><div class="set-group">'+
+      '<div class="set-cell" style="display:block"><span class="lab">この家計スペースの名前</span><div class="desc">ホーム画面の上に表示されます（2人で共有）。例: 今岡家 / ふたりの暮らし</div><input style="width:100%;min-height:40px;margin-top:8px" placeholder="ふたりの家計" value="'+esc(s.spaceName||"")+'" onchange="App.setSpaceName(this.value)"></div></div>';
     h+='<p class="set-head">家族の名前</p><div class="set-group">'+
       '<div class="set-cell"><span class="lab">夫の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.husband)+'" onchange="App.setName(\'husband\',this.value)"></div>'+
       '<div class="set-cell"><span class="lab">妻の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.wife)+'" onchange="App.setName(\'wife\',this.value)"></div></div>';
@@ -1244,6 +1247,7 @@ const App = {
     return h;
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
+  setSpaceName(v){this.state.settings.spaceName=(v||"").trim();this.commit();},
   setApproveThreshold(v){this.state.settings.approveThreshold=+String(v).replace(/[^0-9.]/g,"")||0;this.save(true);},
   // テーマは端末ごと(localStorage)。相手には同期されない
   getDeviceTheme(){let t=localStorage.getItem("imaoka_theme");if(!t){t=(this.state&&this.state.settings&&this.state.settings.theme)||"auto";localStorage.setItem("imaoka_theme",t);}return t;},
