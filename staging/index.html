@@ -414,16 +414,27 @@ const CATS = {
     {id:"home",label:"住居・車",icon:"🏠"},{id:"event",label:"イベント",icon:"🎉"},{id:"other",label:"その他",icon:"📌"}
   ],
   goalType:[
-    {id:"goal_emergency",label:"緊急予備資金",icon:"🆘",bench:1800000},
-    {id:"goal_edu",label:"教育資金",icon:"🎓",bench:10000000},
-    {id:"goal_housing",label:"住宅購入・リフォーム",icon:"🏡",bench:5000000},
-    {id:"goal_retirement",label:"老後資金",icon:"🧓",bench:20000000},
-    {id:"goal_travel",label:"旅行・家族レジャー",icon:"🏖️",bench:500000},
-    {id:"goal_car",label:"車の買替",icon:"🚘",bench:3000000},
-    {id:"goal_home_appliance",label:"家電・家具買替",icon:"🛋️",bench:500000},
-    {id:"goal_wish",label:"夢・欲しいもの",icon:"✨",bench:0}
+    {id:"goal_wedding",label:"結婚式",icon:"💒",bench:1600000,note:"自己負担 平均161万円（ゼクシィ2024）"},
+    {id:"goal_honeymoon",label:"新婚旅行",icon:"✈️",bench:350000,note:"国内 平均31万円／海外 約91万円"},
+    {id:"goal_birth",label:"出産準備",icon:"👶",bench:300000,note:"用品＋自己負担。出産育児一時金50万円あり"},
+    {id:"goal_emergency",label:"緊急予備資金",icon:"🆘",bench:1800000,note:"生活費の約6ヶ月分"},
+    {id:"goal_car",label:"車の購入・買替",icon:"🚘",bench:2640000,note:"新車 平均264万円。買替周期 約7年"},
+    {id:"goal_housing",label:"住宅の頭金",icon:"🏡",bench:5000000,note:"新築の頭金目安（価格の約13%）"},
+    {id:"goal_edu",label:"教育資金",icon:"🎓",bench:3000000,note:"大学入学資金の目安。幼〜大の総額は約942万円"},
+    {id:"goal_retirement",label:"老後資金",icon:"🧓",bench:15000000,note:"夫婦の不足目安 約1,500万円"},
+    {id:"goal_travel",label:"旅行・家族レジャー",icon:"🏖️",bench:300000,note:""},
+    {id:"goal_home_appliance",label:"家電・家具",icon:"🛋️",bench:500000,note:""},
+    {id:"goal_wish",label:"夢・欲しいもの",icon:"✨",bench:0,note:""}
   ]
 };
+/* ライフフェーズ（貯めどき・使いどき）— FP定説ベース。kind=save:貯めフェーズ / spend:使いフェーズ */
+const PHASES=[
+  {key:"newlywed",label:"新婚期",kind:"save",guidance:"二人の収入が高く、人生でいちばん貯めやすい時期。次の目的に向けて種をまこう。",next:["goal_honeymoon","goal_emergency","goal_birth","goal_housing"]},
+  {key:"baby",label:"子育て前期（乳幼児）",kind:"save",guidance:"教育費がまだ軽い「貯めどき」。将来の使う時期に備えて貯めるチャンス。",next:["goal_birth","goal_edu","goal_car","goal_housing"]},
+  {key:"edu",label:"教育費期",kind:"spend",guidance:"支出のピーク。貯蓄ペースを守りながら乗り切る時期。",next:["goal_edu","goal_emergency"]},
+  {key:"preretire",label:"定年前（子の独立後）",kind:"save",guidance:"教育費を終えた最後の貯めどき。老後とご褒美に備えよう。",next:["goal_retirement","goal_travel"]}
+];
+const findPhase=k=>PHASES.find(p=>p.key===k)||PHASES[0];
 function allCats(group){return (CATS[group]||[]).concat((App.state&&App.state.customCats&&App.state.customCats[group])||[]);}
 const findCat=(group,id)=>allCats(group).find(c=>c.id===id)||{label:"その他",icon:"📌"};
 
@@ -432,7 +443,7 @@ function seedState(){
   return {
     v:2,
     _foldersMigrated:true,
-    settings:{spaceName:"",husband:"夫",wife:"妻",theme:"light",sync:{enabled:false,url:"",key:"",space:""}},
+    settings:{spaceName:"",husband:"夫",wife:"妻",theme:"light",phase:"newlywed",sync:{enabled:false,url:"",key:"",space:""}},
     customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
     incomes:[], expenses:[],
     accounts:[],
@@ -618,6 +629,7 @@ const App = {
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0;
     if(s.settings.spaceName==null)s.settings.spaceName="";
+    if(!s.settings.phase)s.settings.phase="newlywed";
     ["incomes","expenses","accounts","debts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
@@ -860,18 +872,47 @@ const App = {
       warn+
       '<div style="margin-top:10px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div></div>';
 
-    // goals
-    const GOAL_IC={goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
-    let goalsHtml="";
-    this.state.goals.forEach(g=>{
-      const pct=g.target>0?Math.min(100,g.current/g.target*100):0;
-      goalsHtml+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer">'+
-        '<span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
-        '<div class="prog"><span class="fill-accent" style="width:'+pct+'%"></span></div></div>'+
-        '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(pct)+'%</div><div class="meta">'+yen(g.current)+'</div></div></div>';
-    });
-    const goalsCard='<div class="section-title">積立ゴール<span class="link" onclick="App.openGoal()">＋ 追加</span></div><div class="card">'+
-      (goalsHtml||'<div class="empty"><span class="e-ic">'+ic('target',30)+'</span>積立ゴールを追加しましょう</div>')+'</div>';
+    // ふたりの航路（ライフゴールのロードマップ）
+    const GOAL_IC={goal_wedding:'heart',goal_honeymoon:'plane',goal_birth:'baby',goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
+    const gprog=g=>(g.target>0?Math.min(100,(g.current||0)/g.target*100):0);
+    const gdone=g=>(g.target>0&&(g.current||0)>=g.target);
+    const phC=findPhase(this.state.settings.phase);
+    const allg=this.state.goals.slice();
+    const justWon=allg.filter(g=>gdone(g)&&!g.done);
+    const settled=allg.filter(g=>gdone(g)&&g.done);
+    const active=allg.filter(g=>!gdone(g)).sort((a,b)=>{const ad=a.targetDate||"9999-99",bd=b.targetDate||"9999-99";return ad<bd?-1:ad>bd?1:(gprog(b)-gprog(a));});
+    const phaseBanner='<div class="row" style="align-items:flex-start;gap:10px;background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:10px;padding:10px 12px;margin-bottom:14px">'+
+      '<span style="color:var(--color-secondary-600);display:flex;margin-top:1px">'+(phC.kind==="save"?ic('coins',16):ic('wallet',16))+'</span>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-sm);color:var(--color-secondary-600)">今は「'+esc(phC.label)+'」 ・ '+(phC.kind==="save"?"貯めフェーズ":"使いフェーズ")+'</div>'+
+      '<div class="meta" style="margin-top:3px;line-height:1.5">'+esc(phC.guidance)+'</div></div>'+
+      '<span class="link" style="white-space:nowrap" onclick="App.openPhase()">変更</span></div>';
+    let body=phaseBanner;
+    if(allg.length===0){
+      body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>二人の目的を決めて、航路をつくりましょう</div>'+
+        '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 最初の目的を決める</button></div>';
+    }else{
+      justWon.forEach(g=>{
+        body+='<div style="background:var(--color-secondary-50);border:1.5px solid var(--color-secondary-400);border-radius:12px;padding:13px 14px;margin-bottom:12px">'+
+          '<div class="row"><span style="font-weight:700;color:var(--color-secondary-600);display:flex;align-items:center;gap:7px">'+ic('trophy',18)+'達成！'+esc(g.label)+'</span><span class="num" style="font-weight:700">'+yen(g.target)+'</span></div>'+
+          '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.achieveGoal(\''+g.id+'\')">'+ic('sparkle',15)+' 達成を祝って、次の目的へ</button></div>';
+      });
+      const hero=active[0];
+      if(hero){
+        body+='<div style="border:1.5px solid var(--color-accent-500);border-radius:12px;padding:14px 15px;margin-bottom:14px">'+
+          '<div class="row" style="margin-bottom:8px"><span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="ic" style="background:var(--color-secondary-50);color:var(--color-accent-600);flex-shrink:0">'+ic(GOAL_IC[hero.typeId]||'target',20)+'</span><span style="min-width:0"><span style="font-size:11px;color:var(--color-accent-600);display:block">いま、ここに向かってます</span><span style="font-weight:700">'+esc(hero.label)+'</span></span></span>'+(hero.targetDate?'<span class="chip chip-todo" style="white-space:nowrap">'+monthLabel(hero.targetDate)+'</span>':'')+'</div>'+
+          '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="mid-num" style="color:var(--color-accent-600)">'+yen(hero.current)+'</span><span class="meta">/ '+yen(hero.target)+'</span></div>'+
+          '<div class="prog" style="height:10px"><span class="fill-accent" style="width:'+gprog(hero)+'%"></span></div>'+
+          '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">あと '+yen(Math.max(0,(hero.target||0)-(hero.current||0)))+'</span><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">積み立てる ›</span></div></div>';
+      }
+      active.slice(1).forEach(g=>{
+        body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div><div class="prog"><span class="fill-accent" style="width:'+gprog(g)+'%"></span></div></div>'+
+          '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(gprog(g))+'%</div><div class="meta">'+(g.targetDate?monthLabel(g.targetDate):yen(g.current))+'</div></div></div>';
+      });
+      settled.forEach(g=>{
+        body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic('check',18)+'</span><div class="main"><div class="ttl" style="color:var(--color-text-secondary);text-decoration:line-through">'+esc(g.label)+'</div></div><span class="chip chip-both" style="white-space:nowrap">達成</span></div>';
+      });
+    }
+    const goalsCard='<div class="section-title">ふたりの航路<span class="link" onclick="App.openGoal()">＋ 目的を追加</span></div><div class="card">'+body+'</div>';
 
     // tasks short
     const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
@@ -1718,23 +1759,62 @@ const App = {
   _initFormIcon(it,def){this._formIcon=it&&it.icon?(_ICONS[it.icon]?it.icon:(EMOJI_ICON[it.icon]||def)):def;},
   // ---- wish ----
   // ---- goal ----
-  openGoal(id){
+  openGoal(id,preType){
     const it=id?this.state.goals.find(x=>x.id===id):null;
-    const h='<h3>'+(it?"積立ゴールを編集":"積立ゴールを追加")+'</h3>'+
-      this.field("種類",'<select id="f-type" onchange="var g=App.glabel(this.value);if(g)document.getElementById(\'f-label\').value=g">'+this.opts("goalType",it?it.typeId:"goal_emergency")+'</select>')+
-      this.field("名前",'<input id="f-label" value="'+esc(it?it.label:"緊急予備資金")+'">')+
-      '<div class="form-row">'+this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.target)+'" oninput="App.commaize(this)">')+
-      this.field("現在の積立額",'<input id="f-current" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.current)+'" oninput="App.commaize(this)">')+'</div>'+
+    const type0=it?it.typeId:(preType||"goal_wedding");
+    const t0=findCat("goalType",type0);
+    const tgt0=it?it.target:(t0.bench||"");
+    const h='<h3>'+(it?"目的を編集":"目的を追加")+'</h3>'+
+      this.field("種類",'<select id="f-type" onchange="App.gtypeChange(this)">'+this.opts("goalType",type0)+'</select>')+
+      '<div id="f-note" class="meta" style="margin:-6px 0 12px;line-height:1.5">'+(t0.note?esc(t0.note):"")+'</div>'+
+      this.field("名前",'<input id="f-label" value="'+esc(it?it.label:t0.label)+'">')+
+      '<div class="form-row">'+this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(tgt0)+'" oninput="App.commaize(this)">')+
+      this.field("いつまでに（任意）",'<input id="f-date" type="month" value="'+(it&&it.targetDate?it.targetDate:"")+'">')+'</div>'+
+      this.field("現在の積立額",'<input id="f-current" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.current)+'" oninput="App.commaize(this)">')+
       (it?'<div class="form-row"><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',10000)">+1万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',30000)">+3万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',50000)">+5万</button></div>':'')+
       this.actions(()=>{
-        const data={typeId:val("f-type"),label:val("f-label"),target:numv("f-target"),current:numv("f-current")};
+        const data={typeId:val("f-type"),label:val("f-label"),target:numv("f-target"),current:numv("f-current"),targetDate:val("f-date")};
         if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),...data});
         return true;
       },it?()=>this.del("goals",id):null);
     this.showSheet(h);
   },
+  gtypeChange(sel){
+    const t=findCat("goalType",sel.value);
+    const lab=document.getElementById("f-label"); if(lab)lab.value=t.label||"";
+    const tg=document.getElementById("f-target"); if(tg&&!numv("f-target")&&t.bench)tg.value=cf(t.bench);
+    const nt=document.getElementById("f-note"); if(nt)nt.textContent=t.note||"";
+  },
   glabel(typeId){const t=findCat("goalType",typeId);return t?t.label:"";},
-  addToGoal(id,amt){const g=this.state.goals.find(x=>x.id===id);if(g){g.current=(+g.current||0)+amt;const el=document.getElementById("f-current");if(el)el.value=cf(g.current);this.save();this.toast(yen(amt)+"を積立");}},
+  addToGoal(id,amt){const g=this.state.goals.find(x=>x.id===id);if(g){const before=(g.target>0&&(g.current||0)>=g.target);g.current=(+g.current||0)+amt;const el=document.getElementById("f-current");if(el)el.value=cf(g.current);this.save();const after=(g.target>0&&g.current>=g.target);this.toast(!before&&after?"目標達成！おめでとう":yen(amt)+"を積立");}},
+  // ---- 航路: フェーズと「次の目的」 ----
+  openPhase(){
+    const cur=this.state.settings.phase;
+    let h='<h3>いまの時期は？</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">人生のフェーズに合わせて、Miettaが「今は貯めどき／使いどき」とおすすめの目的を案内します。</div>';
+    PHASES.forEach(p=>{
+      h+='<div class="li" onclick="App.setPhase(\''+p.key+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-secondary-600)">'+(p.kind==="save"?ic('coins',18):ic('wallet',18))+'</span><div class="main"><div class="ttl">'+esc(p.label)+(p.key===cur?' <span class="chip chip-both">今</span>':'')+'</div><div class="meta" style="line-height:1.5">'+(p.kind==="save"?"貯めフェーズ":"使いフェーズ")+'・'+esc(p.guidance)+'</div></div></div>';
+    });
+    this.showSheet(h);
+  },
+  setPhase(k){this.state.settings.phase=k;this.closeSheet();this.commit();this.toast("いまの時期を更新しました");},
+  achieveGoal(id){
+    const g=this.state.goals.find(x=>x.id===id); if(!g)return;
+    g.done=true; this.commit();
+    this.celebrate({kind:"income",amount:g.target});
+    setTimeout(()=>this.suggestNext(g),700);
+  },
+  suggestNext(prev){
+    const GI={goal_wedding:"heart",goal_honeymoon:"plane",goal_birth:"baby",goal_emergency:"lifebuoy",goal_edu:"graduation",goal_housing:"house",goal_retirement:"person",goal_travel:"palm",goal_car:"car",goal_home_appliance:"sofa",goal_wish:"sparkle"};
+    const ph=findPhase(this.state.settings.phase);
+    const have=this.state.goals.filter(g=>!(g.target>0&&(g.current||0)>=g.target)).map(g=>g.typeId);
+    const recs=ph.next.filter(tid=>have.indexOf(tid)<0);
+    let h='<h3>次の目的を決めよう</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">'+(prev?esc(prev.label)+'、達成おめでとう！ ':'')+'「'+esc(ph.label)+'」のいま、こんな目的がおすすめです。</div>';
+    (recs.length?recs:ph.next).forEach(tid=>{const t=findCat("goalType",tid);
+      h+='<div class="li" onclick="App.closeSheet();App.openGoal(null,\''+tid+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic(GI[tid]||"target",20)+'</span><div class="main"><div class="ttl">'+esc(t.label)+'</div><div class="meta" style="line-height:1.5">'+(t.bench?"目安 "+yen(t.bench):"")+(t.note?((t.bench?" ・ ":"")+esc(t.note)):"")+'</div></div><span style="color:var(--color-text-disabled)">›</span></div>';
+    });
+    h+='<button class="btn btn-sec btn-block" style="margin-top:14px" onclick="App.closeSheet();App.openGoal()">自分で目的を決める</button>';
+    this.showSheet(h);
+  },
   // ---- event ----
   openEvent(id,presetDate){
     const it=id?this.state.events.find(x=>x.id===id):null;
