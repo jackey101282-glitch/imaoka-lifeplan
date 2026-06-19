@@ -21,6 +21,10 @@ perl -pi -e 's{src="\.\./icon-192\.png" alt="Mietta"}{src="icon-192.png" alt="Mi
 perl -0pi -e 's{/\* DEMO: ServiceWorker無効\(本番に干渉しない\) \*/}{if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}}' "$OUT"
 # 5. デモバナー行を除去
 perl -ni -e 'print unless /position:fixed;top:0;left:0;right:0;z-index:9999;background:#C4521F/' "$OUT"
+# 6. localStorageデータキーを本番へ
+perl -pi -e 's/"imaoka_lifeplan_staging"/"imaoka_lifeplan"/g' "$OUT"
+# 7. Supabase認証storageKey(staging専用)を本番(デフォルト)へ戻す
+perl -pi -e 's/\{auth:\{persistSession:true,autoRefreshToken:true,storageKey:"sb-mietta-staging-auth"\}\}/{auth:{persistSession:true,autoRefreshToken:true}}/' "$OUT"
 
 echo "✅ 昇格完了: staging/index.html → index.html"
 echo "   次: 1) git diff index.html で差分確認  2) 必要なら sw.js のキャッシュ版を+1  3) commit & push"

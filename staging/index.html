@@ -451,7 +451,7 @@ const App = {
   /* ---- persistence ---- */
   load(){
     try{
-      const raw=localStorage.getItem("imaoka_lifeplan");
+      const raw=localStorage.getItem("imaoka_lifeplan_staging");
       this.state = raw?JSON.parse(raw):seedState();
     }catch(e){this.state=seedState();}
     this.normalize();
@@ -479,7 +479,7 @@ const App = {
     }
   },
   save(skipCloud){
-    localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));
+    localStorage.setItem("imaoka_lifeplan_staging",JSON.stringify(this.state));
     if(!skipCloud && this._client && this.householdId) this.queueCloudPush();
   },
   // called after any data mutation
@@ -1509,7 +1509,7 @@ const App = {
     if(!APP_CONFIG.url||!APP_CONFIG.key)return; // ローカルのみ
     try{
       await this.loadSb();
-      this._client=window.supabase.createClient(APP_CONFIG.url,APP_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true}});
+      this._client=window.supabase.createClient(APP_CONFIG.url,APP_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"sb-mietta-staging-auth"}});
       const {data:{session}}=await this._client.auth.getSession();
       if(session&&session.user){this._user=session.user;await this.afterAuth();}
       else{this.showAuth();}
@@ -1544,7 +1544,7 @@ const App = {
       if(error)throw error;
       this._inviteCode=data?(data.invite_code||""):"";
       if(data&&data.data&&Object.keys(data.data).length){
-        this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();
+        this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan_staging",JSON.stringify(this.state));this.applyTheme();
       }else{
         await this.pushNow(); // 初回: 今のデータをクラウドへ
       }
@@ -1562,7 +1562,7 @@ const App = {
       if(data.updated_at===this._lastPushed)return; // 自分が直前に送った更新
       if(this._lastApplied&&data.updated_at&&data.updated_at<=this._lastApplied)return;
       this._lastApplied=data.updated_at;
-      this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();this.render();
+      this.state=data.data;this.normalize();localStorage.setItem("imaoka_lifeplan_staging",JSON.stringify(this.state));this.applyTheme();this.render();
     }catch(e){}
   },
   subscribeRealtime(){
@@ -1571,7 +1571,7 @@ const App = {
       .on("postgres_changes",{event:"*",schema:"public",table:"app_state",filter:"household_id=eq."+this.householdId},payload=>{
         const nd=payload.new;if(!nd||!nd.data)return;if(nd.updated_at===this._lastPushed)return;
         this._lastApplied=nd.updated_at;
-        this.state=nd.data;this.normalize();localStorage.setItem("imaoka_lifeplan",JSON.stringify(this.state));this.applyTheme();this.render();
+        this.state=nd.data;this.normalize();localStorage.setItem("imaoka_lifeplan_staging",JSON.stringify(this.state));this.applyTheme();this.render();
       }).subscribe((status)=>{ if(status==="SUBSCRIBED")this.pullLatest(); });
   },
   queueCloudPush(){clearTimeout(this._pushTimer);this._pushTimer=setTimeout(()=>this.pushNow(),700);},
