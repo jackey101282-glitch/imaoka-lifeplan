@@ -301,6 +301,25 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
   /* 共有: ポケットを大きく(3つ並び目安) */
   main.view-share .pocket-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
 }
+/* 入れると気持ちいい: 数字カウントアップ＋コイン演出 */
+.cnum{display:inline-block;transition:none}
+@keyframes numbump{0%{transform:scale(1)}28%{transform:scale(1.14)}100%{transform:scale(1)}}
+.cnum.bump{animation:numbump .5s cubic-bezier(.34,1.56,.64,1)}
+.coin-pop{position:fixed;left:50%;top:58%;transform:translate(-50%,-50%);z-index:9999;pointer-events:none;
+  font-family:var(--font-family-number);font-weight:800;font-size:30px;letter-spacing:.5px;
+  padding:8px 16px;border-radius:999px;white-space:nowrap;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);animation:coinrise 1.05s cubic-bezier(.22,.9,.3,1) forwards}
+.coin-pop.exp{background:var(--color-primary-500);color:#fff}
+.coin-pop.inc{background:var(--color-accent-500,var(--color-secondary-500));color:#fff}
+@keyframes coinrise{
+  0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+  32%{transform:translate(-50%,-52%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-150%) scale(.92)}}
+.coin-spark{position:fixed;z-index:9998;pointer-events:none;width:9px;height:9px;border-radius:50%;
+  animation:sparkfly .7s ease-out forwards}
+@keyframes sparkfly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+@media(prefers-reduced-motion:reduce){.cnum.bump{animation:none}.coin-pop,.coin-spark{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -659,6 +678,7 @@ const App = {
     v.innerHTML=this["view_"+this.tab]();
     this.updateBadges();
     this.updateFab();
+    if(this.tab==="dashboard")this.animateDashNums();
   },
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
@@ -778,7 +798,7 @@ const App = {
       expCard='<div class="card"><div class="row"><p class="card-title" style="margin:0">今月の支出</p><span class="link" onclick="App.openExpense()">＋ 追加</span></div><div class="empty"><span class="e-ic">'+ic('wallet',30)+'</span>支出をまだ登録していません</div></div>';
     }else{
       expCard='<div class="card">'+
-        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'exp\')"><p class="card-title" style="margin:0">今月の支出</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num">'+yen(m.totalExpense)+'</span>'+chev('exp')+'</span></div>'+
+        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'exp\')"><p class="card-title" style="margin:0">今月の支出</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num cnum" data-k="exp" data-v="'+m.totalExpense+'">'+yen(m.totalExpense)+'</span>'+chev('exp')+'</span></div>'+
         (this.dashOpen.exp?('<div class="divider"></div>'+
           '<div class="row"><span>固定費</span><span class="num" style="font-weight:700">'+yen(m.fixed)+'</span></div><div class="prog"><span class="fill-sec" style="width:'+fixedPct+'%"></span></div>'+
           '<div class="row" style="margin-top:14px"><span>変動費</span><span class="num" style="font-weight:700">'+yen(m.variable)+'</span></div><div class="prog"><span class="fill-primary" style="width:'+varPct+'%"></span></div>'+
@@ -803,7 +823,7 @@ const App = {
       incCard='<div class="card"><div class="row"><p class="card-title" style="margin:0">今月の収入</p><span class="link" onclick="App.openIncome()">＋ 追加</span></div><div class="empty"><span class="e-ic">'+ic('coins',30)+'</span>収入をまだ登録していません</div></div>';
     }else{
       incCard='<div class="card">'+
-        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'inc\')"><p class="card-title" style="margin:0">今月の収入</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</span>'+chev('inc')+'</span></div>'+
+        '<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'inc\')"><p class="card-title" style="margin:0">今月の収入</p><span style="display:flex;align-items:center;gap:8px"><span class="mid-num cnum" data-k="inc" data-v="'+m.totalIncome+'" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</span>'+chev('inc')+'</span></div>'+
         (this.dashOpen.inc?('<div class="divider"></div>'+
           '<div class="row"><span>'+esc(s.husband)+'</span><span class="num" style="font-weight:700">'+yen(m.hInc)+'</span></div>'+
           '<div class="row" style="margin-top:10px"><span>'+esc(s.wife)+'</span><span class="num" style="font-weight:700">'+yen(m.wInc)+'</span></div>'+
@@ -820,7 +840,7 @@ const App = {
     else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
     const remainCard='<div class="card" style="border:1.5px solid '+(negative?'var(--color-danger)':'var(--color-accent-500)')+'">'+
       '<p class="card-title" style="margin:0;color:'+(negative?'var(--color-danger)':'var(--color-accent-600)')+'">残り（貯金できる分）</p>'+
-      '<div class="big-num" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
+      '<div class="big-num cnum" data-k="bal" data-v="'+m.balance+'" style="color:'+balColor+'">'+yen(m.balance)+'</div>'+
       '<div class="meta" style="margin-top:4px">収入 '+yen(m.totalIncome)+' − 支出 '+yen(m.totalExpense)+(m.totalIncome>0?'（貯蓄率 '+m.savingsRate.toFixed(0)+'%）':'')+'</div>'+
       ((m.planned>0||m.plannedIncome>0)?'<div class="meta ttl-ico" style="margin-top:4px">'+ic('calendar',13)+'予定を反映した月末の見込み: '+yen(m.afterPlanned)+'</div>':'')+
       warn+
@@ -1593,7 +1613,7 @@ const App = {
         const amount=numv("f-amount");if(!amount){this.toast("金額を入力してください");return false;}
         const date=val("f-date")||todayStr();
         const data={typeId:val("f-type"),label:val("f-label"),owner:seg("f-owner"),amount,date,month:date.slice(0,7)};
-        if(it)Object.assign(it,data);else this.state.incomes.push({id:uid(),...data});
+        if(it)Object.assign(it,data);else{this.state.incomes.push({id:uid(),...data});this._celebrate={kind:"income",amount};}
         return true;
       },it?()=>this.del("incomes",id):null);
     this.showSheet(h);
@@ -1622,7 +1642,7 @@ const App = {
         const owner=isPriv?((it&&it.owner)?it.owner:this.deviceOwner):"";
         const data={type:seg("f-etype"),catId:val("f-cat"),sub:val("f-sub"),label:val("f-label"),amount,date,month:date.slice(0,7),private:isPriv,owner:owner};
         if(!it){const th=+this.state.settings.approveThreshold||0;if(!isPriv&&th>0&&this.deviceOwner&&amount>=th){data.approve="pending";data.reqBy=this.deviceOwner;}}
-        if(it)Object.assign(it,data);else this.state.expenses.push({id:uid(),...data});
+        if(it)Object.assign(it,data);else{this.state.expenses.push({id:uid(),...data});this._celebrate={kind:"expense",amount};}
         if(pre&&pre.fromItem){const item=this.state.items.find(x=>x.id===pre.fromItem);if(item)item.done=true;}
         return true;
       },it?()=>this.del("expenses",id):null);
@@ -1791,13 +1811,57 @@ const App = {
     this._onSave=onSave;this._onDelete=onDelete;
     return h;
   },
-  _save(){if(this._onSave()!==false){this.closeSheet();this.commit();this.toast("保存しました");}},
+  _save(){if(this._onSave()!==false){this.closeSheet();this.commit();const c=this._celebrate;this._celebrate=null;if(c){this.celebrate(c);}else{this.toast("保存しました");}}},
   _delete(){if(confirm("削除しますか?")){this._onDelete();this.closeSheet();this.commit();this.toast("削除しました");}},
   del(coll,id){this.state[coll]=this.state[coll].filter(x=>x.id!==id);},
   seg(btn){btn.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("on"));btn.classList.add("on");},
   commaize(el){const d=el.value.replace(/[^0-9]/g,"");el.value=d?Number(d).toLocaleString("en-US"):"";},
 
   toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(this._tt);this._tt=setTimeout(()=>t.classList.remove("show"),1900);},
+
+  /* ---- 入れると気持ちいい: 数字カウントアップ＋コイン演出 ---- */
+  animateDashNums(){
+    if(!this._numCache)this._numCache={};
+    document.querySelectorAll("#view .cnum").forEach(el=>{
+      const k=el.dataset.k, to=+el.dataset.v||0, prev=this._numCache[k];
+      this._numCache[k]=to;
+      if(HIDE_AMT){el.textContent=yen(to);return;}           // 目隠し中はアニメしない
+      if(prev===undefined||prev===to)return;                  // 初回 or 変化なしは静止
+      el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+      this._countUp(el,prev,to);
+    });
+  },
+  _countUp(el,from,to){
+    const dur=520, t0=performance.now();
+    const step=(now)=>{
+      let p=(now-t0)/dur; if(p>1)p=1;
+      const e=1-Math.pow(1-p,3);                              // easeOutCubic
+      el.textContent=yen(from+(to-from)*e);
+      if(p<1)requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  },
+  celebrate(c){
+    if(navigator.vibrate)try{navigator.vibrate(c.kind==="income"?[12,28,12]:18);}catch(e){}
+    const cls=c.kind==="income"?"inc":"exp";
+    const coin=document.createElement("div");
+    coin.className="coin-pop "+cls;
+    coin.textContent=(c.kind==="income"?"＋":"")+yen(c.amount);
+    document.body.appendChild(coin);
+    const cx=window.innerWidth/2, cy=window.innerHeight*0.58;
+    for(let i=0;i<7;i++){
+      const s=document.createElement("div");
+      s.className="coin-spark "+cls;
+      const ang=(Math.PI*2/7)*i, dist=46+i*4;
+      s.style.left=cx+"px"; s.style.top=cy+"px";
+      s.style.background=cls==="inc"?"var(--color-accent-500,var(--color-secondary-500))":"var(--color-primary-400)";
+      s.style.setProperty("--dx",(Math.cos(ang)*dist)+"px");
+      s.style.setProperty("--dy",(Math.sin(ang)*dist-30)+"px");
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(),720);
+    }
+    setTimeout(()=>coin.remove(),1100);
+  },
 
   /* ---- data import/export ---- */
   exportData(){
