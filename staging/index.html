@@ -1014,7 +1014,7 @@ const App = {
     const alerts=storeWarn+remindCard+approveCard;
     // 主要3数字(支出/収入/残り)はヒーロー帯。残りは2列。スマホでは全て縦積み(従来通り)。
     const hero='<div class="dash-hero">'+expCard+incCard+remainCard+'</div>';
-    const cards=[acctCard,debtCard,paceCard,plannedCard,recurCard,simCard,goalsCard,tasksCard,wishCard]
+    const cards=[goalsCard,acctCard,debtCard,paceCard,plannedCard,recurCard,simCard,tasksCard,wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return alerts+hero+'<div class="dash-cols">'+cards+'</div>';
   },
