@@ -350,6 +350,7 @@ function seedState(){
     settings:{spaceName:"",husband:"夫",wife:"妻",theme:"auto",sync:{enabled:false,url:"",key:"",space:""}},
     customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
     incomes:[], expenses:[],
+    accounts:[],
     goals:[],
     folders:[],
     items:[],
@@ -435,7 +436,7 @@ const App = {
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0;
     if(s.settings.spaceName==null)s.settings.spaceName="";
-    ["incomes","expenses","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    ["incomes","expenses","accounts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
@@ -758,8 +759,22 @@ const App = {
         '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:'+(short?'var(--color-danger)':'var(--color-text-secondary)')+'">'+(short?('⚠️ このペースだと月末に '+yen(-pr.projBalance)+' 足りなくなりそう。今月の変動費を見直しましょう。'):'✅ このペースなら予算内におさまりそうです。')+'</div>'+
         '</div>';
     }
+    // 💳 口座・残高
+    const accts=this.state.accounts||[];
+    const af=this.acctFilter||'all';
+    const filteredAcc=af==='husband'?accts.filter(a=>a.owner==='husband'):af==='wife'?accts.filter(a=>a.owner==='wife'):accts;
+    const accTotal=filteredAcc.reduce((a,b)=>a+(+b.balance||0),0);
+    const ownerLabel=(o)=>o==='husband'?esc(s.husband):o==='wife'?esc(s.wife):'共通';
+    const afc=(k,l)=>'<button class="fchip '+(af===k?"on":"")+'" onclick="App.setAcctFilter(\''+k+'\')">'+l+'</button>';
+    let accRows='';
+    filteredAcc.forEach(a=>{accRows+='<div class="li" onclick="App.openAccount(\''+a.id+'\')" style="cursor:pointer"><span class="ic">💳</span><div class="main"><div class="ttl">'+esc(a.name)+'</div><div class="meta">'+ownerLabel(a.owner)+'</div></div><span class="amt num">'+yen(a.balance)+'</span></div>';});
+    const acctCard='<div class="section-title">口座・残高<span class="link" onclick="App.openAccount()">＋ 追加</span></div><div class="card">'+
+      '<div class="row"><span class="card-title" style="margin:0">合計残高'+(af==='husband'?'（'+esc(s.husband)+'）':af==='wife'?'（'+esc(s.wife)+'）':'')+'</span><span class="mid-num">'+yen(accTotal)+'</span></div>'+
+      (accts.length?'<div class="filters" style="margin-top:10px">'+afc('all','すべて')+afc('husband',esc(s.husband))+afc('wife',esc(s.wife))+'</div>':'')+
+      (accRows||'<div class="empty" style="padding:14px 0"><span class="e-ic">💳</span>口座と残高を登録すると、合計や夫婦別で管理できます</div>')+
+      '</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
+    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+acctCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -988,6 +1003,25 @@ const App = {
     this.showSheet(h);
   },
   toggleTask(id){const t=this.state.tasks.find(x=>x.id===id);if(t){t.status=t.status==="done"?"todo":"done";this.commit();}},
+  setAcctFilter(v){this.acctFilter=v;this.render();},
+  openAccount(id){
+    const it=id?this.state.accounts.find(x=>x.id===id):null;
+    const s=this.state.settings;
+    const curOwner=it?it.owner:"common";
+    const h='<h3>'+(it?"口座を編集":"口座を追加")+'</h3>'+
+      this.field("口座名",'<input id="f-aname" placeholder="例: 三菱UFJ / 楽天銀行 / 財布" value="'+esc(it?it.name:"")+'">')+
+      this.field("持ち主",'<div class="seg" id="f-aowner">'+
+        [["husband",esc(s.husband)],["wife",esc(s.wife)],["common","共通"]].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curOwner===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
+      this.field("残高",'<input id="f-abalance" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.balance)+'" oninput="App.commaize(this)">')+
+      '<div class="desc" style="margin:-6px 2px 12px">残高はいつでも編集できます。</div>'+
+      this.actions(()=>{
+        const name=val("f-aname");if(!name){this.toast("口座名を入力してください");return false;}
+        const data={name,owner:seg("f-aowner")||"common",balance:numv("f-abalance")};
+        if(it)Object.assign(it,data);else this.state.accounts.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("accounts",id):null);
+    this.showSheet(h);
+  },
   quickAddTask(projectId){
     const el=document.getElementById("quick-task");
     const title=el?el.value.trim():"";
