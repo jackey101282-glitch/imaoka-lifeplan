@@ -569,21 +569,25 @@ const App = {
     return {totalIncome,manualIncome,fixed,variable,evConfirmed,evIncConfirmed,planned,plannedIncome,totalExpense,balance,afterPlanned,savingsRate,hInc,wInc,oInc,inc,exp};
   },
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
+  // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
+  eventAmountForMonth(e,ym){ if(e&&e.variable)return (e.byMonth&&e.byMonth[ym]!=null)?(+e.byMonth[ym]||0):0; return +(e&&e.amount)||0; },
   eventSum(month,mode,isIncome){
     const today=todayStr(); let sum=0;
-    this.state.events.forEach(e=>{const isInc=e.type==="income";if(e.amount>0&&isInc===isIncome)this.eventDatesInMonth(e,month).forEach(ds=>{const past=ds<=today;if(mode==="confirmed"&&!past)return;if(mode==="planned"&&past)return;sum+=(+e.amount||0);});});
+    this.state.events.forEach(e=>{const isInc=e.type==="income";if(isInc!==isIncome)return;const amt=this.eventAmountForMonth(e,month);if(!(amt>0))return;this.eventDatesInMonth(e,month).forEach(ds=>{const past=ds<=today;if(mode==="confirmed"&&!past)return;if(mode==="planned"&&past)return;sum+=amt;});});
     return sum;
   },
   eventList(month,mode,isIncome){
     const today=todayStr(),list=[];
-    this.state.events.forEach(e=>{const isInc=e.type==="income";if(e.amount>0&&isInc===isIncome){const hit=this.eventDatesInMonth(e,month).filter(d=>{const past=d<=today;if(mode==="confirmed"&&!past)return false;if(mode==="planned"&&past)return false;return true;});if(hit.length)list.push({id:e.id,title:e.title,n:hit.length,sum:hit.length*(+e.amount||0),next:hit.sort()[0]});}});
+    this.state.events.forEach(e=>{const isInc=e.type==="income";if(isInc!==isIncome)return;const amt=this.eventAmountForMonth(e,month);if(!(amt>0))return;const hit=this.eventDatesInMonth(e,month).filter(d=>{const past=d<=today;if(mode==="confirmed"&&!past)return false;if(mode==="planned"&&past)return false;return true;});if(hit.length)list.push({id:e.id,title:e.title,n:hit.length,sum:hit.length*amt,next:hit.sort()[0]});});
     return list.sort((a,b)=>b.sum-a.sum);
   },
   remindersWithin(days){
     const today=todayStr(),end=addDaysStr(today,days);
     const months=[today.slice(0,7)];if(end.slice(0,7)!==months[0])months.push(end.slice(0,7));
     const out=[];
-    this.state.events.forEach(e=>{const kind=e.type==="income"?"income":(e.type==="payment"?"payment":"event");months.forEach(mo=>this.eventDatesInMonth(e,mo).forEach(ds=>{if(ds>=today&&ds<=end)out.push({date:ds,kind,title:e.title,amount:e.amount||0});}));});
+    this.state.events.forEach(e=>{const kind=e.type==="income"?"income":(e.type==="payment"?"payment":"event");months.forEach(mo=>this.eventDatesInMonth(e,mo).forEach(ds=>{if(ds>=today&&ds<=end)out.push({date:ds,kind,title:e.title,amount:this.eventAmountForMonth(e,mo)});}));});
+    // 変動の定期(カード引落等)で当月金額が未入力のものは「金額入力」を促す
+    this.state.events.forEach(e=>{if(!e.variable||!e.fixed)return;const day=(+String(e.date).slice(8))||1;const closeDay=e.closeDay?(+e.closeDay||0):0;months.forEach(mo=>{const entered=e.byMonth&&e.byMonth[mo]!=null;if(entered)return;const trigger=mo+"-"+pad2(Math.min(closeDay||day,28));if(trigger>=today&&trigger<=end)out.push({date:trigger,kind:"input",title:e.title+" の金額を入力",amount:0,recurId:e.id});});});
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"&&t.due>=today&&t.due<=end)out.push({date:t.due,kind:"task",title:t.title,amount:0});});
     return out.sort((a,b)=>a.date<b.date?-1:1);
   },
@@ -713,7 +717,7 @@ const App = {
     const rem=this.remindersWithin(7);
     let remindCard='';
     if(rem.length){
-      const ic={payment:"💴",income:"💰",event:"📌",task:"✅"};
+      const ic={payment:"💴",income:"💰",event:"📌",task:"✅",input:"✏️"};
       let r='';
       rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ic[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
       remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title" style="margin:0;color:var(--color-secondary-500)">🔔 もうすぐ（7日以内）</p>'+r+'</div>';
@@ -727,8 +731,27 @@ const App = {
         r+='<div class="row" style="margin-top:8px"><div style="min-width:0;flex:1"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(lbl)+' '+yen(e.amount)+'</div><div class="meta">'+(mine?"相手の承認待ち":(who+"さんが登録"))+'</div></div>'+(mine?'<span class="chip chip-todo">確認中</span>':'<button class="btn btn-primary btn-sm" style="min-height:34px;padding:5px 14px;white-space:nowrap" onclick="App.approveExpense(\''+e.id+'\')">承認</button>')+'</div>';});
       approveCard='<div class="card" style="border-color:var(--color-warning)"><p class="card-title" style="margin:0;color:var(--color-warning)">🤝 承認待ちの支出</p>'+r+'</div>';
     }
+    // 🔁 定期（毎月の収入・固定費）
+    const curM=this.curMonth;
+    const recs=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
+    let recRows='';
+    recs.forEach(e=>{
+      const day=(+String(e.date).slice(8))||1, inc=e.type==="income", ic=inc?'💰':'💴';
+      let right;
+      if(e.variable){
+        const entered=e.byMonth&&e.byMonth[curM]!=null;
+        right=entered
+          ?'<span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.byMonth[curM])+'</span>'
+          :'<button class="btn btn-primary btn-sm" style="min-height:32px;padding:4px 12px;white-space:nowrap" onclick="event.stopPropagation();App.enterRecurAmount(\''+e.id+'\')">金額を入力</button>';
+      }else{
+        right='<span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.amount)+'</span>';
+      }
+      const sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');
+      recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
+    });
+    const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">🔁</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+simCard+goalsCard+tasksCard+wishCard;
+    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -1028,7 +1051,7 @@ const App = {
     const map={};
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
-    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const rec=(e.recurrence&&e.recurrence!=="none")?" 🔁":"";const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+rec,amount:e.amount,memo:e.memo||"",start:e.start||"",onclick:"App.openEvent('"+e.id+"')"}))});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const rec=(e.recurrence&&e.recurrence!=="none")?" 🔁":"";const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+rec+vTag,amount:cAmt,memo:e.memo||"",start:e.start||"",onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
     this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
     this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
@@ -1217,19 +1240,6 @@ const App = {
     h+='<p class="set-head">家族の名前</p><div class="set-group">'+
       '<div class="set-cell"><span class="lab">夫の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.husband)+'" onchange="App.setName(\'husband\',this.value)"></div>'+
       '<div class="set-cell"><span class="lab">妻の表示名</span><input style="max-width:150px;text-align:right;min-height:40px" value="'+esc(s.wife)+'" onchange="App.setName(\'wife\',this.value)"></div></div>';
-
-    // 定期の収入・固定費（毎月）— 一度登録すれば毎月カレンダー＆家計に自動計上
-    const fx=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
-    const fxInc=fx.filter(e=>e.type==="income").reduce((a,b)=>a+(+b.amount||0),0);
-    const fxExp=fx.filter(e=>e.type!=="income").reduce((a,b)=>a+(+b.amount||0),0);
-    h+='<p class="set-head">定期の収入・固定費（毎月）</p><div class="set-group">'+
-      '<div class="set-cell" style="display:block"><div class="desc">給料・家賃・カード引落・サブスクなど毎月決まったものを登録すると、毎月この日に自動でカレンダーと家計に計上されます。</div></div>';
-    fx.forEach(e=>{const day=(+String(e.date).slice(8))||1,inc=e.type==="income";
-      h+='<div class="set-cell" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><div><span class="lab">'+(inc?'💰':'💴')+' '+esc(e.title)+'</span><div class="desc">毎月'+day+'日</div></div><span class="amt"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+(inc?'+':'−')+yen(e.amount)+'</span></div>';});
-    if(!fx.length)h+='<div class="set-cell"><span class="desc">まだ登録がありません</span></div>';
-    h+='<div class="set-cell" onclick="App.openRecurring()" style="cursor:pointer"><span class="lab" style="color:var(--color-primary-600)">＋ 追加</span></div>';
-    if(fx.length)h+='<div class="set-cell"><span class="desc">固定収入 +'+yen(fxInc)+'／固定費 −'+yen(fxExp)+'（毎月）</span></div>';
-    h+='</div>';
 
     // この端末の本人・承認・通知(夫婦で巻き込む)
     h+='<p class="set-head">この端末・通知</p><div class="set-group">'+
@@ -1443,21 +1453,39 @@ const App = {
     const it=id?this.state.events.find(x=>x.id===id):null;
     const curDay=(it&&it.date)?((+String(it.date).slice(8))||1):1;
     const curType=it?it.type:"payment";
+    const curVar=it?(it.variable?"variable":"fixed"):"fixed";
+    const curClose=it&&it.closeDay?(+it.closeDay||0):0;
+    const dayOptions=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>'<option value="'+d+'" '+(d===sel?"selected":"")+'>'+d+'日</option>').join("");
     const h='<h3>'+(it?"定期項目を編集":"定期の収入・固定費を追加")+'</h3>'+
       this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:"")+'">')+
       this.field("種別",'<div class="seg" id="f-rtype">'+
         [['payment','支出（固定費）'],['income','収入']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curType===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
-      '<div class="form-row">'+this.field("毎月の日",'<select id="f-rday">'+Array.from({length:31},(_,i)=>i+1).map(d=>'<option value="'+d+'" '+(d===curDay?"selected":"")+'>'+d+'日</option>').join("")+'</select>')+
-      this.field("金額",'<input id="f-ramount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+'</div>'+
-      '<div class="desc" style="margin:-6px 2px 14px">登録すると毎月この日に、自動でカレンダーと家計に計上されます。</div>'+
+      this.field("金額タイプ",'<div class="seg" id="f-rvar">'+
+        [['fixed','毎月同じ金額'],['variable','毎月入力（変動）']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curVar===o[0]?"on":"")+'" onclick="App.segRecurType(this)">'+o[1]+'</button>').join("")+'</div>')+
+      this.field("毎月の日（引落・発生日）",'<select id="f-rday">'+dayOptions(curDay)+'</select>')+
+      '<div id="recur-amt-wrap" style="display:'+(curVar==="variable"?"none":"block")+'">'+this.field("金額",'<input id="f-ramount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+'</div>'+
+      '<div id="recur-close-wrap" style="display:'+(curVar==="variable"?"block":"none")+'">'+this.field("締め日（任意・金額が確定する目安日）",'<select id="f-rclose"><option value="">なし</option>'+dayOptions(curClose)+'</select>')+
+        '<div class="desc" style="margin:-6px 2px 8px">金額は毎月ホームの「定期」欄から入力します（締め日が近づくとお知らせ）。</div></div>'+
       this.actions(()=>{
         const title=val("f-rtitle");if(!title){this.toast("名前を入力してください");return false;}
-        const amount=numv("f-ramount");if(!amount){this.toast("金額を入力してください");return false;}
         const day=(+val("f-rday"))||1;
-        const data={title,type:seg("f-rtype")||"payment",date:thisMonth()+"-"+pad2(day),recurrence:"monthly_date",amount,fixed:true,start:null,end:null,loc:"",memo:""};
-        if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
+        const isVar=(seg("f-rvar")||"fixed")==="variable";
+        const base={title,type:seg("f-rtype")||"payment",date:thisMonth()+"-"+pad2(day),recurrence:"monthly_date",fixed:true,start:null,end:null,loc:"",memo:""};
+        if(isVar){base.variable=true;base.amount=null;base.closeDay=(+val("f-rclose"))||null;}
+        else{const amount=numv("f-ramount");if(!amount){this.toast("金額を入力してください");return false;}base.variable=false;base.amount=amount;base.closeDay=null;}
+        if(it)Object.assign(it,base);else this.state.events.push({id:uid(),...base});
         return true;
       },it?()=>this.del("events",id):null);
+    this.showSheet(h);
+  },
+  segRecurType(btn){this.seg(btn);const v=btn.dataset.v;const a=document.getElementById("recur-amt-wrap"),c=document.getElementById("recur-close-wrap");if(a)a.style.display=(v==="variable")?"none":"block";if(c)c.style.display=(v==="variable")?"block":"none";},
+  enterRecurAmount(id){
+    const it=this.state.events.find(x=>x.id===id);if(!it)return;
+    const ym=this.curMonth||thisMonth();
+    const cur=(it.byMonth&&it.byMonth[ym]!=null)?it.byMonth[ym]:"";
+    const h='<h3>'+esc(it.title)+'</h3><div class="desc" style="margin:0 2px 12px">'+monthLabel(ym)+'分の金額を入力</div>'+
+      this.field("金額",'<input id="f-vamount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(cur)+'" oninput="App.commaize(this)">')+
+      this.actions(()=>{const a=numv("f-vamount");it.byMonth=it.byMonth||{};if(a>0)it.byMonth[ym]=a;else delete it.byMonth[ym];return true;});
     this.showSheet(h);
   },
   gcalUrl(ev){
