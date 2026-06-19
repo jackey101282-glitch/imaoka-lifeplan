@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#E86A35" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<title>今岡家ライフプラン</title>
+<title>Mietta（ミエッタ）</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
@@ -231,7 +231,7 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
 @media (min-width:900px){
   body{padding-bottom:0;padding-left:230px}
   .tabbar{flex-direction:column;top:0;bottom:0;left:0;right:auto;width:230px;height:100vh;border-top:none;border-right:1px solid var(--color-border);padding:16px 14px;gap:4px;justify-content:flex-start;align-items:stretch}
-  .tabbar::before{content:"make your life.";display:block;font-weight:800;font-size:var(--text-lg);letter-spacing:-.02em;color:var(--color-primary-600);padding:10px 12px 18px;line-height:1.2}
+  .tabbar::before{content:"Mietta";display:block;font-weight:800;font-size:var(--text-lg);letter-spacing:-.02em;color:var(--color-primary-600);padding:10px 12px 18px;line-height:1.2}
   .tab{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:14px;padding:13px 14px;border-radius:var(--radius-md);width:100%}
   .tab:hover{background:var(--color-bg-muted)}
   .tab.on{background:var(--color-primary-50)}
@@ -589,7 +589,7 @@ const App = {
     const x=c.getContext("2d");
     x.fillStyle="#FAFAF8";x.fillRect(0,0,W,H);
     x.fillStyle="#E86A35";x.fillRect(0,0,W,190);
-    x.fillStyle="#fff";x.textAlign="left";x.font="bold 52px sans-serif";x.fillText("今岡家ライフプラン",64,98);
+    x.fillStyle="#fff";x.textAlign="left";x.font="bold 52px sans-serif";x.fillText("Mietta",64,98);
     x.font="40px sans-serif";x.fillText(monthLabel(this.curMonth)+" の家計",64,158);
     // 残り(中央・大)
     x.textAlign="center";x.fillStyle="#6B6560";x.font="40px sans-serif";x.fillText("残り（貯金できる分）",W/2,360);
@@ -600,7 +600,7 @@ const App = {
     function rr(ctx,X,Y,w,h,r){ctx.beginPath();ctx.moveTo(X+r,Y);ctx.arcTo(X+w,Y,X+w,Y+h,r);ctx.arcTo(X+w,Y+h,X,Y+h,r);ctx.arcTo(X,Y+h,X,Y,r);ctx.arcTo(X,Y,X+w,Y,r);ctx.closePath();ctx.fill();}
     card(80,"今月の収入",m.totalIncome,"#E86A35");
     card(560,"今月の支出",m.totalExpense,"#1A1714");
-    x.fillStyle="#ADA8A2";x.font="32px sans-serif";x.textAlign="center";x.fillText("夫婦の生活管理アプリ「今岡家ライフプラン」",W/2,1000);
+    x.fillStyle="#ADA8A2";x.font="32px sans-serif";x.textAlign="center";x.fillText("夫婦の生活管理アプリ「Mietta（ミエッタ）」",W/2,1000);
     c.toBlob((blob)=>{
       if(!blob){this.toast("画像を作成できませんでした");return;}
       const file=new File([blob],"kakei-"+this.curMonth+".png",{type:"image/png"});
@@ -1227,7 +1227,7 @@ const App = {
       '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">🗑 すべてのデータを消す</span></div></div>'+
       '<input type="file" id="importer" accept="application/json" style="display:none" onchange="App.importData(this.files[0])">';
 
-    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">今岡家ライフプラン管理 v1.0<br>株式会社今岡勇成 制作</p>';
+    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">Mietta（ミエッタ） v1.0<br>株式会社今岡勇成 制作</p>';
     return h;
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
@@ -1534,8 +1534,8 @@ const App = {
     }
     const su=this._authView==="signup";
     return '<div class="authcard"><div class="my-brand">'+
-      '<img class="ic" src="icon-192.png" alt="make your life." />'+
-      '<h2 class="my-wordmark">make your life<span style="color:var(--color-accent-500)">.</span></h2>'+
+      '<img class="ic" src="icon-192.png" alt="Mietta" />'+
+      '<h2 class="my-wordmark">Miett<span style="color:var(--color-accent-500)">a</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+

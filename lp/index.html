@@ -572,8 +572,8 @@ Wi-Fi・サイトのURLもここに</p></div>
   <div class="cta">
     <h2>いちばん早く、使ってみませんか。</h2>
     <p>30秒のアンケートで先行登録。公開初日にお知らせします。</p>
-    <!-- ▼ Formspreeのエンドポイントに置き換え（action="https://formspree.io/f/xxxxxx"） -->
-    <form class="survey" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+    <!-- ▼ Formspree接続: 下のJS定数 FORMSPREE_ID にFormspreeのフォームIDを入れるだけで稼働します -->
+    <form class="survey" id="waitlist-form" method="POST">
       <div class="srow">
         <select name="gender"><option value="" disabled selected>性別</option><option>男性</option><option>女性</option><option>その他・回答しない</option></select>
         <select name="age"><option value="" disabled selected>年代</option><option>20代</option><option>30代</option><option>40代</option><option>50代以上</option></select>
@@ -581,8 +581,15 @@ Wi-Fi・サイトのURLもここに</p></div>
         <select name="type"><option value="" disabled selected>使い方</option><option>夫婦・パートナーと使いたい</option><option>まず一人で試したい</option><option>まだ検討中</option></select>
       </div>
       <input class="full" type="email" name="email" placeholder="メールアドレス" required />
+      <input type="hidden" name="_subject" value="【Mietta】先行登録がありました" />
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
       <button type="submit">先行登録する（無料）</button>
     </form>
+    <div id="waitlist-done" style="display:none;text-align:center;padding:18px 12px">
+      <div style="font-size:32px;line-height:1">🎉</div>
+      <div style="font-weight:800;margin-top:8px">先行登録ありがとうございます！</div>
+      <div class="small" style="margin-top:6px">公開初日（7/15予定）にメールでお知らせします。</div>
+    </div>
     <div class="small">メールはリリースのお知らせにのみ使用します。いつでも解除できます。</div>
   </div>
 </div></section>
@@ -615,6 +622,34 @@ Wi-Fi・サイトのURLもここに</p></div>
     function upd(){var d=Math.max(0,target-new Date().getTime());
       set('cd-d',Math.floor(d/86400000),'日');set('cd-h',Math.floor(d%86400000/3600000),'時間');set('cd-m',Math.floor(d%3600000/60000),'分');}
     upd();setInterval(upd,60000);
+  })();
+
+  /* ===== 先行登録フォーム（Formspree）=====
+     ▼ ここにFormspreeのフォームIDを入れるだけで稼働します（例: "xayzwvqr"）。
+        取得方法: formspree.io で無料登録 → New form → 通知先メールを設定 → 発行されるエンドポイント
+        https://formspree.io/f/XXXXXXXX の XXXXXXXX 部分を貼り付け。 */
+  var FORMSPREE_ID = "YOUR_FORM_ID";
+  (function(){
+    var form=document.getElementById('waitlist-form');
+    if(!form) return;
+    var done=document.getElementById('waitlist-done');
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      if(!FORMSPREE_ID || FORMSPREE_ID==="YOUR_FORM_ID"){
+        alert('フォーム未接続です（FORMSPREE_ID が未設定）。lp/index.html の FORMSPREE_ID にFormspreeのIDを入れて再デプロイしてください。');
+        return;
+      }
+      var btn=form.querySelector('button[type="submit"]');
+      var label=btn?btn.textContent:''; if(btn){btn.disabled=true;btn.textContent='送信中…';}
+      fetch('https://formspree.io/f/'+FORMSPREE_ID,{
+        method:'POST',body:new FormData(form),headers:{'Accept':'application/json'}
+      }).then(function(r){
+        if(r.ok){ form.style.display='none'; if(done) done.style.display='block'; }
+        else { alert('送信に失敗しました。時間をおいて再度お試しください。'); if(btn){btn.disabled=false;btn.textContent=label;} }
+      }).catch(function(){
+        alert('通信エラーが発生しました。電波の良い場所で再度お試しください。'); if(btn){btn.disabled=false;btn.textContent=label;}
+      });
+    });
   })();
 </script>
 </body>

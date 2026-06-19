@@ -1,6 +1,6 @@
 {
-  "name": "make your life.",
-  "short_name": "make your life",
+  "name": "Mietta（ミエッタ）",
+  "short_name": "Mietta",
   "description": "夫婦で共有する家計・タスク・夢・カレンダーの管理アプリ",
   "start_url": "./index.html",
   "display": "standalone",
