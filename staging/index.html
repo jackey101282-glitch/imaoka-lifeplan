@@ -39,12 +39,21 @@
   --shadow-primary:0 4px 12px rgba(196,113,74,.28);
 }
 html[data-theme="dark"]{
-  --color-bg-base:#17130F;--color-bg-surface:#221C16;--color-bg-muted:#2C251D;
-  --color-border:#3A332B;--color-border-strong:#524A40;
-  --color-text-primary:#F0EAE0;--color-text-secondary:#A89E92;--color-text-disabled:#5E574E;
-  --color-primary-50:#2A201A;--color-primary-500:#D4855E;--color-primary-600:#C4714A;
-  --color-secondary-300:#9DB5A0;--color-secondary-500:#8DB491;--color-accent-500:#62BF95;
-  --color-warning:#EBAA46;--color-danger:#E07060;
+  /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
+  --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
+  --color-border:#2C2F36;--color-border-strong:#3D424B;
+  --color-text-primary:#ECEEF1;--color-text-secondary:#99A0AB;--color-text-disabled:#565C66;
+  --color-primary-50:#2A201B;--color-primary-100:#3A2A22;--color-primary-200:#5C3F2E;
+  --color-primary-300:#C97E58;--color-primary-400:#D6885F;--color-primary-500:#E08A5E;
+  --color-primary-600:#E89C72;--color-primary-700:#F0B392;
+  --color-secondary-50:#1B2620;--color-secondary-100:#22332A;--color-secondary-200:#2E4A39;
+  --color-secondary-300:#5E8466;--color-secondary-400:#79A081;--color-secondary-500:#8FBE96;
+  --color-secondary-600:#A6D0AC;--color-secondary-700:#BCDCC0;
+  --color-accent-400:#57C08F;--color-accent-500:#5BC596;--color-accent-600:#86D6AE;
+  --color-warning:#E8B055;--color-danger:#E8705F;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.4);--shadow-sm:0 2px 8px rgba(0,0,0,.45);
+  --shadow-md:0 4px 16px rgba(0,0,0,.5);--shadow-lg:0 10px 36px rgba(0,0,0,.6);
+  --shadow-primary:0 4px 14px rgba(224,138,94,.28);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{overflow-x:hidden}
@@ -119,6 +128,14 @@ html[data-theme="dark"] .chip-over{background:#3a2020}
 .pill-ok{background:#E8F5EF;color:var(--color-accent-600)}
 .pill-warn{background:#FCEFD9;color:var(--color-warning)}
 .pill-bad{background:#FDECEC;color:var(--color-danger)}
+html[data-theme="dark"] .pill-ok{background:#16291F}
+html[data-theme="dark"] .pill-warn{background:#2E2412}
+html[data-theme="dark"] .pill-bad{background:#321C19}
+/* 警告トーンのカード(これからの予定/オフライン等)。ダークでも浮かない */
+.card-warn{background:#FCEFD9;border-color:#F3D9A8}
+.card-warn .lo{color:#9a6a1a}
+html[data-theme="dark"] .card-warn{background:#2A2114;border-color:#46381E}
+html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 /* list item */
 .li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border)}
 .li:last-child{border-bottom:none}
@@ -223,6 +240,9 @@ a.tlink{color:var(--color-secondary-500)}
 .authwrap{position:fixed;inset:0;z-index:100;background:var(--color-bg-base);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .authcard{width:100%;max-width:380px;margin:auto;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-md)}
 .authcard h2{font-size:var(--text-xl)}
+.auth-switch{text-align:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--color-border);font-size:var(--text-sm);color:var(--color-text-secondary)}
+.invite-note{background:var(--color-secondary-50);color:var(--color-secondary-600);border:1px solid var(--color-secondary-200);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);line-height:1.6;margin-bottom:16px;align-items:flex-start}
+.invite-note .ico{margin-top:2px;flex-shrink:0}
 .my-brand{text-align:center;margin-bottom:22px}
 .my-brand .ic{width:72px;height:72px;border-radius:18px;display:inline-block;object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.16)}
 .my-wordmark{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:14px 0 4px}
@@ -407,7 +427,11 @@ const _ICONS={
   trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 13v4M9 21h6M10 21v-2h4v2"/>',
   wallet:'<rect x="3" y="6.5" width="18" height="12" rx="3"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1.1" fill="currentColor" stroke="none"/>',
   trend:'<path d="M3 17 9 11l4 4 8-9"/><path d="M16 6h5v5"/>',
-  send:'<path d="M21 4 3 11l7 3 3 7z"/><path d="m10 14 4-4"/>'
+  send:'<path d="M21 4 3 11l7 3 3 7z"/><path d="m10 14 4-4"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 13.5a5.5 5.5 0 0 1 3 5.5"/>',
+  link:'<path d="M10 13a4 4 0 0 0 5.7.3l2.6-2.6a4 4 0 0 0-5.7-5.7L11 6.6"/><path d="M14 11a4 4 0 0 0-5.7-.3L5.7 13.3a4 4 0 0 0 5.7 5.7L13 17.4"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5V5a2 2 0 0 1 2-2h8.5A1.5 1.5 0 0 1 15 4.5V5"/>',
+  heart:'<path d="M12 20S4 14.5 4 9a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 5.5-8 11-8 11z"/>'
 };
 function ic(name,sz){sz=sz||18;return '<svg class="ico" width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(_ICONS[name]||'')+'</svg>';}
 
@@ -425,7 +449,7 @@ const App = {
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
-  _user:null, householdId:null, _inviteCode:"", _authView:"login", hideAmt:false,
+  _user:null, householdId:null, _inviteCode:"", _pendingInvite:"", _authView:"login", hideAmt:false,
 
   init(){
     try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
@@ -680,10 +704,10 @@ const App = {
     // これからの予定(未来の入金・支払い)
     let plannedCard='';
     if(m.planned>0||m.plannedIncome>0){
-      plannedCard='<div class="card" style="border-color:#F3D9A8;background:#FCEFD9"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('calendar',16)+'これからの予定(入出金)</p>'+
+      plannedCard='<div class="card card-warn"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('calendar',16)+'これからの予定(入出金)</p>'+
         (m.plannedIncome>0?'<div class="row" style="margin-top:8px"><span>入る予定</span><span class="num" style="font-weight:700;color:var(--color-accent-600)">＋'+yen(m.plannedIncome)+'</span></div>':'')+
         (m.planned>0?'<div class="row" style="margin-top:8px"><span>支払う予定</span><span class="num" style="font-weight:700;color:var(--color-danger)">－'+yen(m.planned)+'</span></div>':'')+
-        '<div class="meta" style="margin-top:8px;color:#9a6a1a">日付が来たら自動で今月の収入/支出に反映されます。月末の見込み残りは '+yen(m.afterPlanned)+'。</div></div>';
+        '<div class="meta lo" style="margin-top:8px">日付が来たら自動で今月の収入/支出に反映されます。月末の見込み残りは '+yen(m.afterPlanned)+'。</div></div>';
     }
     // 収入カード(合計+▼で内訳開閉)
     let incCard;
@@ -751,9 +775,9 @@ const App = {
     const rem=this.remindersWithin(7);
     let remindCard='';
     if(rem.length){
-      const kindIc={payment:"💴",income:"💰",event:"📌",task:"✅",input:"✏️"};
+      const kindIc={payment:ic('wallet',15),income:ic('trend',15),event:ic('calendar',15),task:ic('check',15),input:ic('chart',15)};
       let r='';
-      rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(kindIc[o.kind]||"📌")+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
+      rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span class="muted" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-primary)">'+(kindIc[o.kind]||ic('calendar',15))+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
       remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-500)">'+ic('bell',16)+'もうすぐ（7日以内）</p>'+r+'</div>';
     }
     // 🤝 承認待ちの支出
@@ -770,7 +794,7 @@ const App = {
     const recs=this.state.events.filter(e=>e.fixed).slice().sort((a,b)=>((+String(a.date).slice(8))||0)-((+String(b.date).slice(8))||0));
     let recRows='';
     recs.forEach(e=>{
-      const inc=e.type==="income", ic=inc?'💰':'💴';
+      const inc=e.type==="income", rIcon=inc?ic('trend',18):ic('wallet',18);
       const day=(+String(e.date).slice(8))||1;
       const dateUnknown=e.dayMode==="variable";
       const amtKnown=!e.variable||(e.byMonth&&e.byMonth[curM]!=null);
@@ -784,7 +808,7 @@ const App = {
       let sub;
       if(dateUnknown){const ds=(e.byMonthDate&&e.byMonthDate[curM]);sub=(ds?(ds.slice(5).replace("-","/")+'に確定'):'日付未定')+(e.variable?'・変動':'');}
       else{sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');}
-      recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
+      recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+rIcon+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
     const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">🔁</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
     // 📊 予算ペース管理レポート(当月のみ)
@@ -822,7 +846,7 @@ const App = {
       debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'完済</span>')+'</div></div>';});
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">🧾</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
-    const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div class="ttl-ico" style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
+    const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     const alerts=storeWarn+remindCard+approveCard;
     // 主要3数字(支出/収入/残り)はヒーロー帯。残りは2列。スマホでは全て縦積み(従来通り)。
@@ -1234,7 +1258,11 @@ const App = {
     h+='<div class="pocket-grid">';
     this.state.folders.forEach(f=>{
       const cnt=this.state.items.filter(i=>i.folderId===f.id).length;
-      h+='<div class="pocket" onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:16px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div class="ic" style="width:52px;height:52px;font-size:26px;border-radius:15px">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-lg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
+      if(f.image){
+        h+='<div class="pocket" onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;border-radius:18px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;overflow:hidden;background-image:linear-gradient(to top,rgba(0,0,0,.66),rgba(0,0,0,0) 58%),url(\''+f.image+'\');background-size:cover;background-position:center;box-shadow:var(--shadow-sm)"><div style="font-weight:700;font-size:var(--text-lg);color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div style="color:rgba(255,255,255,.88);font-size:var(--text-sm)">'+cnt+'件</div></div>';
+      }else{
+        h+='<div class="pocket" onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:16px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div class="ic" style="width:52px;height:52px;font-size:26px;border-radius:15px">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-lg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
+      }
     });
     h+='<div onclick="App.openFolderForm()" style="aspect-ratio:1;border:1.5px dashed var(--color-border-strong);border-radius:18px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--color-text-secondary)"><div style="font-size:28px;line-height:1;color:var(--color-primary-500)">＋</div><div style="font-size:var(--text-sm)">フォルダを追加</div></div>';
     h+='</div>';
@@ -1251,7 +1279,8 @@ const App = {
     const f=this.state.folders.find(x=>x.id===this.curFolderId);
     if(!f){this.shareView="home";return this.view_share();}
     let h='<button class="btn btn-sec btn-sm btn-block" style="margin-bottom:12px" onclick="App.shareGo(\'home\')">‹ 共有にもどる</button>';
-    h+='<div class="section-title" style="margin-top:0">'+f.icon+' '+esc(f.name)+'<span class="link" onclick="App.openFolderForm(\''+f.id+'\')">フォルダ編集</span></div>';
+    if(f.image)h+='<div style="height:160px;border-radius:var(--radius-lg);margin-bottom:12px;background-image:url(\''+f.image+'\');background-size:cover;background-position:center;box-shadow:var(--shadow-sm)"></div>';
+    h+='<div class="section-title" style="margin-top:0">'+(f.image?'':f.icon+' ')+esc(f.name)+'<span class="link" onclick="App.openFolderForm(\''+f.id+'\')">フォルダ編集</span></div>';
     const items=this.state.items.filter(i=>i.folderId===f.id).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
     if(!items.length){h+='<div class="card"><div class="empty"><span class="e-ic">'+f.icon+'</span>まだ何もありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openItem(null,\''+f.id+'\')">＋ 追加する</button></div></div>';return h;}
     items.forEach(it=>h+=this.itemCard(it));
@@ -1268,8 +1297,8 @@ const App = {
       (l.url?'<a class="btn btn-sec btn-sm" style="text-decoration:none;min-height:36px;padding:6px 12px;white-space:nowrap" href="'+esc(l.url)+'" target="_blank" rel="noopener">開く ↗</a>':'')+'</div>';
     if(l.target>0){
       h+='<div class="prog lg" style="margin-top:12px"><span class="fill-accent" style="width:'+pct+'%"></span></div>'+
-        '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(l.current||0)+' / '+yen(l.target)+'</span><span class="meta">'+(l.date?'🗓 '+esc(l.date):Math.round(pct)+'%')+'</span></div>';
-    }else if(l.date){h+='<div class="meta" style="margin-top:8px">🗓 '+esc(l.date)+'</div>';}
+        '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(l.current||0)+' / '+yen(l.target)+'</span><span class="meta ttl-ico">'+(l.date?ic('calendar',13)+esc(l.date):Math.round(pct)+'%')+'</span></div>';
+    }else if(l.date){h+='<div class="meta ttl-ico" style="margin-top:8px">'+ic('calendar',13)+esc(l.date)+'</div>';}
     if(l.loginId||l.password){
       h+='<div style="margin-top:12px;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:10px 12px">';
       if(l.loginId){h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">ID</div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.loginId)+'</div></div><button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 12px;white-space:nowrap" onclick="App.copyItem(\''+l.id+'\',\'loginId\')">コピー</button></div>';}
@@ -1277,7 +1306,7 @@ const App = {
       h+='</div>';
     }
     if(l.memo)h+='<div class="meta" style="margin-top:10px;white-space:pre-wrap">'+esc(l.memo)+'</div>';
-    if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm" style="min-height:36px;padding:6px 14px" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">🛒 買った→支出に記録</button></div>';
+    if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm ttl-ico" style="min-height:36px;padding:6px 14px;justify-content:center" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">'+ic('wallet',14)+'買った→支出に記録</button></div>';
     h+='</div>';
     return h;
   },
@@ -1286,13 +1315,15 @@ const App = {
   copy(text){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>this.toast("コピーしました")).catch(()=>this.toast("コピーできませんでした"));}else{this.toast("コピーできませんでした");}},
   openFolderForm(id){
     const it=id?this.state.folders.find(x=>x.id===id):null;
+    this._formImage=it&&it.image?it.image:null;
     const h='<h3>'+(it?"フォルダを編集":"新しいフォルダ")+'</h3>'+
       this.field("フォルダ名",'<input id="f-name" placeholder="例: 行ってみたいお店 / 泊まりたい宿" value="'+esc(it?it.name:"")+'">')+
       this.field("アイコン（絵文字）",'<input id="f-icon" placeholder="📁" value="'+esc(it?it.icon:"📁")+'">')+
+      this.field("カバー画像（任意）",'<div id="f-img-preview">'+this.imgPreview(it&&it.image)+'</div><input type="file" accept="image/*" onchange="App.pickImage(this)"><div class="meta" style="margin-top:6px">画像を設定するとポケットの表紙になります</div>')+
       this.actions(()=>{
         const name=val("f-name");if(!name){this.toast("フォルダ名を入力してください");return false;}
-        const icon=val("f-icon")||"📁";
-        if(it){it.name=name;it.icon=icon;}else{const nf={id:uid(),name,icon};this.state.folders.push(nf);this.curFolderId=nf.id;this.shareView="folder";}
+        const icon=val("f-icon")||"📁";const image=this._formImage||null;
+        if(it){it.name=name;it.icon=icon;it.image=image;}else{const nf={id:uid(),name,icon,image};this.state.folders.push(nf);this.curFolderId=nf.id;this.shareView="folder";}
         return true;
       },it?()=>{this.state.items=this.state.items.filter(x=>x.folderId!==id);this.state.folders=this.state.folders.filter(x=>x.id!==id);this.shareView="home";}:null);
     this.showSheet(h);
@@ -1669,6 +1700,7 @@ const App = {
     try{
       await this.loadSb();
       this._client=window.supabase.createClient(APP_CONFIG.url,APP_CONFIG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"sb-mietta-staging-auth"}});
+      try{const p=new URLSearchParams(location.search).get("invite");if(p){this._pendingInvite=p.trim().toUpperCase();this._authView="signup";}}catch(e){}
       const {data:{session}}=await this._client.auth.getSession();
       if(session&&session.user){this._user=session.user;await this.afterAuth();}
       else{this.showAuth();}
@@ -1692,11 +1724,12 @@ const App = {
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
       if(error)throw error;
       if(mem&&mem.length){this.householdId=mem[0].household_id;await this.loadCloud();this.hideAuth();}
+      else if(this._pendingInvite){const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
       else{this._authView="household";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("はじめましょう!");}catch(e){console.error(e);this.toast("作成に失敗しました");}},
-  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this.hideAuth();this.toast("参加しました!");}catch(e){console.error(e);this.toast("招待コードが正しくありません");}},
+  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
       const{data,error}=await this._client.from("app_state").select("data,invite_code").eq("household_id",this.householdId).maybeSingle();
@@ -1743,12 +1776,26 @@ const App = {
   /* ---- 認証オーバーレイ ---- */
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
+  inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.toast("ようこそ！");},
+  async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
+    if(this._authView==="invite"){
+      const code=this._inviteCode||"",url=this.inviteUrl(code);
+      return '<div class="authcard">'+
+        '<div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('heart',40)+'</div>'+
+        '<h2 style="text-align:center;margin:0 0 4px">ふたりのスペースを作りました</h2>'+
+        '<p class="muted" style="text-align:center;margin:0 0 18px;line-height:1.7">下の招待リンクをパートナーに送ってください。<br>開くだけで登録でき、同じスペースに参加できます。</p>'+
+        '<label class="fld"><span class="lbl ttl-ico">'+ic('link',14)+'招待リンク</span><div style="display:flex;gap:8px"><input id="inv-url" readonly value="'+esc(url)+'" onclick="this.select()" style="flex:1;min-width:0;font-size:var(--text-sm)"><button class="btn btn-primary" style="flex-shrink:0;min-height:48px;padding:0 16px" onclick="App.copy(App.inviteUrl())">コピー</button></div></label>'+
+        '<div class="muted" style="text-align:center;margin:-6px 0 16px">招待コード: <b class="num" style="letter-spacing:2px">'+esc(code)+'</b></div>'+
+        '<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center" onclick="App.shareInvite()">'+ic('send',16)+'リンクを送る</button>'+
+        '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.finishInvite()">アプリを始める</button></div>';
+    }
     if(this._authView==="household"){
-      return '<div class="authcard"><div style="text-align:center;font-size:34px">👫</div><h2 style="text-align:center;margin:6px 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
-        '<button class="btn btn-primary btn-block" onclick="App.createHousehold()">新しく家計を始める</button>'+
-        '<div class="muted" style="text-align:center;margin:14px 0 10px">― または ―</div>'+
-        '<input id="au-code" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
+      return '<div class="authcard"><div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('users',40)+'</div><h2 style="text-align:center;margin:0 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.createHousehold()">新しくスペースを作る</button>'+
+        '<div class="muted" style="text-align:center;margin:16px 0 12px;display:flex;align-items:center;gap:10px"><span style="flex:1;height:1px;background:var(--color-border)"></span>または<span style="flex:1;height:1px;background:var(--color-border)"></span></div>'+
+        '<input id="au-code" value="'+esc(this._pendingInvite||"")+'" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
         '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.joinHousehold(document.getElementById(\'au-code\').value)">招待コードで参加</button>'+
         '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.doLogout()">ログアウト</span></div></div>';
     }
@@ -1757,10 +1804,11 @@ const App = {
       '<img class="ic" src="../icon-192.png" alt="Mietta" />'+
       '<h2 class="my-wordmark">Miett<span style="color:var(--color-accent-500)">a</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
+      (this._pendingInvite?'<div class="invite-note ttl-ico">'+ic('heart',15)+'パートナーから招待されています。登録するとふたりのスペースに参加できます。</div>':'')+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
-      '<button class="btn btn-primary btn-block" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録":"ログイン")+'</button>'+
-      '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"すでにアカウントがある → ログイン":"はじめての方 → 新規登録")+'</span></div></div>';
+      '<button class="btn btn-primary btn-block" style="margin-top:4px" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録ではじめる":"ログイン")+'</button>'+
+      '<div class="auth-switch">'+(su?"すでにアカウントをお持ちですか？":"アカウントをお持ちでない方")+'<button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"ログインに切り替え":"新規登録に切り替え")+'</button></div></div>';
   }
 };
 // helpers used inside form callbacks
