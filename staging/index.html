@@ -351,6 +351,7 @@ function seedState(){
     customCats:{fixed:[],variable:[],task:[],income:[],wish:[]},
     incomes:[], expenses:[],
     accounts:[],
+    debts:[],
     goals:[],
     folders:[],
     items:[],
@@ -436,7 +437,7 @@ const App = {
     const s=this.state; s.settings=s.settings||{}; s.settings.sync=s.settings.sync||{enabled:false,url:"",key:"",space:""};
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0;
     if(s.settings.spaceName==null)s.settings.spaceName="";
-    ["incomes","expenses","accounts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    ["incomes","expenses","accounts","debts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
@@ -773,8 +774,15 @@ const App = {
       (accts.length?'<div class="filters" style="margin-top:10px">'+afc('all','すべて')+afc('husband',esc(s.husband))+afc('wife',esc(s.wife))+'</div>':'')+
       (accRows||'<div class="empty" style="padding:14px 0"><span class="e-ic">💳</span>口座と残高を登録すると、合計や夫婦別で管理できます</div>')+
       '</div>';
+    // 🧾 返済・ローン
+    const debts=this.state.debts||[];
+    let debtRows='',debtRemain=0;
+    debts.forEach(d=>{const total=+d.count||0,paid=+d.paid||0,left=Math.max(0,total-paid),remainAmt=(+d.monthly||0)*left,pct=total?Math.round(paid/total*100):0;debtRemain+=remainAmt;
+      debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full" style="background:var(--color-accent-500);color:#fff">完済 🎉</span>')+'</div></div>';});
+    const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
+      (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">🧾</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card" style="border-color:var(--color-warning);background:#FCEFD9"><div style="color:#9a6a1a;font-size:var(--text-sm);line-height:1.7">⚠️ クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</div></div>':'';
-    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+acctCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
+    return storeWarn+remindCard+approveCard+'<div class="dash-grid">'+expCard+incCard+'</div>'+remainCard+acctCard+debtCard+paceCard+plannedCard+recurCard+simCard+goalsCard+tasksCard+wishCard;
   },
 
   /* ====== income / expense lists ====== */
@@ -1004,6 +1012,24 @@ const App = {
   },
   toggleTask(id){const t=this.state.tasks.find(x=>x.id===id);if(t){t.status=t.status==="done"?"todo":"done";this.commit();}},
   setAcctFilter(v){this.acctFilter=v;this.render();},
+  openDebt(id){
+    const it=id?this.state.debts.find(x=>x.id===id):null;
+    const h='<h3>'+(it?"返済を編集":"返済・ローンを追加")+'</h3>'+
+      this.field("名前",'<input id="f-dname" placeholder="例: 結婚式費用(父に立替) / 奨学金 / 車ローン" value="'+esc(it?it.name:"")+'">')+
+      this.field("総額（任意）",'<input id="f-dtotal" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.total)+'" oninput="App.commaize(this)">')+
+      '<div class="form-row">'+this.field("毎月の返済額",'<input id="f-dmonthly" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.monthly)+'" oninput="App.commaize(this)">')+
+      this.field("総回数",'<input id="f-dcount" type="number" inputmode="numeric" placeholder="例: 12" value="'+(it&&it.count?it.count:"")+'">')+'</div>'+
+      this.field("返済済みの回数",'<input id="f-dpaid" type="number" inputmode="numeric" placeholder="0" value="'+(it&&it.paid?it.paid:"0")+'">')+
+      '<div class="desc" style="margin:-6px 2px 12px">登録後は「返済した」ボタンで1回ずつ進められます。</div>'+
+      this.actions(()=>{
+        const name=val("f-dname");if(!name){this.toast("名前を入力してください");return false;}
+        const data={name,total:numv("f-dtotal"),monthly:numv("f-dmonthly"),count:Math.max(0,parseInt(val("f-dcount"))||0),paid:Math.max(0,parseInt(val("f-dpaid"))||0)};
+        if(it)Object.assign(it,data);else this.state.debts.push({id:uid(),...data});
+        return true;
+      },it?()=>this.del("debts",id):null);
+    this.showSheet(h);
+  },
+  repayDebt(id){const d=this.state.debts.find(x=>x.id===id);if(d){d.paid=Math.min((+d.count||0),(+d.paid||0)+1);this.commit();this.toast("1回分の返済を記録しました");}},
   openAccount(id){
     const it=id?this.state.accounts.find(x=>x.id===id):null;
     const s=this.state.settings;
@@ -1083,7 +1109,10 @@ const App = {
       arr.sort((a,b)=>b.sum-a.sum);
       const total=arr.reduce((s,x)=>s+x.sum,0);
       h+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
-      arr.forEach(c=>{const pct=total>0?Math.round(c.sum/total*100):0;h+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span class="fill-primary" style="width:'+pct+'%"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
+      const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
+      let gsegs='';arr.forEach((c,i)=>{const p=total>0?(c.sum/total*100):0;if(p>0)gsegs+='<span style="width:'+p+'%;background:'+gpal[i%gpal.length]+';display:block"></span>';});
+      h+='<div style="display:flex;height:16px;border-radius:9px;overflow:hidden;margin-bottom:14px">'+gsegs+'</div>';
+      arr.forEach((c,i)=>{const pct=total>0?Math.round(c.sum/total*100):0;h+='<div class="li"><span class="ic">'+c.icon+'</span><div class="main"><div class="ttl">'+esc(c.label)+' <span class="meta">'+c.n+'件</span></div><div class="prog"><span style="display:block;height:100%;border-radius:inherit;width:'+pct+'%;background:'+gpal[i%gpal.length]+'"></span></div></div><div style="text-align:right"><div class="amt">'+yen(c.sum)+'</div><div class="meta num">'+pct+'%</div></div></div>';});
       h+='</div>';
     }
     return h;
@@ -1140,6 +1169,7 @@ const App = {
     if(!items.length)h+='<div class="empty">予定はありません</div>';
     items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+it.icon+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
     h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加（相手に頼む）</button>';
     this.showSheet(h);
   },
 
@@ -1150,16 +1180,13 @@ const App = {
     let h='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 14px">「行きたい場所・やりたいこと・欲しい物・よく使うサイト」などをフォルダで整理。日付の決まっていない共有メモも残せます。</p>';
     h+=this.hubCard("📝","共有メモ","日付のない自由メモ。流れず残ります",this.state.notes.length+"件","notes");
     h+='<div class="section-title">フォルダ<span class="link" onclick="App.openFolderForm()">＋ フォルダ追加</span></div>';
-    if(!this.state.folders.length){
-      h+='<div class="card"><div class="empty"><span class="e-ic">📁</span>フォルダがありません<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openFolderForm()">＋ フォルダを作る</button></div></div>';
-    }
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
     this.state.folders.forEach(f=>{
       const cnt=this.state.items.filter(i=>i.folderId===f.id).length;
-      h+='<div class="card" style="padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px" onclick="App.openFolder(\''+f.id+'\')">'+
-        '<div style="font-size:26px;flex-shrink:0;line-height:1">'+f.icon+'</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div></div>'+
-        '<span class="chip chip-todo">'+cnt+'件</span><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+      h+='<div onclick="App.openFolder(\''+f.id+'\')" style="aspect-ratio:1;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:18px;padding:15px;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow-xs)"><div style="font-size:30px;line-height:1">'+f.icon+'</div><div style="flex:1"></div><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</div><div class="meta" style="margin-top:2px">'+cnt+'件</div></div>';
     });
+    h+='<div onclick="App.openFolderForm()" style="aspect-ratio:1;border:1.5px dashed var(--color-border-strong);border-radius:18px;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--color-text-secondary)"><div style="font-size:28px;line-height:1;color:var(--color-primary-500)">＋</div><div style="font-size:var(--text-sm)">フォルダを追加</div></div>';
+    h+='</div>';
     return h;
   },
   hubCard(icon,title,desc,count,view){
@@ -1417,7 +1444,7 @@ const App = {
   // ---- task ----
   taskSubSelect(projId,subId){const subs=this.state.subprojects.filter(s=>s.projectId===projId);return '<select id="f-sub2"'+(projId?'':' disabled')+'><option value="">（なし）</option>'+subs.map(s=>'<option value="'+s.id+'" '+(s.id===subId?"selected":"")+'>'+esc(s.name)+'</option>').join("")+'</select>';},
   taskProjChange(){const pid=val("f-proj");document.getElementById("sub-wrap").innerHTML=this.field("グループ（中プロジェクト）",this.taskSubSelect(pid,null));},
-  openTask(id,subId,projId){
+  openTask(id,subId,projId,presetDue){
     const it=id?this.state.tasks.find(x=>x.id===id):null;
     this._formImage=it&&it.image?it.image:null;
     const presetSub=(typeof subId==="string"&&subId)?subId:(it?it.subId:null);
@@ -1429,7 +1456,7 @@ const App = {
         ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'both:二人'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.assignee:"both")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
       this.field("プロジェクト（任意）",'<select id="f-proj" onchange="App.taskProjChange()"><option value="">（個別タスク）</option>'+this.state.projects.map(p=>'<option value="'+p.id+'" '+(p.id===presetProj?"selected":"")+'>'+p.icon+' '+esc(p.name)+'</option>').join("")+'</select>')+
       '<div id="sub-wrap">'+this.field("グループ（中プロジェクト）",this.taskSubSelect(presetProj,presetSub))+'</div>'+
-      '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:"")+'">')+
+      '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:(presetDue||""))+'">')+
       this.field("優先度",'<select id="f-priority">'+['high:高','medium:中','low:低'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.priority:"medium")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+'</div>'+
       this.field("メモ",'<textarea id="f-memo" placeholder="詳細メモ">'+esc(it?it.memo:"")+'</textarea>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 区役所 / 自宅" value="'+esc(it&&it.loc?it.loc:"")+'">')+
