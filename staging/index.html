@@ -185,7 +185,8 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .sheet.show{transform:translateY(0)}
 .sheet input,.sheet select,.sheet textarea{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){.sheet{max-width:560px;margin:0 auto}}
-.sheet .grip{width:38px;height:4px;background:var(--color-border-strong);border-radius:2px;margin:6px auto 12px}
+.sheet .grip{width:44px;height:5px;background:var(--color-border-strong);border-radius:3px;margin:8px auto 12px;cursor:grab;touch-action:none}
+.sheet .grip:active{cursor:grabbing}
 .sheet-close{position:absolute;top:12px;right:14px;width:34px;height:34px;border-radius:var(--radius-full);border:none;background:var(--color-bg-muted);color:var(--color-text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .sheet-close:active{background:var(--color-border)}
 .sheet h3{padding-right:40px}
@@ -431,9 +432,27 @@ const _ICONS={
   users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 13.5a5.5 5.5 0 0 1 3 5.5"/>',
   link:'<path d="M10 13a4 4 0 0 0 5.7.3l2.6-2.6a4 4 0 0 0-5.7-5.7L11 6.6"/><path d="M14 11a4 4 0 0 0-5.7-.3L5.7 13.3a4 4 0 0 0 5.7 5.7L13 17.4"/>',
   copy:'<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5V5a2 2 0 0 1 2-2h8.5A1.5 1.5 0 0 1 15 4.5V5"/>',
-  heart:'<path d="M12 20S4 14.5 4 9a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 5.5-8 11-8 11z"/>'
+  heart:'<path d="M12 20S4 14.5 4 9a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 5.5-8 11-8 11z"/>',
+  rocket:'<path d="M5 15c-1.5 1-2 4-2 4s3-.5 4-2a2.1 2.1 0 0 0-2-2z"/><path d="M9 14.5 7 13a11 11 0 0 1 4-7c2-2 5-3 8-3 0 3-1 6-3 8a11 11 0 0 1-7 4l-1.5-2"/><circle cx="14.5" cy="9.5" r="1.4"/>',
+  lifebuoy:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/><path d="m6 6 3.6 3.6M14.4 14.4 18 18M18 6l-3.6 3.6M9.6 14.4 6 18"/>',
+  graduation:'<path d="M12 4 2.5 8.5 12 13l9.5-4.5z"/><path d="M6.5 11v4.5c0 1 2.5 2.5 5.5 2.5s5.5-1.5 5.5-2.5V11"/><path d="M21.5 8.5v5"/>',
+  house:'<path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/>',
+  person:'<circle cx="12" cy="7.5" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  palm:'<path d="M12 21V11"/><path d="M12 11c-2-3-6-3-7-1 3-1 5 0 7 1zM12 11c2-3 6-3 7-1-3-1-5 0-7 1zM12 11c0-3-2-6-5-6 1 3 2 5 5 6zM12 11c0-3 2-6 5-6-1 3-2 5-5 6z"/>',
+  car:'<path d="M4 16v-3.2l2-4.3A2 2 0 0 1 7.8 7h8.4a2 2 0 0 1 1.8 1.5l2 4.3V16"/><path d="M3 16h18v2.5h-3V16M6 18.5V16H3"/><circle cx="7.5" cy="16.2" r="1.4"/><circle cx="16.5" cy="16.2" r="1.4"/>',
+  sofa:'<path d="M4 11V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M3 11a2 2 0 0 1 2 2v3h14v-3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5H1v-5a2 2 0 0 1 2-2z"/><path d="M6 19v1.5M18 19v1.5"/>',
+  trash:'<path d="M4 7h16M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7M6.5 7l1 12a1.6 1.6 0 0 0 1.6 1.5h5.8A1.6 1.6 0 0 0 16.5 19l1-12"/>',
+  shield:'<path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.3 7 9 4.1-1.7 7-4.8 7-9V6z"/>',
+  baby:'<circle cx="12" cy="6.5" r="2.2"/><path d="M7 13a5 5 0 0 1 10 0M9 13v6.5M15 13v6.5M9 16.5h6"/>',
+  clipboard:'<rect x="6" y="5" width="12" height="16" rx="2.2"/><path d="M9.5 5a2.5 2.5 0 0 1 5 0"/><path d="M9 11h6M9 14.5h4"/>',
+  coins:'<ellipse cx="9" cy="7" rx="5" ry="2.4"/><path d="M4 7v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"/><path d="M10 14.4c.6 1 2.6 1.8 5 1.8 2.8 0 5-1.1 5-2.4V9.6c0-1.1-1.5-2-3.6-2.3"/>',
+  party:'<path d="M4 20 9 8l7 7z"/><path d="M9 8c1-2 3-2 4 0M14 4c.5 1.5 2 2 3.5 1.5M18 8c1.5 0 2.5 1 2.5 2.5M16 12c1.5-.5 3 .5 3 2"/>',
+  tag:'<path d="M4 11.5V5a1 1 0 0 1 1-1h6.5l8 8a1.4 1.4 0 0 1 0 2l-6.5 6.5a1.4 1.4 0 0 1-2 0z"/><circle cx="8" cy="8" r="1.3"/>',
+  map:'<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/>'
 };
 function ic(name,sz){sz=sz||18;return '<svg class="ico" width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(_ICONS[name]||'')+'</svg>';}
+/* タスクのカテゴリ→ラインアイコン */
+const TASK_IC={insurance:'shield',child:'baby',admin:'clipboard',finance:'coins',home:'house',event:'party',other:'tag'};
 
 /* ============================================================ */
 /* ===== 自動同期の埋め込み設定 =====
@@ -457,8 +476,10 @@ const App = {
     this.deviceOwner=localStorage.getItem("imaoka_device")||"";
     this.hideAmt=localStorage.getItem("imaoka_hide_amt")==="1"; HIDE_AMT=this.hideAmt;
     this.applyTheme();
-    this.go("dashboard");
+    const _lt=localStorage.getItem("imaoka_tab");
+    this.go(["dashboard","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
     this.notifyPending();
+    this.sheetDrag();
     this.initCloud();
     window.addEventListener("beforeunload",()=>this.save());
     // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)
@@ -526,6 +547,7 @@ const App = {
   /* ---- navigation ---- */
   go(tab){
     this.tab=tab;
+    if(["dashboard","tasks","calendar","share","settings"].includes(tab)){try{localStorage.setItem("imaoka_tab",tab);}catch(e){}}
     if(tab==="share"){this.shareView="home";this.curFolderId=null;}
     if(tab==="tasks"){this.taskView="home";this.curProjectId=null;this.curSubId=null;}
     document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
@@ -700,7 +722,7 @@ const App = {
       '</div>';
     }
     // ライフプラン・シミュレーターへの入口
-    const simCard='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-secondary-50);border-color:var(--color-secondary-200)" onclick="App.go(\'simulator\')"><div class="ic" style="background:var(--color-secondary-100);color:var(--color-secondary-600);width:44px;height:44px">'+ic('trend',22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-secondary-600)">ライフプラン・シミュレーター</div><div class="meta">10年後・将来の貯蓄を見える化</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+    const simCard='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-secondary-50);border-color:var(--color-secondary-200)" onclick="App.go(\'simulator\')"><div class="ic" style="background:var(--color-secondary-100);color:var(--color-secondary-600);width:44px;height:44px">'+ic('rocket',22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-secondary-600)">ライフプラン・シミュレーター</div><div class="meta">10年後・将来の貯蓄を見える化</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
     // これからの予定(未来の入金・支払い)
     let plannedCard='';
     if(m.planned>0||m.plannedIncome>0){
@@ -739,12 +761,12 @@ const App = {
       '<div style="margin-top:10px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div></div>';
 
     // goals
+    const GOAL_IC={goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
     let goalsHtml="";
     this.state.goals.forEach(g=>{
-      const t=findCat("goalType",g.typeId);
       const pct=g.target>0?Math.min(100,g.current/g.target*100):0;
       goalsHtml+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer">'+
-        '<span class="ic">'+t.icon+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
+        '<span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div>'+
         '<div class="prog"><span class="fill-accent" style="width:'+pct+'%"></span></div></div>'+
         '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(pct)+'%</div><div class="meta">'+yen(g.current)+'</div></div></div>';
     });
@@ -971,13 +993,15 @@ const App = {
     const aChip=t.assignee==="husband"?'<span class="chip chip-full chip-h">'+esc(this.state.settings.husband)+'</span>':
       t.assignee==="wife"?'<span class="chip chip-full chip-w">'+esc(this.state.settings.wife)+'</span>':
       '<span class="chip chip-full chip-both">二人</span>';
-    const dueChip=t.due?('<span class="chip '+(overdue?'chip-over':'chip-todo')+'">📅 '+t.due.slice(5).replace("-","/")+'</span>'):'';
-    const att=(t.loc?'📍':'')+(t.url?'🔗':'')+(t.image?'🖼':'');
-    const attChip=att?('<span class="chip chip-todo">'+att+'</span>'):'';
+    const dueChip=t.due?('<span class="chip ttl-ico '+(overdue?'chip-over':'chip-todo')+'">'+ic('calendar',12)+t.due.slice(5).replace("-","/")+'</span>'):'';
+    const att=(t.loc?ic('map',13):'')+(t.url?ic('link',13):'');
+    const attChip=att?('<span class="chip chip-todo ttl-ico">'+att+'</span>'):'';
+    const cl=t.checklist||[];const clDone=cl.filter(c=>c.done).length;
+    const clChip=cl.length?('<span class="chip '+(clDone===cl.length?'chip-both':'chip-todo')+' ttl-ico">'+ic('check',12)+clDone+'/'+cl.length+'</span>'):'';
     return '<div class="li '+(t.status==="done"?"done":"")+'">'+
-      '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?"✓":"")+'</div>'+
-      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl">'+c.icon+' '+esc(t.title)+'</div>'+
-      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+attChip+'</div></div></div>';
+      '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?ic('check',14):'')+'</div>'+
+      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico">'+ic(TASK_IC[t.cat]||'tag',15)+esc(t.title)+'</div>'+
+      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div></div></div>';
   },
   projTasks(pid){return this.state.tasks.filter(t=>t.projectId===pid);},
   subTasks(sid){return this.state.tasks.filter(t=>t.subId===sid);},
@@ -987,7 +1011,7 @@ const App = {
   view_tasks(){
     if(this.taskView==="project")return this.view_taskproject();
     if(this.taskView==="sub")return this.view_tasksub();
-    let left='<div class="section-title" style="margin-top:0">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ プロジェクト</span></div>';
+    let left='<div class="section-title" style="margin-top:0">プロジェクト<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openProjectForm()">＋ 追加</button></div>';
     if(!this.state.projects.length){
       left+='<div class="card"><div class="empty"><span class="e-ic">📂</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
     }
@@ -1008,7 +1032,7 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    let right='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
+    let right='<div class="section-title">個別タスク<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openTask()">＋ 詳しく追加</button></div>';
     right+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
       '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}" style="flex:1;min-width:0">'+
       '<button class="btn btn-primary" onclick="App.quickAddTask()" style="flex-shrink:0;min-height:42px;padding:0 16px">追加</button>'+
@@ -1425,10 +1449,10 @@ const App = {
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
-      '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">🗑 すべてのデータを消す</span></div></div>'+
+      '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab ttl-ico" style="color:var(--color-danger)">'+ic('trash',16)+'すべてのデータを消す</span></div></div>'+
       '<input type="file" id="importer" accept="application/json" style="display:none" onchange="App.importData(this.files[0])">';
 
-    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">Mietta（ミエッタ） v1.0<br>株式会社今岡勇成 制作</p>';
+    h+='<p style="text-align:center;color:var(--color-text-disabled);font-size:var(--text-xs);margin-top:24px">Mietta（ミエッタ） v1.0</p>';
     return h;
   },
   setName(k,v){this.state.settings[k]=v||(k==="husband"?"夫":"妻");this.commit();},
@@ -1451,7 +1475,21 @@ const App = {
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
   },
-  closeSheet(){document.getElementById("sheet").classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  // 下シートを掴んで下げると閉じる(グリップ/上部ハンドル領域から)
+  sheetDrag(){
+    const sh=document.getElementById("sheet");if(!sh)return;
+    let y0=null,dy=0;
+    sh.addEventListener("pointerdown",(e)=>{
+      const top=sh.getBoundingClientRect().top;
+      const inHandle=(e.target.classList&&e.target.classList.contains("grip"))||((e.clientY-top)<52);
+      if(!inHandle||(e.target.closest&&e.target.closest(".sheet-close")))return;
+      y0=e.clientY;dy=0;sh.style.transition="none";try{sh.setPointerCapture(e.pointerId);}catch(err){}
+    });
+    sh.addEventListener("pointermove",(e)=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);sh.style.transform="translateY("+dy+"px)";});
+    const end=()=>{if(y0===null)return;sh.style.transition="";if(dy>110){this.closeSheet();}else{sh.style.transform="";}y0=null;dy=0;};
+    sh.addEventListener("pointerup",end);sh.addEventListener("pointercancel",end);
+  },
   fabAction(){
     if(this.tab==="dashboard")this.openExpense();
     else if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
@@ -1529,6 +1567,7 @@ const App = {
   openTask(id,subId,projId,presetDue){
     const it=id?this.state.tasks.find(x=>x.id===id):null;
     this._formImage=it&&it.image?it.image:null;
+    this._formChecklist=it&&it.checklist?JSON.parse(JSON.stringify(it.checklist)):[];
     const presetSub=(typeof subId==="string"&&subId)?subId:(it?it.subId:null);
     const presetProj=presetSub?((this.state.subprojects.find(s=>s.id===presetSub)||{}).projectId):((typeof projId==="string"&&projId)?projId:(it?it.projectId:null));
     const h='<h3>'+(it?"タスクを編集":"タスクを追加")+'</h3>'+
@@ -1541,6 +1580,7 @@ const App = {
       '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:(presetDue||""))+'">')+
       this.field("優先度",'<select id="f-priority">'+['high:高','medium:中','low:低'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+((it?it.priority:"medium")===v?"selected":"")+'>'+l+'</option>'}).join("")+'</select>')+'</div>'+
       this.field("メモ",'<textarea id="f-memo" placeholder="詳細メモ">'+esc(it?it.memo:"")+'</textarea>')+
+      this.field("チェックリスト（任意）",'<div id="f-checklist">'+this.checklistEditorHtml()+'</div>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 区役所 / 自宅" value="'+esc(it&&it.loc?it.loc:"")+'">')+
       this.field("URL（任意）",'<input id="f-url" type="url" inputmode="url" placeholder="https://" value="'+esc(it&&it.url?it.url:"")+'">')+
       (it&&it.url?'<a class="tlink" href="'+esc(it.url)+'" target="_blank" rel="noopener" style="font-size:var(--text-sm);display:inline-block;margin:-10px 0 14px">リンクを開く ↗</a>':'')+
@@ -1550,12 +1590,24 @@ const App = {
         if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
         let projId=val("f-proj")||null,sub2=val("f-sub2")||null;
         if(sub2){const ss=this.state.subprojects.find(s=>s.id===sub2);projId=ss?ss.projectId:projId;}
-        const data={title,cat:val("f-cat"),assignee:seg("f-assignee"),projectId:projId,subId:sub2,due:val("f-due")||null,priority:val("f-priority"),memo:val("f-memo"),loc:val("f-loc"),url:val("f-url"),image:this._formImage||null};
+        const checklist=(this._formChecklist||[]).filter(c=>c.text&&c.text.trim()).map(c=>({text:c.text.trim(),done:!!c.done}));
+        const data={title,cat:val("f-cat"),assignee:seg("f-assignee"),projectId:projId,subId:sub2,due:val("f-due")||null,priority:val("f-priority"),memo:val("f-memo"),checklist:checklist,loc:val("f-loc"),url:val("f-url"),image:this._formImage||null};
         if(it)Object.assign(it,data);else this.state.tasks.push({id:uid(),status:"todo",...data});
         return true;
       },it?()=>this.del("tasks",id):null);
     this.showSheet(h);
   },
+  checklistEditorHtml(){
+    const arr=this._formChecklist||[];let h='';
+    arr.forEach((c,i)=>{h+='<div class="row" style="gap:8px;margin-bottom:8px"><div class="check '+(c.done?'on':'')+'" style="flex-shrink:0" onclick="App.toggleFormCheck('+i+')">'+(c.done?ic('check',14):'')+'</div><input value="'+esc(c.text)+'" oninput="App.editFormCheck('+i+',this.value)" placeholder="例: 牛乳 / 卵" style="flex:1;min-width:0">'+'<button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;min-height:42px;padding:0 12px" onclick="App.delFormCheck('+i+')">'+ic('trash',16)+'</button></div>';});
+    h+='<button type="button" class="btn btn-sec btn-sm btn-block ttl-ico" style="justify-content:center" onclick="App.addFormCheck()">＋ 項目を追加</button>';
+    return h;
+  },
+  _renderFormCheck(){const el=document.getElementById("f-checklist");if(el)el.innerHTML=this.checklistEditorHtml();},
+  addFormCheck(){this._formChecklist=this._formChecklist||[];this._formChecklist.push({text:"",done:false});this._renderFormCheck();const el=document.getElementById("f-checklist");if(el){const ins=el.querySelectorAll("input");if(ins.length)ins[ins.length-1].focus();}},
+  toggleFormCheck(i){const a=this._formChecklist;if(a&&a[i]){a[i].done=!a[i].done;this._renderFormCheck();}},
+  editFormCheck(i,v){const a=this._formChecklist;if(a&&a[i])a[i].text=v;},
+  delFormCheck(i){const a=this._formChecklist;if(a){a.splice(i,1);this._renderFormCheck();}},
   imgPreview(src){return src?('<div style="position:relative;display:inline-block;margin-bottom:10px"><img src="'+src+'" style="max-width:100%;max-height:180px;border-radius:var(--radius-md);display:block"><button type="button" class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;min-height:30px;padding:4px 10px" onclick="App.clearImage()">削除</button></div>'):'';},
   pickImage(input){const f=input.files&&input.files[0];if(!f)return;readImage(f,(d)=>{this._formImage=d;const p=document.getElementById("f-img-preview");if(p)p.innerHTML=this.imgPreview(d);});},
   clearImage(){this._formImage=null;const p=document.getElementById("f-img-preview");if(p)p.innerHTML="";},
