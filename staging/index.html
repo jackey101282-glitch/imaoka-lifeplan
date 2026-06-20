@@ -420,7 +420,7 @@ const CATS = {
     {id:"home",label:"住居・車",icon:"🏠"},{id:"event",label:"イベント",icon:"🎉"},{id:"other",label:"その他",icon:"📌"}
   ],
   goalType:[
-    {id:"goal_wedding",label:"結婚式",icon:"💒",bench:2214000,note:"ご祝儀差引後の安全めな目安（ゼクシィ2024ベース）"},
+    {id:"goal_wedding",label:"結婚式",icon:"💒",bench:4677000,note:"総額の目安。人数で大きく変わるので「条件から内訳をつくる」が便利"},
     {id:"goal_honeymoon",label:"新婚旅行",icon:"✈️",bench:350000,note:"国内 平均31万円／海外 約91万円"},
     {id:"goal_moving",label:"引っ越し・新生活",icon:"🏠",bench:1273000,note:"賃貸初期費用＋引越し＋家具家電（二人暮らしの安全め目安）"},
     {id:"goal_birth",label:"出産準備",icon:"👶",bench:505000,note:"用品＋自己負担。出産育児一時金50万円あり"},
@@ -473,6 +473,31 @@ const GOAL_TEMPLATES={
     {label:"火災・地震保険（5年）",amount:400000},{label:"不動産取得税（目安）",amount:150000},{label:"固定資産税精算",amount:80000},
     {label:"引越し・家具家電",amount:600000},{label:"予備費",amount:200000}
   ]
+};
+/* 条件パラメータから内訳を計算（人数等で変動。総額ベース。refund=戻ってくる見込み） */
+const GOAL_PARAMS={
+  goal_wedding:{
+    fields:[
+      {key:"guests",label:"何人くらい呼ぶ？",type:"number",default:60,unit:"名"},
+      {key:"grade",label:"豪華さ",type:"select",default:"standard",options:[{v:"simple",l:"シンプル"},{v:"standard",l:"標準"},{v:"luxury",l:"豪華"}]}
+    ],
+    build(p){
+      const n=Math.max(1,+p.guests||60), m=(p.grade==="simple"?0.85:(p.grade==="luxury"?1.3:1.0)), R=x=>Math.round(x/1000)*1000;
+      const items=[
+        {label:"会場費・挙式料",amount:R(450000*m)},
+        {label:"料理・飲物（"+n+"名）",amount:R((18000+4500)*n*m)},
+        {label:"引出物・引菓子（"+n+"名）",amount:R((6300+1400)*n*m)},
+        {label:"新婦・新郎衣装",amount:R(740000*m)},
+        {label:"写真・映像・前撮り",amount:R(630000*m)},
+        {label:"会場装花・ブーケ・装飾",amount:R(355000*m)},
+        {label:"ヘアメイク・エステ",amount:R(200000*m)},
+        {label:"音響・照明・司会・演出",amount:R(240000*m)},
+        {label:"ペーパー・備品",amount:R(100000*m)},
+        {label:"予備費",amount:R(150000*m)}
+      ];
+      return {items,refund:{label:"ご祝儀の見込み（"+n+"名）",amount:R(30000*n)}};
+    }
+  }
 };
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
@@ -957,7 +982,8 @@ const App = {
           '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="mid-num" style="color:var(--color-accent-600)">'+yen(hero.current)+'</span><span class="meta">/ '+yen(goalAmt(hero))+'</span></div>'+
           '<div class="prog" style="height:10px"><span class="fill-accent" style="width:'+gprog(hero)+'%"></span></div>'+
           '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">あと '+yen(Math.max(0,goalAmt(hero)-(hero.current||0)))+'</span><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">積み立てる ›</span></div>'+
-          (function(){var pc=goalPace(hero);if(!pc)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200)"><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">期日を決めると、毎月いくら貯めれば間に合うか分かります ›</span></div>';if(pc.days<0)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200);color:var(--color-danger)">'+ic('alert',13)+' 期日を過ぎています。期日を見直しましょう。</div>';return '<div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--color-secondary-200);font-size:var(--text-sm);line-height:1.6;color:var(--color-secondary-600)">'+ic('calendar',13)+' '+(pc.months>0?('あと'+pc.months+'ヶ月（'+pc.days+'日）'):('あと'+pc.days+'日'))+' ・ 毎月 <b>'+yen(pc.perMonth)+'</b> 貯めれば間に合う</div>';})()+'</div>';
+          (function(){var pc=goalPace(hero);if(!pc)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200)"><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">期日を決めると、毎月いくら貯めれば間に合うか分かります ›</span></div>';if(pc.days<0)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200);color:var(--color-danger)">'+ic('alert',13)+' 期日を過ぎています。期日を見直しましょう。</div>';return '<div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--color-secondary-200);font-size:var(--text-sm);line-height:1.6;color:var(--color-secondary-600)">'+ic('calendar',13)+' '+(pc.months>0?('あと'+pc.months+'ヶ月（'+pc.days+'日）'):('あと'+pc.days+'日'))+' ・ 毎月 <b>'+yen(pc.perMonth)+'</b> 貯めれば間に合う</div>';})()+
+          ((hero.refund&&hero.refund.amount)?'<div class="meta" style="margin-top:7px;line-height:1.5;color:var(--color-accent-600)">'+ic('coins',13)+' '+esc(hero.refund.label)+' 約'+yen(hero.refund.amount)+' 戻ってくる見込み → 自己負担 約 <b>'+yen(goalAmt(hero)-hero.refund.amount)+'</b></div>':'')+'</div>';
       }
       active.slice(1).forEach(g=>{
         body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div><div class="prog"><span class="fill-accent" style="width:'+gprog(g)+'%"></span></div></div>'+
@@ -1830,6 +1856,8 @@ const App = {
     const type0=it?it.typeId:(preType||"goal_wedding");
     this.curGoalType=type0;
     this._formItems=it&&it.items?JSON.parse(JSON.stringify(it.items)):[];
+    this._formParams=it&&it.params?JSON.parse(JSON.stringify(it.params)):null;
+    this._formRefund=it&&it.refund?JSON.parse(JSON.stringify(it.refund)):null;
     const t0=findCat("goalType",type0);
     const tgt0=it?it.target:(t0.bench||"");
     const h='<h3>'+(it?"ゴールを編集":"ゴールを追加")+'</h3>'+
@@ -1840,13 +1868,14 @@ const App = {
       this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(tgt0)+'" oninput="App.commaize(this);App.updateGoalTotal()">')+
       '<div id="f-goal-pace" class="meta" style="margin:-6px 0 12px;line-height:1.6;color:var(--color-secondary-600)"></div>'+
       this.field("内訳（任意・合計が目標額になります）",'<div id="f-goal-items">'+this.goalItemsEditorHtml()+'</div>')+
-      '<div class="meta" style="margin:-4px 0 12px;line-height:1.55"><span style="color:var(--color-secondary-600)">'+ic('alert',13)+' 金額は相場より<b>少し高めの安全めな目安</b>です（オーバーしても安心なように）。実際に合わせて編集してください。</span></div>'+
+      '<div id="f-goal-refund" class="meta" style="margin:6px 0 10px;line-height:1.55"></div>'+
+      '<div class="meta" style="margin:-2px 0 12px;line-height:1.55"><span style="color:var(--color-secondary-600)">'+ic('alert',13)+' 金額は相場より<b>少し高めの安全めな目安</b>です（オーバーしても安心なように）。実際に合わせて編集してください。</span></div>'+
       this.field("現在の積立額",'<input id="f-current" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.current)+'" oninput="App.commaize(this);App.updateGoalTotal()">')+
       (it?'<div class="form-row"><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',10000)">+1万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',30000)">+3万</button><button class="btn btn-ghost btn-sm" onclick="App.addToGoal(\''+id+'\',50000)">+5万</button></div>':'')+
       this.actions(()=>{
         const items=(this._formItems||[]).filter(x=>(x.label&&String(x.label).trim())||(+x.amount)).map(x=>({label:(String(x.label||"").trim())||"項目",amount:Math.round(+x.amount||0)}));
         const target=items.length?items.reduce((a,b)=>a+(+b.amount||0),0):numv("f-target");
-        const data={typeId:val("f-type"),label:val("f-label"),target:target,current:numv("f-current"),targetDate:val("f-date"),items:items};
+        const data={typeId:val("f-type"),label:val("f-label"),target:target,current:numv("f-current"),targetDate:val("f-date"),items:items,params:this._formParams||null,refund:(items.length?this._formRefund:null)||null};
         if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),...data});
         return true;
       },it?()=>this.del("goals",id):null);
@@ -1855,7 +1884,19 @@ const App = {
   },
   goalItemsEditorHtml(){
     const arr=this._formItems||[];let h='';
-    if(GOAL_TEMPLATES[this.curGoalType])h+='<button type="button" class="btn btn-primary btn-sm btn-block ttl-ico" style="justify-content:center;margin-bottom:10px" onclick="App.applyGoalTemplate()">'+ic('sparkle',14)+' 平均の内訳を入れる</button>';
+    const P=GOAL_PARAMS[this.curGoalType];
+    if(P){
+      const pv=k=>{const f=P.fields.find(x=>x.key===k);return (this._formParams&&this._formParams[k]!=null)?this._formParams[k]:f.default;};
+      h+='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:10px;padding:11px 12px;margin-bottom:12px">'+
+        '<div class="meta" style="margin-bottom:9px;color:var(--color-secondary-600);font-weight:700">'+ic('sparkle',13)+' 条件から内訳をつくる</div>';
+      P.fields.forEach(f=>{
+        if(f.type==="number")h+='<div class="row" style="margin-bottom:9px"><span style="font-size:var(--text-sm)">'+esc(f.label)+'</span><span style="display:flex;align-items:center;gap:5px"><input id="gp-'+f.key+'" inputmode="numeric" value="'+pv(f.key)+'" style="width:88px;text-align:right">'+(f.unit?'<span class="meta">'+f.unit+'</span>':'')+'</span></div>';
+        else if(f.type==="select")h+='<div style="margin-bottom:9px"><div style="font-size:var(--text-sm);margin-bottom:5px">'+esc(f.label)+'</div><div class="seg" id="gp-'+f.key+'">'+f.options.map(o=>'<button type="button" data-v="'+o.v+'" class="'+(pv(f.key)===o.v?"on":"")+'" onclick="App.seg(this)">'+o.l+'</button>').join("")+'</div></div>';
+      });
+      h+='<button type="button" class="btn btn-primary btn-sm btn-block" style="margin-top:3px" onclick="App.buildFromParams()">この条件で内訳をつくる</button></div>';
+    }else if(GOAL_TEMPLATES[this.curGoalType]){
+      h+='<button type="button" class="btn btn-primary btn-sm btn-block ttl-ico" style="justify-content:center;margin-bottom:10px" onclick="App.applyGoalTemplate()">'+ic('sparkle',14)+' 平均の内訳を入れる</button>';
+    }
     arr.forEach((it,i)=>{h+='<div class="row" style="gap:6px;margin-bottom:6px">'+
       '<input value="'+esc(it.label||"")+'" oninput="App.editFormItemLabel('+i+',this.value)" placeholder="項目名" style="flex:1;min-width:0">'+
       '<input value="'+(it.amount==null||it.amount===""?"":it.amount)+'" inputmode="numeric" oninput="App.editFormItemAmount('+i+',this.value)" placeholder="0" style="width:92px;flex-shrink:0;text-align:right">'+
@@ -1875,14 +1916,33 @@ const App = {
         pe.innerHTML=pc.days<0?(ic('alert',13)+' 期日が過ぎています'):(ic('calendar',13)+' '+(pc.months>0?('あと'+pc.months+'ヶ月（'+pc.days+'日）'):('あと'+pc.days+'日'))+' ・ 毎月 <b>'+yen(pc.perMonth)+'</b> 貯めれば間に合う');
       }else pe.innerHTML="";
     }
+    const re=document.getElementById("f-goal-refund");if(re){
+      if(arr.length&&this._formRefund&&this._formRefund.amount){const self=target-this._formRefund.amount;
+        re.innerHTML='<span style="color:var(--color-accent-600)">'+ic('coins',13)+' '+esc(this._formRefund.label)+' 約'+yen(this._formRefund.amount)+' 戻ってくる見込み → 自己負担 約 <b>'+yen(self)+'</b></span>';
+      }else re.innerHTML="";
+    }
+  },
+  buildFromParams(){
+    const P=GOAL_PARAMS[this.curGoalType];if(!P)return;
+    if(this._formItems&&this._formItems.length&&!confirm("入力中の内訳を、この条件で置き換えますか？"))return;
+    const p={};
+    P.fields.forEach(f=>{
+      if(f.type==="number"){const el=document.getElementById("gp-"+f.key);p[f.key]=el?(parseInt(String(el.value).replace(/[^0-9]/g,""),10)||f.default):f.default;}
+      else if(f.type==="select"){p[f.key]=seg("gp-"+f.key)||f.default;}
+    });
+    this._formParams=p;
+    const r=P.build(p);
+    this._formItems=r.items;this._formRefund=r.refund||null;
+    this._renderGoalItems();this.toast("条件から内訳をつくりました");
   },
   addFormItem(){this._formItems=this._formItems||[];this._formItems.push({label:"",amount:""});this._renderGoalItems();const el=document.getElementById("f-goal-items");if(el){const ins=el.querySelectorAll("input");if(ins.length)ins[ins.length-3]&&ins[ins.length-3].focus();}},
   editFormItemLabel(i,v){const a=this._formItems;if(a&&a[i])a[i].label=v;},
   editFormItemAmount(i,v){const a=this._formItems;if(a&&a[i]){a[i].amount=parseInt(String(v).replace(/[^0-9-]/g,""),10)||0;this.updateGoalTotal();}},
   delFormItem(i){const a=this._formItems;if(a){a.splice(i,1);this._renderGoalItems();}},
-  applyGoalTemplate(){const t=GOAL_TEMPLATES[this.curGoalType];if(!t)return;const hasItems=(this._formItems&&this._formItems.length);const manual=!hasItems&&numv("f-target")>0;if((hasItems||manual)&&!confirm("入力中の内訳・目標額を、平均の内訳で置き換えますか？"))return;this._formItems=t.map(x=>({label:x.label,amount:x.amount}));this._renderGoalItems();this.toast("平均の内訳を入れました");},
+  applyGoalTemplate(){const t=GOAL_TEMPLATES[this.curGoalType];if(!t)return;const hasItems=(this._formItems&&this._formItems.length);const manual=!hasItems&&numv("f-target")>0;if((hasItems||manual)&&!confirm("入力中の内訳・目標額を、平均の内訳で置き換えますか？"))return;this._formItems=t.map(x=>({label:x.label,amount:x.amount}));this._formRefund=null;this._renderGoalItems();this.toast("平均の内訳を入れました");},
   gtypeChange(sel){
     this.curGoalType=sel.value;
+    this._formParams=null;this._formRefund=null;
     const t=findCat("goalType",sel.value);
     const lab=document.getElementById("f-label"); if(lab)lab.value=t.label||"";
     const nt=document.getElementById("f-note"); if(nt)nt.textContent=t.note||"";
