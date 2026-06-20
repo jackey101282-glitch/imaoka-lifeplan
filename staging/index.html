@@ -85,6 +85,7 @@ body{
 .month-nav .cur{font-weight:var(--fw-b);font-size:var(--text-base);min-width:88px;text-align:center;color:var(--color-primary-700);cursor:pointer}
 .month-nav.off{background:#FCEFD9;border-color:#F3D9A8}
 .month-nav.off button,.month-nav.off .cur{color:var(--color-warning)}
+.monthbar{position:sticky;top:0;z-index:29;display:flex;justify-content:center;background:var(--color-bg-surface);border-bottom:1px solid var(--color-border);padding:7px var(--screen-px)}
 html[data-theme="dark"] .month-nav .cur,html[data-theme="dark"] .month-nav button{color:var(--color-primary-500)}
 html[data-theme="dark"] .month-nav.off{background:#3a2f1a;border-color:#5a4520}
 html[data-theme="dark"] .month-nav.off button,html[data-theme="dark"] .month-nav.off .cur{color:var(--color-warning)}
@@ -342,20 +343,22 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
 <body>
 <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#C4521F;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:3px 6px;letter-spacing:.02em">🧪 デモ環境（本番ではありません）</div>
 <header class="app-header">
-  <div>
+  <div style="min-width:0">
     <h1 id="hd-title">ホーム</h1>
     <div class="sub" id="hd-sub"></div>
   </div>
   <div class="hd-right">
     <button class="eye-btn" id="eye-btn" onclick="App.toggleHideAmt()" aria-label="金額の表示を切り替え" title="金額を隠す"></button>
-    <button class="eye-btn" id="gear-btn" onclick="App.go('settings')" aria-label="設定" title="設定"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1M18.4 18.4l-2.1-2.1M7.7 7.7 5.6 5.6"/></svg></button>
-    <div class="month-nav" id="month-nav">
-      <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
-      <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
-      <button onclick="App.shiftMonth(1)" aria-label="次の月">›</button>
-    </div>
+    <button class="eye-btn" id="gear-btn" onclick="App.go('settings')" aria-label="設定" title="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 13a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 8.91 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.91a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9c.2.62.78 1.05 1.43 1.06H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
+<div class="monthbar" id="monthbar">
+  <div class="month-nav" id="month-nav">
+    <button onclick="App.shiftMonth(-1)" aria-label="前の月">‹</button>
+    <span class="cur num" id="cur-month" onclick="App.thisMonthJump()" title="タップで今月へ"></span>
+    <button onclick="App.shiftMonth(1)" aria-label="次の月">›</button>
+  </div>
+</div>
 
 <main id="view"></main>
 
@@ -658,6 +661,7 @@ const App = {
   state:null, tab:"dashboard", curMonth:thisMonth(), shareView:"home", curFolderId:null,
   taskView:"home", curProjectId:null, curSubId:null,
   dashOpen:{inc:false,exp:false},
+  goalOpen:{},
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
@@ -748,8 +752,9 @@ const App = {
     if(tab==="share"){this.shareView="home";this.curFolderId=null;}
     if(tab==="tasks"){this.taskView="home";this.curProjectId=null;this.curSubId=null;}
     document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===tab));
-    document.getElementById("month-nav").style.display=(tab==="dashboard")?"flex":"none";
+    document.getElementById("monthbar").style.display=(tab==="dashboard")?"flex":"none";
     this.render();
+    window.scrollTo(0,0);
   },
   shareGo(view){this.shareView=view;this.render();window.scrollTo(0,0);},
   openFolder(id){this.curFolderId=id;this.shareView="folder";this.render();window.scrollTo(0,0);},
@@ -977,20 +982,25 @@ const App = {
       });
       const hero=active[0];
       if(hero){
-        body+='<div style="border:1.5px solid var(--color-accent-500);border-radius:12px;padding:14px 15px;margin-bottom:14px">'+
-          '<div class="row" style="margin-bottom:8px"><span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="ic" style="background:var(--color-secondary-50);color:var(--color-accent-600);flex-shrink:0">'+ic(GOAL_IC[hero.typeId]||'target',20)+'</span><span style="min-width:0"><span style="font-size:11px;color:var(--color-accent-600);display:block">いま、ここに向かってます</span><span style="font-weight:700">'+esc(hero.label)+'</span></span></span>'+(hero.targetDate?'<span class="chip chip-todo" style="white-space:nowrap">'+monthLabel(hero.targetDate)+'</span>':'')+'</div>'+
+        body+='<div onclick="App.toggleGoalItems(\''+hero.id+'\')" style="border:1.5px solid var(--color-accent-500);border-radius:12px;padding:14px 15px;margin-bottom:14px;cursor:pointer">'+
+          '<div class="row" style="margin-bottom:8px"><span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="ic" style="background:var(--color-secondary-50);color:var(--color-accent-600);flex-shrink:0">'+ic(GOAL_IC[hero.typeId]||'target',20)+'</span><span style="min-width:0"><span style="font-size:11px;color:var(--color-accent-600);display:block">いま、ここに向かってます</span><span style="font-weight:700">'+esc(hero.label)+'</span></span></span><span style="display:flex;align-items:center;gap:8px;flex-shrink:0">'+(hero.targetDate?'<span class="chip chip-todo" style="white-space:nowrap">'+monthLabel(hero.targetDate)+'</span>':'')+'<span class="chev'+(this.goalOpen[hero.id]?' open':'')+'">▾</span></span></div>'+
           '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="mid-num" style="color:var(--color-accent-600)">'+yen(hero.current)+'</span><span class="meta">/ '+yen(goalAmt(hero))+'</span></div>'+
           '<div class="prog" style="height:10px"><span class="fill-accent" style="width:'+gprog(hero)+'%"></span></div>'+
           '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">あと '+yen(Math.max(0,goalAmt(hero)-(hero.current||0)))+'</span><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">積み立てる ›</span></div>'+
           (function(){var pc=goalPace(hero);if(!pc)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200)"><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">期日を決めると、毎月いくら貯めれば間に合うか分かります ›</span></div>';if(pc.days<0)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200);color:var(--color-danger)">'+ic('alert',13)+' 期日を過ぎています。期日を見直しましょう。</div>';return '<div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--color-secondary-200);font-size:var(--text-sm);line-height:1.6;color:var(--color-secondary-600)">'+ic('calendar',13)+' '+(pc.months>0?('あと'+pc.months+'ヶ月（'+pc.days+'日）'):('あと'+pc.days+'日'))+' ・ 毎月 <b>'+yen(pc.perMonth)+'</b> 貯めれば間に合う</div>';})()+
-          ((hero.refund&&hero.refund.amount)?'<div class="meta" style="margin-top:7px;line-height:1.5;color:var(--color-accent-600)">'+ic('coins',13)+' '+esc(hero.refund.label)+' 約'+yen(hero.refund.amount)+' 戻ってくる見込み → 自己負担 約 <b>'+yen(goalAmt(hero)-hero.refund.amount)+'</b></div>':'')+'</div>';
+          ((hero.refund&&hero.refund.amount)?'<div class="meta" style="margin-top:7px;line-height:1.5;color:var(--color-accent-600)">'+ic('coins',13)+' '+esc(hero.refund.label)+' 約'+yen(hero.refund.amount)+' 戻ってくる見込み → 自己負担 約 <b>'+yen(goalAmt(hero)-hero.refund.amount)+'</b></div>':'')+
+          (this.goalOpen[hero.id]?this.goalItemsView(hero):'')+'</div>';
       }
       active.slice(1).forEach(g=>{
-        body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div><div class="prog"><span class="fill-accent" style="width:'+gprog(g)+'%"></span></div></div>'+
-          '<div style="text-align:right"><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(gprog(g))+'%</div><div class="meta">'+(g.targetDate?monthLabel(g.targetDate):yen(g.current))+'</div></div></div>';
+        body+='<div>'+
+          '<div class="li" onclick="App.toggleGoalItems(\''+g.id+'\')" style="cursor:pointer"><span class="ic">'+ic(GOAL_IC[g.typeId]||'target',20)+'</span><div class="main"><div class="ttl">'+esc(g.label)+'</div><div class="prog"><span class="fill-accent" style="width:'+gprog(g)+'%"></span></div></div>'+
+          '<div style="text-align:right;display:flex;align-items:center;gap:7px"><div><div class="num" style="font-weight:700;font-size:var(--text-sm)">'+Math.round(gprog(g))+'%</div><div class="meta">'+(g.targetDate?monthLabel(g.targetDate):yen(g.current))+'</div></div><span class="chev'+(this.goalOpen[g.id]?' open':'')+'">▾</span></div></div>'+
+          (this.goalOpen[g.id]?'<div style="padding:2px 4px 8px">'+this.goalItemsView(g)+'</div>':'')+'</div>';
       });
       settled.forEach(g=>{
-        body+='<div class="li" onclick="App.openGoal(\''+g.id+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic('check',18)+'</span><div class="main"><div class="ttl" style="color:var(--color-text-secondary);text-decoration:line-through">'+esc(g.label)+'</div></div><span class="chip chip-both" style="white-space:nowrap">達成</span></div>';
+        body+='<div>'+
+          '<div class="li" onclick="App.toggleGoalItems(\''+g.id+'\')" style="cursor:pointer"><span class="ic" style="color:var(--color-accent-600)">'+ic('check',18)+'</span><div class="main"><div class="ttl" style="color:var(--color-text-secondary);text-decoration:line-through">'+esc(g.label)+'</div></div><span style="display:flex;align-items:center;gap:7px"><span class="chip chip-both" style="white-space:nowrap">達成</span><span class="chev'+(this.goalOpen[g.id]?' open':'')+'">▾</span></span></div>'+
+          (this.goalOpen[g.id]?'<div style="padding:2px 4px 8px">'+this.goalItemsView(g)+'</div>':'')+'</div>';
       });
     }
     const goalsCard='<div class="section-title">ふたりのゴール<span class="link" onclick="App.openGoal()">＋ ゴールを追加</span></div><div class="card">'+body+'</div>';
@@ -1709,20 +1719,29 @@ const App = {
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
   },
-  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
-  // 下シートを掴んで下げると閉じる(グリップ/上部ハンドル領域から)
+  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.style.opacity="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  // 下シートを掴んで下げると閉じる(グリップ/上部ハンドル領域から)。pointer/touch両対応で確実に閉じる
   sheetDrag(){
     const sh=document.getElementById("sheet");if(!sh)return;
-    let y0=null,dy=0;
-    sh.addEventListener("pointerdown",(e)=>{
+    let y0=null,dy=0,dragging=false;
+    const start=(clientY,target)=>{
+      if(dragging)return false;
+      if(target&&target.closest&&target.closest(".sheet-close"))return false;
       const top=sh.getBoundingClientRect().top;
-      const inHandle=(e.target.classList&&e.target.classList.contains("grip"))||((e.clientY-top)<52);
-      if(!inHandle||(e.target.closest&&e.target.closest(".sheet-close")))return;
-      y0=e.clientY;dy=0;sh.style.transition="none";try{sh.setPointerCapture(e.pointerId);}catch(err){}
-    });
-    sh.addEventListener("pointermove",(e)=>{if(y0===null)return;dy=Math.max(0,e.clientY-y0);sh.style.transform="translateY("+dy+"px)";});
-    const end=()=>{if(y0===null)return;sh.style.transition="";if(dy>110){this.closeSheet();}else{sh.style.transform="";}y0=null;dy=0;};
-    sh.addEventListener("pointerup",end);sh.addEventListener("pointercancel",end);
+      const onGrip=(target&&target.classList&&target.classList.contains("grip"));
+      if(!onGrip && (clientY-top)>=58)return false;          // 上部ハンドル領域のみ
+      y0=clientY;dy=0;dragging=true;sh.style.transition="none";return true;
+    };
+    const move=(clientY)=>{if(!dragging)return;dy=Math.max(0,clientY-y0);sh.style.transform="translateY("+dy+"px)";sh.style.opacity=String(Math.max(0.35,1-dy/500));};
+    const end=()=>{if(!dragging)return;dragging=false;sh.style.transition="";if(dy>80){this.closeSheet();}else{sh.style.transform="";sh.style.opacity="";}y0=null;dy=0;};
+    sh.addEventListener("pointerdown",(e)=>{if(start(e.clientY,e.target)){try{sh.setPointerCapture(e.pointerId);}catch(err){}}});
+    sh.addEventListener("pointermove",(e)=>{move(e.clientY);});
+    sh.addEventListener("pointerup",end);
+    sh.addEventListener("pointercancel",end);
+    sh.addEventListener("touchstart",(e)=>{if(e.touches[0])start(e.touches[0].clientY,e.target);},{passive:true});
+    sh.addEventListener("touchmove",(e)=>{if(dragging&&e.touches[0]){move(e.touches[0].clientY);e.preventDefault();}},{passive:false});
+    sh.addEventListener("touchend",end);
+    sh.addEventListener("touchcancel",end);
   },
   fabAction(){
     if(this.tab==="dashboard")this.openExpense();
@@ -1950,6 +1969,19 @@ const App = {
     this._renderGoalItems();
   },
   glabel(typeId){const t=findCat("goalType",typeId);return t?t.label:"";},
+  toggleGoalItems(id){this.goalOpen[id]=!this.goalOpen[id];this.render();},
+  goalItemsView(g){
+    if(!(g.items&&g.items.length)){
+      return '<div onclick="event.stopPropagation()" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--color-border)"><div class="meta" style="line-height:1.5">内訳はまだありません。</div><button class="btn btn-sec btn-sm btn-block" style="margin-top:8px" onclick="App.openGoal(\''+g.id+'\')">内訳を追加・編集する</button></div>';
+    }
+    let h='<div onclick="event.stopPropagation()" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--color-border)">';
+    g.items.forEach(it=>{h+='<div class="row" style="margin-bottom:5px;gap:10px"><span style="font-size:var(--text-sm);min-width:0">'+esc(it.label)+'</span><span class="num" style="font-weight:600;white-space:nowrap'+(it.amount<0?';color:var(--color-accent-600)':'')+'">'+(it.amount<0?'−'+yen(-it.amount):yen(it.amount))+'</span></div>';});
+    h+='<div class="row" style="margin-top:7px;padding-top:7px;border-top:1px dashed var(--color-border)"><span style="font-weight:700">合計</span><span class="num" style="font-weight:700">'+yen(goalAmt(g))+'</span></div>';
+    if(g.refund&&g.refund.amount)h+='<div class="meta" style="margin-top:6px;color:var(--color-accent-600);line-height:1.5">'+ic('coins',13)+' '+esc(g.refund.label)+' 約'+yen(g.refund.amount)+' 戻る → 自己負担 約 <b>'+yen(goalAmt(g)-g.refund.amount)+'</b></div>';
+    h+='<button class="btn btn-sec btn-sm btn-block" style="margin-top:10px" onclick="App.openGoal(\''+g.id+'\')">編集・積み立てる</button>';
+    h+='</div>';
+    return h;
+  },
   addToGoal(id,amt){const g=this.state.goals.find(x=>x.id===id);if(g){const T=goalAmt(g);const before=(T>0&&(g.current||0)>=T);g.current=(+g.current||0)+amt;const el=document.getElementById("f-current");if(el)el.value=cf(g.current);this.save();this.updateGoalTotal();const after=(T>0&&g.current>=T);this.toast(!before&&after?"目標達成！おめでとう":yen(amt)+"を積立");}},
   // ---- 航路: フェーズと「次のゴール」 ----
   openPhase(){
