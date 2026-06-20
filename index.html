@@ -215,7 +215,9 @@ input.amt{font-family:var(--font-family-number);text-align:right;font-size:var(-
 .seg button.on{background:var(--color-bg-surface);color:var(--color-primary-600);font-weight:var(--fw-b);box-shadow:var(--shadow-xs)}
 .form-row{display:flex;flex-direction:column;gap:10px}.form-row > *{flex:1 1 0;min-width:0}
 @media(min-width:600px){.form-row{flex-direction:row}}
-input[type=date],input[type=time]{min-width:0;max-width:100%;width:100%}
+input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;width:100%;background-clip:padding-box}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
+input::-webkit-calendar-picker-indicator{margin-left:0}
 .sheet-actions{display:flex;gap:10px;margin-top:8px}
 .delete-link{text-align:center;color:var(--color-danger);font-size:var(--text-base);padding:14px;cursor:pointer;font-weight:var(--fw-m)}
 /* settings */
@@ -365,8 +367,8 @@ html[data-theme="dark"] .warn-box{background:#3a2020}
 <nav class="tabbar">
   <button class="tab" data-tab="dashboard" onclick="App.go('dashboard')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/></svg></span><span class="tl">ホーム</span></button>
   <button class="tab" data-tab="lifeplan" onclick="App.go('lifeplan')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 10 11l3.5 3.5L20 7.5"/><path d="M15 7.5h5v5"/></svg></span><span class="tl">ライフプラン</span></button>
-  <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.4 12.3 2.4 2.4 4.8-5.4"/></svg></span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
   <button class="tab" data-tab="calendar" onclick="App.go('calendar')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="3.5"/><path d="M3.5 10h17"/><path d="M8 3.4V7M16 3.4V7"/></svg></span><span class="tl">カレンダー</span></button>
+  <button class="tab" data-tab="tasks" onclick="App.go('tasks')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8.4 12.3 2.4 2.4 4.8-5.4"/></svg></span><span class="tl">タスク</span><span class="nbadge" id="tab-task-badge"></span></button>
   <button class="tab" data-tab="share" onclick="App.go('share')"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5a2 2 0 0 1 2-2h3.2l1.8 2H18a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11.2c-1-1.4-3.2-.7-3.2 1 0 1.3 1.7 2.4 3.2 3.4 1.5-1 3.2-2.1 3.2-3.4 0-1.7-2.2-2.4-3.2-1z"/></svg></span><span class="tl">共有</span></button>
 </nav>
 
