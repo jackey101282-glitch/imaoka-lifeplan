@@ -504,8 +504,24 @@ const GOAL_PARAMS={
     }
   }
 };
+/* 特別費カタログ(FP準拠の年間特別費。count=回数(null=固定額)、units=1回あたり/固定なら年額。cond=世帯条件) */
+const SPECIAL_CATALOG=[
+  {key:"newyear",label:"年末年始",icon:"calendar",count:null,units:[{label:"お年玉",amount:30000},{label:"おせち",amount:44000},{label:"ご飯",amount:20000},{label:"移動費",amount:20000},{label:"その他",amount:10000}]},
+  {key:"homecoming",label:"帰省",icon:"map",count:2,units:[{label:"移動費",amount:20000},{label:"食費・お土産",amount:15000}]},
+  {key:"travel",label:"旅行",icon:"plane",count:2,units:[{label:"移動費",amount:50000},{label:"滞在費",amount:60000},{label:"食費",amount:30000}]},
+  {key:"ceremony",label:"冠婚葬祭",icon:"gift",count:2,units:[{label:"ご祝儀・香典",amount:30000}]},
+  {key:"xmas",label:"クリスマス・記念日",icon:"star",count:null,units:[{label:"プレゼント",amount:30000},{label:"食事",amount:20000},{label:"記念日",amount:20000}]},
+  {key:"appliance",label:"家電・家具 買い替え",icon:"sofa",count:null,units:[{label:"買い替え積立",amount:50000}]},
+  {key:"insurance",label:"保険 年払い",icon:"lifebuoy",count:null,units:[{label:"生命・医療保険",amount:120000}]},
+  {key:"other",label:"その他（生活防衛・治療）",icon:"coins",count:null,units:[{label:"生活防衛費 積立",amount:100000},{label:"医療・治療費",amount:50000}]},
+  {key:"renew",label:"賃貸 更新料",icon:"house",count:null,units:[{label:"更新料（2年→年換算）",amount:40000}],cond:"rent"},
+  {key:"property",label:"固定資産税・住宅修繕",icon:"house",count:null,units:[{label:"固定資産税",amount:100000},{label:"修繕積立",amount:50000}],cond:"own"},
+  {key:"car",label:"車（車検・税・保険）",icon:"car",count:null,units:[{label:"車検（2年→年換算）",amount:55000},{label:"自動車税",amount:35000},{label:"任意保険",amount:60000}],cond:"car"},
+  {key:"kids",label:"子どもイベント",icon:"baby",count:null,units:[{label:"入園・入学・行事",amount:50000},{label:"お祝い・記念",amount:30000}],cond:"kids"}
+];
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
+function specialAnnual(it){return (it&&it.count!=null?it.count:1)*((it&&it.units)||[]).reduce((a,b)=>a+(+b.amount||0),0);}
 /* 期日からの逆算ペース */
 function goalPace(g){
   if(!g||!g.targetDate)return null;
@@ -725,6 +741,7 @@ const App = {
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.goals.forEach(g=>{if(!Array.isArray(g.items))g.items=[];});
+    if(!Array.isArray(s.special))s.special=[];
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
     // 旧バージョン(やりたい/リンク)からフォルダ構造へ自動移行
@@ -1192,9 +1209,76 @@ const App = {
   view_lifeplan(){
     this.view_dashboard();
     const c=this._lpCards||{};
-    const cards=[c.goalsCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    const cards=[c.goalsCard,this.specialCardHtml(),c.simCard,c.acctCard,c.debtCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
+  },
+  // ── 1年の特別費(年間特別費→毎月の積立) ──
+  specialCardHtml(){
+    const sp=this.state.special||[];
+    if(!sp.length){
+      return '<div class="section-title">1年の特別費</div><div class="card"><div class="empty"><span class="e-ic">'+ic('coins',30)+'</span>毎年くる特別費（旅行・帰省・冠婚葬祭・車検・家電…）を見える化して、毎月いくら貯めればいいか出します</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openSpecialSetup()">条件から特別費をつくる</button></div></div>';
+    }
+    const annual=sp.reduce((a,it)=>a+specialAnnual(it),0), monthly=Math.round(annual/12);
+    let h='<div class="section-title">1年の特別費<span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span></div><div class="card">';
+    h+='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px"><div class="meta" style="color:var(--color-secondary-600)">この調子なら、特別費は</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">毎月 '+yen(monthly)+'</div><div class="meta">貯めておけば慌てません（年間 '+yen(annual)+' ／ '+sp.length+'項目）</div></div>';
+    sp.forEach(it=>{const cnt=(it.count!=null)?('<span class="meta"> ・ '+it.count+'回 × '+yen((it.units||[]).reduce((a,b)=>a+(+b.amount||0),0))+'</span>'):'';
+      h+='<div class="li" onclick="App.openSpecialItem(\''+it.id+'\')" style="cursor:pointer"><span class="ic">'+ic(it.icon||'coins',20)+'</span><div class="main"><div class="ttl">'+esc(it.label)+cnt+'</div></div><span class="amt num">'+yen(specialAnnual(it))+'</span></div>';});
+    h+='<div style="text-align:center;margin-top:10px"><span class="link" onclick="App.openSpecialSetup()">条件から作り直す</span></div></div>';
+    return h;
+  },
+  openSpecialSetup(){
+    const seg3=(id,opts,def)=>'<div class="seg" id="'+id+'">'+opts.map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(o[0]===def?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>';
+    const cur=this._spProfile||{home:"rent",car:"no",kids:"no"};
+    this.showSheet('<h3>あなたの世帯にあわせて</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">3つだけ答えると、特別費のテンプレが自動でできます。あとから自由に編集できます。</div>'+
+      this.field("住まい",seg3("sp-home",[["rent","賃貸"],["own","持ち家"]],cur.home))+
+      this.field("車",seg3("sp-car",[["yes","あり"],["no","なし"]],cur.car))+
+      this.field("子ども",seg3("sp-kids",[["yes","いる/予定"],["no","なし"]],cur.kids))+
+      '<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.buildSpecial()">この条件で特別費をつくる</button>');
+  },
+  buildSpecial(){
+    const home=seg("sp-home"),car=seg("sp-car"),kids=seg("sp-kids");
+    this._spProfile={home,car,kids};
+    if((this.state.special||[]).length&&!confirm("今の特別費リストを、この条件で作り直しますか？"))return;
+    const set=SPECIAL_CATALOG.filter(c=>{if(!c.cond)return true;if(c.cond==="rent")return home==="rent";if(c.cond==="own")return home==="own";if(c.cond==="car")return car==="yes";if(c.cond==="kids")return kids==="yes";return false;});
+    this.state.special=set.map(c=>({id:uid(),label:c.label,icon:c.icon,count:c.count,units:c.units.map(u=>({label:u.label,amount:u.amount}))}));
+    this.closeSheet();this.commit();this.toast("特別費をつくりました");
+  },
+  openSpecialItem(id){
+    const it=id?this.state.special.find(x=>x.id===id):null;
+    this._formUnits=it&&it.units?JSON.parse(JSON.stringify(it.units)):[{label:"",amount:""}];
+    const h='<h3>'+(it?"特別費を編集":"特別費を追加")+'</h3>'+
+      this.field("項目名",'<input id="f-splabel" value="'+esc(it?it.label:"")+'" placeholder="例: 旅行">')+
+      this.field("年に何回？（毎年決まった額なら空欄）",'<input id="f-spcount" inputmode="numeric" value="'+(it&&it.count!=null?it.count:"")+'" placeholder="空欄＝固定" oninput="App.updateSpTotal()">')+
+      this.field("内訳（1回あたり／固定なら年額）",'<div id="f-sp-units">'+this.spUnitsHtml()+'</div>')+
+      '<div id="f-sp-total" class="meta" style="margin:6px 0 12px;color:var(--color-secondary-600);font-weight:700"></div>'+
+      this.actions(()=>{
+        const label=val("f-splabel");if(!label){this.toast("項目名を入力してください");return false;}
+        const units=(this._formUnits||[]).filter(u=>(u.label&&String(u.label).trim())||(+u.amount)).map(u=>({label:(String(u.label||"").trim())||"内訳",amount:Math.round(+u.amount||0)}));
+        const cv=String(val("f-spcount")).replace(/[^0-9]/g,"");const count=cv?parseInt(cv,10):null;
+        const data={label,icon:it?it.icon:"coins",count,units};
+        if(it)Object.assign(it,data);else{this.state.special=this.state.special||[];this.state.special.push({id:uid(),...data});}
+        return true;
+      },it?()=>{this.state.special=this.state.special.filter(x=>x.id!==id);}:null);
+    this.showSheet(h);this.updateSpTotal();
+  },
+  spUnitsHtml(){
+    const arr=this._formUnits||[];let h='';
+    arr.forEach((u,i)=>{h+='<div class="row" style="gap:6px;margin-bottom:6px"><input value="'+esc(u.label||"")+'" oninput="App.editSpUnit('+i+',this.value)" placeholder="内訳名" style="flex:1;min-width:0"><input value="'+(u.amount==null||u.amount===""?"":u.amount)+'" inputmode="numeric" oninput="App.editSpUnitAmt('+i+',this.value)" placeholder="0" style="width:92px;flex-shrink:0;text-align:right"><button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;min-height:42px;padding:0 9px" onclick="App.delSpUnit('+i+')">'+ic('trash',16)+'</button></div>';});
+    h+='<button type="button" class="btn btn-sec btn-sm btn-block ttl-ico" style="justify-content:center;margin-top:2px" onclick="App.addSpUnit()">＋ 内訳を追加</button>';
+    return h;
+  },
+  _renderSpUnits(){const el=document.getElementById("f-sp-units");if(el)el.innerHTML=this.spUnitsHtml();this.updateSpTotal();},
+  addSpUnit(){this._formUnits=this._formUnits||[];this._formUnits.push({label:"",amount:""});this._renderSpUnits();},
+  editSpUnit(i,v){const a=this._formUnits;if(a&&a[i])a[i].label=v;},
+  editSpUnitAmt(i,v){const a=this._formUnits;if(a&&a[i]){a[i].amount=parseInt(String(v).replace(/[^0-9-]/g,""),10)||0;this.updateSpTotal();}},
+  delSpUnit(i){const a=this._formUnits;if(a){a.splice(i,1);this._renderSpUnits();}},
+  updateSpTotal(){
+    const el=document.getElementById("f-sp-total");if(!el)return;
+    const per=(this._formUnits||[]).reduce((a,b)=>a+(Math.round(+b.amount)||0),0);
+    const cv=String(val("f-spcount")||"").replace(/[^0-9]/g,"");const cnt=cv?parseInt(cv,10):null;
+    const annual=(cnt!=null?cnt:1)*per;
+    el.innerHTML=(cnt!=null?(cnt+"回 × "+yen(per)+" = "):"")+"年間 "+yen(annual)+" ・ 毎月 "+yen(Math.round(annual/12));
   },
 
   /* ====== income / expense lists ====== */
