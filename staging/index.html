@@ -188,6 +188,23 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .tab .nbadge{position:absolute;top:2px;right:calc(50% - 22px)}
 /* sheet/modal */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.onb-modal{position:fixed;inset:0;z-index:60;background:rgba(40,30,20,.5);display:flex;align-items:center;justify-content:center;padding:24px}
+.onb-card{background:var(--color-bg-surface);border-radius:20px;max-width:380px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.onb-card .onb-ic{color:var(--color-primary-500);display:flex;justify-content:center;margin-bottom:6px}
+.onb-card h2{font-size:var(--text-xl);margin:0 0 10px}
+.onb-card p{font-size:var(--text-sm);line-height:1.85;color:var(--color-text-secondary);margin:0 0 12px}
+.onb-card p b{color:var(--color-text-primary)}
+.onb-card .onb-sub{font-size:var(--text-xs);color:var(--color-text-secondary)}
+.onb-skip{margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary);cursor:pointer;text-decoration:underline}
+.onb-coach{position:fixed;left:0;right:0;bottom:calc(72px + env(safe-area-inset-bottom));z-index:45;display:flex;justify-content:center;padding:0 14px;pointer-events:none}
+.onb-bar{background:var(--color-bg-surface);border:1.5px solid var(--color-primary-300);border-radius:16px;padding:14px 16px;max-width:460px;width:100%;box-shadow:0 12px 30px rgba(60,40,20,.22);pointer-events:auto;animation:onbpop .3s ease}
+@keyframes onbpop{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.onb-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.onb-step{font-size:var(--text-xs);font-weight:800;color:var(--color-primary-500);letter-spacing:.05em}
+.onb-skip2{font-size:var(--text-xs);color:var(--color-text-secondary);cursor:pointer;text-decoration:underline}
+.onb-ttl{font-weight:800;font-size:var(--text-base);margin-bottom:2px}
+.onb-desc{font-size:var(--text-sm);color:var(--color-text-secondary);line-height:1.6;margin-bottom:10px}
+.onb-hidden{display:none}
 .scrim.show{opacity:1;pointer-events:auto}
 /* スマホ幅では left:0;right:0 のみで画面いっぱい(width/max-width/vwを使わずはみ出しを根絶) */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box}
@@ -860,7 +877,60 @@ const App = {
     this.updateBadges();
     this.updateFab();
     if(this.tab==="dashboard")this.animateDashNums();
+    if(this._onb&&this._onb.active)this.renderOnboard();
   },
+  // ===== はじめてガイド（オンボーディング）=====
+  startOnboarding(force){
+    if(!force){try{if(localStorage.getItem("imaoka_onboard"))return;}catch(e){}}
+    this._onb={active:true,step:0};
+    this.renderOnboard();
+  },
+  onbEl(){let el=document.getElementById("onb");if(!el){el=document.createElement("div");el.id="onb";document.body.appendChild(el);}return el;},
+  onbSteps(){
+    return [
+      {key:"intro"},
+      {key:"income",title:"まずは、お給料を登録",desc:"毎月入ってくるお金を入れましょう。",btn:"給料を登録する",act:()=>this.openRecurring(null,{title:"給料",type:"income"}),done:()=>(this.state.events||[]).some(e=>e.fixed&&e.type==="income")},
+      {key:"rent",title:"次に、毎月の固定費",desc:"家賃やサブスクなど、毎月決まって出るお金。",btn:"家賃を登録する",act:()=>this.openRecurring(null,{title:"家賃",type:"payment"}),done:()=>(this.state.events||[]).some(e=>e.fixed&&e.type==="payment")},
+      {key:"special",title:"最後に、1年の特別費（積立）",desc:"旅行・帰省・車検…年に数回どんと出るお金を、毎月いくら貯めるかに変えます。",btn:"特別費をつくる",act:()=>this.openSpecialSetup(),done:()=>(this.state.special||[]).length>0},
+      {key:"done"}
+    ];
+  },
+  renderOnboard(){
+    if(!this._onb||!this._onb.active){const e=document.getElementById("onb");if(e)e.remove();return;}
+    const steps=this.onbSteps();let i=this._onb.step;
+    while(i>0&&i<steps.length-1&&steps[i].done&&steps[i].done())i++;
+    this._onb.step=i;
+    const st=steps[i],el=this.onbEl();
+    if(st.key==="intro"){
+      el.className="onb-modal";
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",34)+'</div>'+
+        '<h2>Miettaへ、ようこそ</h2>'+
+        '<p>Miettaは、毎日コツコツつける家計簿ではありません。<br>先に<b>「予定・毎月の固定費・1年の積立」</b>を入れておくと、<b>今月いくらまで使えるか</b>が先に分かります。</p>'+
+        '<p class="onb-sub">まずは3つだけ、入れてみましょう。1分で終わります。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.onbNext()">はじめる</button>'+
+        '<div class="onb-skip" onclick="App.onbSkip()">スキップ</div></div>';
+      return;
+    }
+    if(st.key==="done"){
+      el.className="onb-modal";
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("trophy",34)+'</div>'+
+        '<h2>できました！</h2>'+
+        '<p>これで <b>「今月 使えるお金」</b> が出ました。<br>ホームでいつでも確認できます。あとは残りの中で、ふたりで楽しむだけ。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.onbFinish()">Miettaを使ってみる</button></div>';
+      return;
+    }
+    const sheetOpen=document.getElementById("scrim")&&document.getElementById("scrim").classList.contains("show");
+    if(sheetOpen){el.className="onb-hidden";el.innerHTML="";return;}
+    const n=steps.filter(s=>s.btn).length,cur=steps.slice(1,i+1).filter(s=>s.btn).length;
+    el.className="onb-coach";
+    el.innerHTML='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
+      '<div class="onb-ttl">'+esc(st.title)+'</div><div class="onb-desc">'+esc(st.desc)+'</div>'+
+      '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(st.btn)+'</button></div>';
+  },
+  onbNext(){if(this._onb){this._onb.step=1;this.go("dashboard");this.renderOnboard();}},
+  onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
+  onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
+  onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
@@ -1990,6 +2060,8 @@ const App = {
     if(!catHtml)catHtml='<div class="set-cell"><span class="desc">自分で追加したカテゴリがここに表示されます。収入・支出・タスクの入力画面で、カテゴリ欄の「＋ 新しいカテゴリを追加…」から追加できます。</span></div>';
     h+='<p class="set-head">カテゴリ管理（自分で追加した分）</p><div class="set-group">'+catHtml+'</div>';
 
+    h+='<p class="set-head">使い方</p><div class="set-group">'+
+      '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
@@ -2334,15 +2406,16 @@ const App = {
       },it?()=>this.del("events",id):null);
     this.showSheet(h);
   },
-  openRecurring(id){
+  openRecurring(id,preset){
     const it=id?this.state.events.find(x=>x.id===id):null;
+    const pre=(!id&&preset)?preset:null;
     const curDay=(it&&it.date)?((+String(it.date).slice(8))||1):1;
-    const curType=it?it.type:"payment";
+    const curType=it?it.type:(pre&&pre.type?pre.type:"payment");
     const curVar=it?(it.variable?"variable":"fixed"):"fixed";
     const curClose=it&&it.closeDay?(+it.closeDay||0):0;
     const dayOptions=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>'<option value="'+d+'" '+(d===sel?"selected":"")+'>'+d+'日</option>').join("");
     const h='<h3>'+(it?"定期項目を編集":"定期の収入・固定費を追加")+'</h3>'+
-      this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:"")+'">')+
+      this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:(pre&&pre.title?pre.title:""))+'">')+
       this.field("種別",'<div class="seg" id="f-rtype">'+
         [['payment','支出（固定費）'],['income','収入']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curType===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
       this.field("金額タイプ",'<div class="seg" id="f-rvar">'+
@@ -2582,7 +2655,7 @@ const App = {
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
   inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
-  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.toast("ようこそ！");},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");this.startOnboarding();},
   async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
     if(this._authView==="invite"){
