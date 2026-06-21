@@ -432,8 +432,8 @@ const CATS = {
     {id:"goal_emergency",label:"緊急予備資金",icon:"🆘",bench:1800000,note:"生活費の約6ヶ月分"},
     {id:"goal_car",label:"車の購入・買替",icon:"🚘",bench:2880000,note:"新車 乗り出しの安全め目安（本体＋諸費用）"},
     {id:"goal_housing",label:"住宅の頭金",icon:"🏡",bench:10626000,note:"頭金＋購入諸費用（中古4,000万円・仲介の安全め目安）"},
-    {id:"goal_school",label:"入学・進学費用",icon:"📖",bench:0,note:"入学金・制服・教材など。テンプレは順次追加"},
-    {id:"goal_exam",label:"受験費用",icon:"📋",bench:0,note:"受験料・塾・併願など。テンプレは順次追加"},
+    {id:"goal_school",label:"入学・進学費用",icon:"📖",bench:265000,note:"制服・教材・端末など（高校入学・公立めやす）。文科省 学習費調査2023"},
+    {id:"goal_exam",label:"受験費用",icon:"📋",bench:323200,note:"受験料・季節講習・併願など（高校受験めやす）。栄光ゼミナール/塾選2026"},
     {id:"goal_edu",label:"教育資金",icon:"🎓",bench:3000000,note:"大学入学資金の目安。幼〜大の総額は約942万円"},
     {id:"goal_retirement",label:"老後資金",icon:"🧓",bench:15000000,note:"夫婦の不足目安 約1,500万円"},
     {id:"goal_travel",label:"旅行・家族レジャー",icon:"🏖️",bench:300000,note:""},
@@ -477,6 +477,16 @@ const GOAL_TEMPLATES={
     {label:"登記費用（登録免許税＋司法書士）",amount:500000},{label:"ローン事務手数料",amount:880000},{label:"ローン保証料",amount:400000},
     {label:"火災・地震保険（5年）",amount:400000},{label:"不動産取得税（目安）",amount:150000},{label:"固定資産税精算",amount:80000},
     {label:"引越し・家具家電",amount:600000},{label:"予備費",amount:200000}
+  ],
+  goal_school:[
+    {label:"制服・体操着",amount:70000},{label:"教科書・副教材",amount:25000},{label:"通学かばん・学用品",amount:20000},
+    {label:"通学定期・自転車",amount:40000},{label:"タブレット端末（自己負担）",amount:60000},{label:"入学金・施設諸費",amount:30000},
+    {label:"予備費",amount:20000}
+  ],
+  goal_exam:[
+    {label:"塾の夏期・冬期講習",amount:90000},{label:"私立 受験料（3校・22,000円）",amount:66000},{label:"公立 受験料",amount:2200},
+    {label:"模試・過去問・教材",amount:30000},{label:"併願校 入学金の押さえ",amount:100000},{label:"交通費・当日費用",amount:15000},
+    {label:"予備費",amount:20000}
   ]
 };
 /* 条件パラメータから内訳を計算（人数等で変動。総額ベース。refund=戻ってくる見込み） */
@@ -585,6 +595,7 @@ function seedState(){
     incomes:[], expenses:[],
     accounts:[],
     debts:[],
+    emergency:{cost:"",months:6,current:0},
     goals:[],
     folders:[],
     items:[],
@@ -1239,6 +1250,19 @@ const App = {
       debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'完済</span>')+'</div></div>';});
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">'+ic('wallet',30)+'</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
+    // 🛟 生活防衛費（生活費×3〜6ヶ月を別枠で確保）
+    const ef=this.state.emergency||{cost:"",months:6,current:0};
+    const efCost=+ef.cost||0,efMonths=+ef.months||6,efTarget=efCost*efMonths,efCur=+ef.current||0;
+    const efPct=efTarget>0?Math.min(100,Math.round(efCur/efTarget*100)):0,efDone=efTarget>0&&efCur>=efTarget;
+    let emergencyCard='<div class="section-title">生活防衛費<span class="link" onclick="App.openEmergency()">'+(efCost>0?'編集':'＋ 設定')+'</span></div><div class="card">';
+    if(!efCost){
+      emergencyCard+='<div class="empty"><span class="e-ic">'+ic('shield',30)+'</span>急な収入減や万一に備える「生活防衛費」。生活費の3〜6ヶ月分を目安に、別枠で確保しておくと安心です</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openEmergency()">生活防衛費を設定</button></div>';
+    }else{
+      emergencyCard+='<div class="row"><span class="card-title" style="margin:0">目標（生活費'+efMonths+'ヶ月分）</span><span class="mid-num">'+yen(efTarget)+'</span></div>'+
+        '<div class="prog" style="margin-top:10px;height:10px"><span class="'+(efDone?'fill-accent':'fill-primary')+'" style="width:'+efPct+'%"></span></div>'+
+        '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">今 '+yen(efCur)+'（'+efPct+'%）</span>'+(efDone?'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'達成</span>':'<span style="font-weight:700;color:var(--color-secondary-600)">あと '+yen(Math.max(0,efTarget-efCur))+'</span>')+'</div>';
+    }
+    emergencyCard+='</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
     // 💰 今月の予算（収入−固定/予定−積立＝使えるお金）当月のみ
     let budgetCard='';
@@ -1265,7 +1289,7 @@ const App = {
     }
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
-    this._lpCards={budgetCard,goalsCard,simCard,acctCard,debtCard,wishCard};
+    this._lpCards={budgetCard,goalsCard,simCard,acctCard,debtCard,emergencyCard,wishCard};
     // ホーム＝今月のお金(フロー)だけ。支出/収入はヒーロー帯。
     const alerts=storeWarn+warn+remindCard+approveCard;
     const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
@@ -1277,7 +1301,7 @@ const App = {
   view_lifeplan(){
     this.view_dashboard();
     const c=this._lpCards||{};
-    const cards=[c.budgetCard,c.goalsCard,this.specialCardHtml(),c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    const cards=[c.budgetCard,c.goalsCard,this.specialCardHtml(),c.emergencyCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
@@ -1628,6 +1652,22 @@ const App = {
     this.showSheet(h);
   },
   repayDebt(id){const d=this.state.debts.find(x=>x.id===id);if(d){d.paid=Math.min((+d.count||0),(+d.paid||0)+1);this.commit();this.toast("1回分の返済を記録しました");}},
+  openEmergency(){
+    const ef=this.state.emergency||{cost:"",months:6,current:0};
+    const seg3=(id,opts,def)=>'<div class="seg" id="'+id+'">'+opts.map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(o[0]===def?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>';
+    const m=this.metrics(this.curMonth),suggest=Math.round((m.fixed+m.variable)||0);
+    const h='<h3>生活防衛費</h3><div class="meta" style="margin-bottom:14px;line-height:1.6">急な収入減や万一に備えて、生活費の3〜6ヶ月分を別枠で確保しておくと安心です。'+(suggest>0?'今月の支出から、月の生活費はおよそ <b>'+yen(suggest)+'</b>。':'')+'</div>'+
+      this.field("月の生活費",'<input id="f-efcost" class="amt" type="text" inputmode="numeric" placeholder="例: 250,000" value="'+cf(ef.cost)+'" oninput="App.commaize(this)">')+
+      this.field("目標（何ヶ月分）",seg3("f-efmonths",[["3","3ヶ月"],["6","6ヶ月"],["12","12ヶ月"]],String(ef.months||6)))+
+      this.field("今あるお金（防衛費として）",'<input id="f-efcur" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(ef.current)+'" oninput="App.commaize(this)">')+
+      this.actions(()=>{
+        const cost=numv("f-efcost"),months=parseInt(seg("f-efmonths"))||6,current=numv("f-efcur");
+        if(!cost){this.toast("月の生活費を入力してください");return false;}
+        this.state.emergency={cost,months,current};
+        return true;
+      },(this.state.emergency&&this.state.emergency.cost)?()=>{this.state.emergency={cost:"",months:6,current:0};}:null);
+    this.showSheet(h);
+  },
   openAccount(id){
     const it=id?this.state.accounts.find(x=>x.id===id):null;
     const s=this.state.settings;
