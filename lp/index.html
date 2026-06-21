@@ -152,6 +152,13 @@
   .cal2 .cell.today{background:var(--peach);color:var(--coral-d);font-weight:800}
   .calleg{display:flex;gap:12px;justify-content:center;margin-top:9px;font-size:9.5px;color:var(--muted)}
   .calleg span{display:flex;align-items:center;gap:4px}
+  .lp-pg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .lp-pk{aspect-ratio:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px;display:flex;flex-direction:column;justify-content:space-between}
+  .lp-pk .pkic{width:32px;height:32px;border-radius:10px;background:var(--peach);display:flex;align-items:center;justify-content:center;color:var(--coral-d)}
+  .lp-pk .pkic svg{width:18px;height:18px}
+  .lp-pk .pkn{font-weight:800;font-size:11.5px}.lp-pk .pkc{font-size:10px;color:var(--muted)}
+  .lp-pk.cov{justify-content:flex-end;color:#fff;border:none}
+  .lp-pk.add{border-style:dashed;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-weight:700}
   .ba{margin-top:14px;display:flex;flex-direction:column;gap:9px}
   .ba .b,.ba .a{border-radius:13px;padding:12px 15px;font-size:14px}
   .ba .b{background:#f4eee2;color:#7a7268}
@@ -369,15 +376,26 @@
   <!-- panel 0 今月の予算 -->
   <div class="panel" data-panel="feat">
     <div class="txt"><h3>「今月、あといくら使える？」が<span class="hl">先に</span>わかる。</h3><p>収入から、固定費・予定の支出・将来への積立を自動で引き算。だから“使っていい額”がハッキリ。あとは残りの中で楽しむだけ。使いすぎそうな月は、先にそっと教えてくれます。</p><ul><li>収入 −固定費 −予定の支出 −積立 ＝ 使えるお金</li><li>カレンダーの予定金額が自動で反映</li><li>2人の入力をリアルタイムで合算</li></ul><span class="tag">使う前に、わかる</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
-      <div class="app-body">
-        <div class="c green-c"><span class="lab">今月 使えるお金</span><div class="big">¥240,000</div><div class="bar" style="margin:8px 0"><i style="width:25%"></i></div><div class="mini"><span>収入 ¥520,000 −固定/予定/積立</span><span style="font-weight:800;color:var(--green-d)">残り ¥180,000</span></div></div>
-        <div class="c"><div class="row"><span class="lab">予定からの支出見込み</span><span class="pill" style="background:var(--peach);color:var(--coral-d)">カレンダー連動</span></div><div class="big">¥90,000</div></div>
-        <div class="c warn-c"><div class="mini" style="color:var(--coral-d);margin-top:0"><span style="font-weight:800">このペースだと月末 −¥8,000</span><span>見直そう</span></div></div>
-      </div>
-      <div class="tab" data-on="home"></div>
-    </div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+        <div class="app-body">
+          <div class="c green-c"><span class="lab">今月 使えるお金</span><div class="big">¥240,000</div><div class="bar" style="margin:8px 0"><i style="width:25%"></i></div><div class="mini"><span>収入 ¥520,000 −固定/予定/積立</span><span style="font-weight:800;color:var(--green-d)">残り ¥180,000</span></div></div>
+          <div class="c"><div class="row"><span class="lab">予定からの支出見込み</span><span class="pill" style="background:var(--peach);color:var(--coral-d)">カレンダー連動</span></div><div class="big">¥90,000</div></div>
+          <div class="c warn-c"><div class="mini" style="color:var(--coral-d);margin-top:0"><span style="font-weight:800">このペースだと月末 −¥8,000</span><span>見直そう</span></div></div>
+        </div>
+        <div class="tab" data-on="home"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">ホーム</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+        <div class="app-body">
+          <div class="c"><div class="lab">今月の支出</div><div class="big">¥182,400</div><div class="chipline"><span class="chip">食費 ¥41,200</span><span class="chip">住居 ¥98,000</span><span class="chip">趣味 ¥18,500</span></div></div>
+          <div class="c"><div class="lab">今月の収入（合算）</div><div class="big">¥520,000</div></div>
+          <div class="c" style="background:var(--peach);border-color:var(--peach-line)"><div class="mini" style="margin-top:0;color:var(--coral-d)"><span style="font-weight:800">＋ 支出をワンタップで記録</span><span>数秒・撮影不要</span></div></div>
+        </div>
+        <div class="tab" data-on="home"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
 
@@ -448,83 +466,156 @@
   <!-- panel 2 ふたりのゴール -->
   <div class="panel" data-panel="feat" style="display:none">
     <div class="txt"><h3>「いつか」を、<span class="hl">期日と金額</span>に変える。</h3><p>新婚旅行・マイホーム・出産——ふたりのゴールを並べて、期日から逆算。「毎月いくら貯めれば間に合う」まで自動で出ます。今の暮らしが“貯めどき / 使いどき”のどちらかも教えてくれて、達成したら祝って次のゴールへ。</p><ul><li>直近のゴールをホームに大きく表示</li><li>期日から毎月の積立額を自動で逆算</li><li>出産・住宅・結婚式はテンプレで内訳づくり</li></ul><span class="tag">2人で見るから、未来が動き出す</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">ライフプラン</div><div class="s">ふたりで同期中</div></div></div>
-      <div class="app-body">
-        <div class="c" style="background:#eef3ee;border-color:#d7e3d8;padding:11px 13px"><div style="font-size:11px;color:var(--green-d);font-weight:800;display:flex;align-items:center;gap:5px"><span data-ic="coins" data-sz="14"></span>いまは「新婚期」・貯めどき</div><div style="font-size:10.5px;color:#6a6258;margin-top:3px;line-height:1.5">人生でいちばん貯めやすい時期。種をまこう。</div></div>
-        <div class="c goal" style="border-color:#e7c7b4"><div class="row"><span style="font-weight:800;font-size:12.5px;display:flex;align-items:center;gap:5px"><span data-ic="plane" data-sz="14" style="color:var(--coral)"></span>新婚旅行</span><span class="pill" style="background:#fff;color:var(--coral-d)">2027年3月</span></div><div class="mini"><span>¥180,000 / ¥400,000</span></div><div class="bar"><i style="width:45%"></i></div><div style="font-size:10.5px;color:var(--green-d);font-weight:800;margin-top:7px">あと9ヶ月 ・ 毎月 ¥24,000 で間に合う</div></div>
-        <div class="tk sub" style="margin-left:0"><span class="ck"></span><span class="nm" style="display:flex;align-items:center;gap:6px"><span data-ic="house" data-sz="15" style="color:var(--coral-d)"></span>マイホーム頭金</span><span class="who" style="background:#f1ece2;color:#9a8f7e">次のゴール</span></div>
-      </div>
-      <div class="tab" data-on="lifeplan"></div>
-    </div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">ライフプラン</div><div class="s">ふたりで同期中</div></div></div>
+        <div class="app-body">
+          <div class="c" style="background:#eef3ee;border-color:#d7e3d8;padding:11px 13px"><div style="font-size:11px;color:var(--green-d);font-weight:800;display:flex;align-items:center;gap:5px"><span data-ic="coins" data-sz="14"></span>いまは「新婚期」・貯めどき</div><div style="font-size:10.5px;color:#6a6258;margin-top:3px;line-height:1.5">人生でいちばん貯めやすい時期。種をまこう。</div></div>
+          <div class="c goal" style="border-color:#e7c7b4"><div class="row"><span style="font-weight:800;font-size:12.5px;display:flex;align-items:center;gap:5px"><span data-ic="plane" data-sz="14" style="color:var(--coral)"></span>新婚旅行</span><span class="pill" style="background:#fff;color:var(--coral-d)">2027年3月</span></div><div class="mini"><span>¥180,000 / ¥400,000</span></div><div class="bar"><i style="width:45%"></i></div><div style="font-size:10.5px;color:var(--green-d);font-weight:800;margin-top:7px">あと9ヶ月 ・ 毎月 ¥24,000 で間に合う</div></div>
+          <div class="tk sub" style="margin-left:0"><span class="ck"></span><span class="nm" style="display:flex;align-items:center;gap:6px"><span data-ic="house" data-sz="15" style="color:var(--coral-d)"></span>マイホーム頭金</span><span class="who" style="background:#f1ece2;color:#9a8f7e">次のゴール</span></div>
+        </div>
+        <div class="tab" data-on="lifeplan"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">出産準備</div><div class="s">テンプレで内訳づくり</div></div></div>
+        <div class="app-body">
+          <div class="c green-c"><span class="lab">目標額（内訳の合計）</span><div class="big">¥505,000</div><div class="mini"><span style="color:var(--green-d);font-weight:800">一時金 −¥500,000 を差引済み</span></div></div>
+          <div class="tk" style="margin-bottom:5px"><span class="nm">出産・入院費用</span><span style="font-weight:900;font-size:12px">¥600,000</span></div>
+          <div class="tk" style="margin-bottom:5px"><span class="nm" style="color:var(--green-d)">出産育児一時金</span><span style="font-weight:900;font-size:12px;color:var(--green-d)">−¥500,000</span></div>
+          <div class="tk" style="margin-bottom:5px"><span class="nm">ベビーカー / チャイルドシート</span><span style="font-weight:900;font-size:12px">¥105,000</span></div>
+          <div class="tk" style="margin-bottom:0"><span class="nm">ベビー用品ほか</span><span style="font-weight:900;font-size:12px">¥300,000</span></div>
+        </div>
+        <div class="tab" data-on="lifeplan"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
 
   <!-- panel 3 1年の特別費 -->
   <div class="panel" data-panel="feat" style="display:none">
     <div class="txt"><h3>旅行・車検・家電…<span class="hl">ボーナス頼み</span>を、卒業。</h3><p>年に数回どんと出る「特別費」を、回数×金額や“何年に1回”で積み上げ。毎月いくら取り分けておけば慌てないかが出ます。住まい・車・子どもの3問に答えるだけで、相場入りのテンプレが自動ででき上がり。</p><ul><li>年1回・◯年に1回・毎年固定の3パターンに対応</li><li>相場の初期値つき（公的データ・FP監修）</li><li>合計を「毎月いくら」に自動で換算</li></ul><span class="tag">急な出費に、もう驚かない</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">1年の特別費</div><div class="s">ふたりで同期中</div></div></div>
-      <div class="app-body">
-        <div class="c green-c"><span class="lab">この調子なら、毎月</span><div class="big">¥38,000</div><div class="mini"><span>取り分けておけば慌てません（年 ¥456,000）</span></div></div>
-        <div class="tk" style="margin-bottom:5px"><span class="e-ic" data-ic="plane" style="color:var(--coral)"></span><span class="nm">旅行・レジャー<br><span style="font-weight:700;color:var(--muted);font-size:10px">年2回 × ¥160,000</span></span><span style="font-weight:900;font-size:12px">¥320,000</span></div>
-        <div class="tk" style="margin-bottom:5px"><span class="e-ic" data-ic="sofa" style="color:var(--coral)"></span><span class="nm">家電の買い替え<br><span style="font-weight:700;color:var(--muted);font-size:10px">10年に1回 ¥570,000</span></span><span style="font-weight:900;font-size:12px">¥57,000</span></div>
-        <div class="tk" style="margin-bottom:0"><span class="e-ic" data-ic="car" style="color:var(--coral)"></span><span class="nm">車検<br><span style="font-weight:700;color:var(--muted);font-size:10px">2年に1回 ¥118,000</span></span><span style="font-weight:900;font-size:12px">¥59,000</span></div>
-      </div>
-      <div class="tab" data-on="lifeplan"></div>
-    </div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">1年の特別費</div><div class="s">ふたりで同期中</div></div></div>
+        <div class="app-body">
+          <div class="c green-c"><span class="lab">この調子なら、毎月</span><div class="big">¥31,000</div><div class="mini"><span>取り分けておけば慌てません（年 ¥372,000）</span></div></div>
+          <div class="tk" style="margin-bottom:5px"><span class="e-ic" data-ic="plane" style="color:var(--coral)"></span><span class="nm">旅行・レジャー<br><span style="font-weight:700;color:var(--muted);font-size:10px">年1回 × ¥160,000</span></span><span style="font-weight:900;font-size:12px">¥160,000</span></div>
+          <div class="tk" style="margin-bottom:5px"><span class="e-ic" data-ic="sofa" style="color:var(--coral)"></span><span class="nm">家電の買い替え<br><span style="font-weight:700;color:var(--muted);font-size:10px">10年に1回 ¥570,000</span></span><span style="font-weight:900;font-size:12px">¥57,000</span></div>
+          <div class="tk" style="margin-bottom:0"><span class="e-ic" data-ic="car" style="color:var(--coral)"></span><span class="nm">車検<br><span style="font-weight:700;color:var(--muted);font-size:10px">2年に1回 ¥118,000</span></span><span style="font-weight:900;font-size:12px">¥59,000</span></div>
+        </div>
+        <div class="tab" data-on="lifeplan"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">家電の買い替え</div><div class="s">どのくらいの頻度？</div></div></div>
+        <div class="app-body">
+          <div style="display:flex;gap:6px;margin-bottom:10px"><span style="flex:1;text-align:center;font-size:10px;font-weight:800;padding:7px 0;border-radius:9px;background:#fff;border:1px solid var(--line);color:var(--muted)">年に複数回</span><span style="flex:1;text-align:center;font-size:10px;font-weight:800;padding:7px 0;border-radius:9px;background:var(--coral);color:#fff">◯年に1回</span><span style="flex:1;text-align:center;font-size:10px;font-weight:800;padding:7px 0;border-radius:9px;background:#fff;border:1px solid var(--line);color:var(--muted)">毎年</span></div>
+          <div class="c" style="margin-bottom:8px"><div class="row"><span class="lab">何年に1回？</span><span style="font-weight:900">10 年</span></div></div>
+          <div class="tk" style="margin-bottom:5px"><span class="nm">冷蔵庫 / 洗濯機</span><span style="font-weight:900;font-size:12px">¥250,000</span></div>
+          <div class="tk" style="margin-bottom:8px"><span class="nm">エアコン / テレビ ほか</span><span style="font-weight:900;font-size:12px">¥320,000</span></div>
+          <div class="c green-c"><div class="mini" style="margin-top:0"><span>10年に1回 ¥570,000 →</span><b style="color:var(--green-d)">毎月 ¥4,750</b></div></div>
+          <div style="font-size:9.5px;color:var(--muted);margin-top:8px;line-height:1.5">目安の出典：内閣府 消費動向調査2025（冷蔵庫13.5年/エアコン14.2年ほか）</div>
+        </div>
+        <div class="tab" data-on="lifeplan"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
 
   <!-- panel 4 月次レポート -->
   <div class="panel" data-panel="feat" style="display:none">
     <div class="txt"><h3>がんばりが、<span class="hl">ごほうび</span>になる。</h3><p>月末に、今月の家計を“家計スコア（100点）”と“動物ランク”で振り返り。支出の内訳ドーナツや先月比もひと目で。金額を隠したシェア画像も作れるので、SNSにも気軽に。続けるのが、ちょっと楽しくなります。</p><ul><li>家計スコア＋動物ランクで楽しく振り返り</li><li>支出内訳ドーナツ・先月比・貯蓄率</li><li>金額を隠してSNSシェアもOK</li></ul><span class="tag">数字が苦手でも、続けられる</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">今月のレポート</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
-      <div class="app-body">
-        <div class="c" style="text-align:center;padding:16px 13px"><div class="lab" style="text-align:center">今月の家計スコア</div><div style="font-size:42px;font-weight:900;color:var(--green-d);letter-spacing:-.02em;line-height:1.1">82<span style="font-size:18px">点</span></div><div class="pill" style="background:#eaf6ef;color:var(--green-d);display:inline-block;margin-top:4px">コツコツ りすさん</div></div>
-        <div class="c"><div class="row"><span class="lab">支出の内訳</span><span style="font-size:10.5px;color:var(--muted)">先月比 −¥9,000</span></div>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:8px"><svg viewBox="0 0 36 36" width="58" height="58"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#eee7d8" stroke-width="4.5"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#C4714A" stroke-width="4.5" stroke-dasharray="42 100" stroke-dashoffset="0" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#7A9E7E" stroke-width="4.5" stroke-dasharray="28 100" stroke-dashoffset="-42" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#D9952F" stroke-width="4.5" stroke-dasharray="18 100" stroke-dashoffset="-70" transform="rotate(-90 18 18)"/></svg>
-          <div style="flex:1"><div class="chipline"><span class="chip">食費 42%</span><span class="chip">住居 28%</span><span class="chip">趣味 18%</span></div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">今月のレポート</div><div class="s">ふたりで同期中</div></div><div class="mo">6月</div></div>
+        <div class="app-body">
+          <div class="c" style="text-align:center;padding:16px 13px"><div class="lab" style="text-align:center">今月の家計スコア</div><div style="font-size:42px;font-weight:900;color:var(--green-d);letter-spacing:-.02em;line-height:1.1">82<span style="font-size:18px">点</span></div><div class="pill" style="background:#eaf6ef;color:var(--green-d);display:inline-block;margin-top:4px">コツコツ りすさん</div></div>
+          <div class="c"><div class="row"><span class="lab">支出の内訳</span><span style="font-size:10.5px;color:var(--muted)">先月比 −¥9,000</span></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px"><svg viewBox="0 0 36 36" width="58" height="58"><circle cx="18" cy="18" r="15.9" fill="none" stroke="#eee7d8" stroke-width="4.5"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#C2724F" stroke-width="4.5" stroke-dasharray="42 100" stroke-dashoffset="0" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#7C9B7E" stroke-width="4.5" stroke-dasharray="28 100" stroke-dashoffset="-42" transform="rotate(-90 18 18)"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="#C99A4A" stroke-width="4.5" stroke-dasharray="18 100" stroke-dashoffset="-70" transform="rotate(-90 18 18)"/></svg>
+            <div style="flex:1"><div class="chipline"><span class="chip">食費 42%</span><span class="chip">住居 28%</span><span class="chip">趣味 18%</span></div></div></div>
+          </div>
         </div>
-      </div>
-      <div class="tab" data-on="home"></div>
-    </div></div></div>
+        <div class="tab" data-on="home"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">シェア画像</div><div class="s">金額を隠すモード</div></div></div>
+        <div class="app-body" style="gap:8px">
+          <div style="background:#52735A;border-radius:16px;padding:16px;text-align:center;color:#fff">
+            <div style="font-size:11px;opacity:.85">ふたりの 2026年6月</div>
+            <div style="font-size:34px;font-weight:900;line-height:1.2;margin:2px 0">家計スコア 82</div>
+            <span style="display:inline-block;background:rgba(255,255,255,.22);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:800">コツコツ りすさん 🐿</span>
+            <div style="display:flex;justify-content:center;gap:6px;margin-top:10px"><span style="background:rgba(255,255,255,.18);border-radius:8px;padding:5px 8px;font-size:10px">貯蓄率 65%</span><span style="background:rgba(255,255,255,.18);border-radius:8px;padding:5px 8px;font-size:10px">先月より改善</span></div>
+          </div>
+          <div class="c" style="background:var(--peach);border-color:var(--peach-line)"><div class="mini" style="margin-top:0;color:var(--coral-d)"><span style="font-weight:800">＋ この画像をシェア</span><span>金額は非表示</span></div></div>
+        </div>
+        <div class="tab" data-on="home"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
 
   <!-- panel 5 タスク -->
   <div class="panel" data-panel="feat" style="display:none">
     <div class="txt"><h3>大きな「やること」を、2人で<span class="hl">サクサク</span>。</h3><p>結婚式も引っ越しも、大→中→小に分解。担当を決めて、持ち物やURLのメモも残せる。「言った／言わない」「やってくれた？」が、なくなります。</p><ul><li>大きな準備を大→中→小に分解</li><li>夫・妻の担当をひと目で色分け</li><li>各タスクにチェックリストやメモも</li></ul><span class="tag">大→中→小・担当・メモ</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">タスク</div><div class="s">ふたりで同期中</div></div></div>
-      <div class="app-body">
-        <div class="proj"><span class="tag">大</span>結婚式の準備</div>
-        <div class="midl">中｜招待状の準備</div>
-        <div class="tk sub"><span class="ck on" data-ic="check" data-sz="12" style="color:#fff"></span><span class="nm done">招待者リストを作る</span><span class="who w">妻</span></div>
-        <div class="tk sub"><span class="ck"></span><span class="nm">招待者へLINEを送る</span><span class="who h">夫</span></div>
-        <div class="midl">中｜前撮り</div>
-        <div class="tk sub"><span class="ck"></span><span class="nm">衣装を選ぶ ・ メモあり</span><span class="who w">妻</span></div>
-        <div class="tk sub"><span class="ck"></span><span class="nm">スタジオを予約</span><span class="who h">夫</span></div>
-      </div>
-      <div class="tab" data-on="tasks"></div>
-    </div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">タスク</div><div class="s">ふたりで同期中</div></div></div>
+        <div class="app-body">
+          <div class="proj"><span class="tag">大</span>結婚式の準備</div>
+          <div class="midl">中｜招待状の準備</div>
+          <div class="tk sub"><span class="ck on" data-ic="check" data-sz="12" style="color:#fff"></span><span class="nm done">招待者リストを作る</span><span class="who w">妻</span></div>
+          <div class="tk sub"><span class="ck"></span><span class="nm">招待者へLINEを送る</span><span class="who h">夫</span></div>
+          <div class="midl">中｜前撮り</div>
+          <div class="tk sub"><span class="ck"></span><span class="nm">衣装を選ぶ ・ メモあり</span><span class="who w">妻</span></div>
+          <div class="tk sub"><span class="ck"></span><span class="nm">スタジオを予約</span><span class="who h">夫</span></div>
+        </div>
+        <div class="tab" data-on="tasks"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">衣装を選ぶ</div><div class="s">前撮り</div></div><span class="who w">妻</span></div>
+        <div class="app-body">
+          <div class="c"><div class="row"><span class="lab">チェックリスト</span><span style="font-size:10px;color:var(--green-d);font-weight:800">2/4</span></div>
+            <div class="tk sub" style="margin:8px 0 0"><span class="ck on" data-ic="check" data-sz="12" style="color:#fff"></span><span class="nm done">ドレスの試着予約</span></div>
+            <div class="tk sub" style="margin:6px 0 0"><span class="ck on" data-ic="check" data-sz="12" style="color:#fff"></span><span class="nm done">和装も候補に</span></div>
+            <div class="tk sub" style="margin:6px 0 0"><span class="ck"></span><span class="nm">小物を決める</span></div>
+            <div class="tk sub" style="margin:6px 0 0"><span class="ck"></span><span class="nm">2人で最終決定</span></div>
+          </div>
+          <div class="memo"><h4 style="display:flex;align-items:center;gap:6px"><span data-ic="book" data-sz="14" style="color:var(--coral-d)"></span>メモ</h4><p>第一候補のサイトURL／予算は¥120,000まで</p></div>
+        </div>
+        <div class="tab" data-on="tasks"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
 
   <!-- panel 6 共有メモ -->
   <div class="panel" data-panel="feat" style="display:none">
     <div class="txt"><h3>行きたい所・買い物・パスワードを、<span class="hl">一箇所</span>に。</h3><p>「ポケット」に、行きたい場所・欲しいもの・Wi-FiやサイトのIDまで。カバー画像をつけて、かわいく整理。あちこちのメモアプリやLINEを探さなくても、2人の“大事なこと”がここに集まります。</p><ul><li>行きたい場所・欲しいもの・買い物リスト</li><li>Wi-FiやサイトのログインIDも安全にメモ</li><li>カバー画像でかわいく整理・2人で共有</li></ul><span class="tag">バラバラのメモを、ひとつに</span></div>
-    <div class="ph"><div class="phone"><div class="notch"></div><div class="screen"><div class="app">
-      <div class="app-hd"><div><div class="t">共有</div><div class="s">ふたりで同期中</div></div></div>
-      <div class="app-body">
-        <div class="fold"><div class="fi" style="color:var(--coral-d)" data-ic="map"></div><div style="flex:1"><div class="fn">行きたい場所</div><div class="chipline"><span class="chip">沖縄の旅館</span><span class="chip">箱根 温泉</span></div></div></div>
-        <div class="fold"><div class="fi" style="color:var(--coral-d)" data-ic="gift"></div><div style="flex:1"><div class="fn">欲しいもの</div><div class="fc">ソファ ¥120,000 ・ 目標まで 68%</div></div></div>
-        <div class="memo"><h4 style="display:flex;align-items:center;gap:6px"><span data-ic="book" data-sz="14" style="color:var(--coral-d)"></span>買い物リスト・メモ</h4><p>牛乳 / たまご / 洗剤
-Wi-Fi・サイトのID/パスもここに</p></div>
-      </div>
-      <div class="tab" data-on="share"></div>
-    </div></div></div>
+    <div class="ph duo">
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">共有</div><div class="s">ふたりで同期中</div></div></div>
+        <div class="app-body">
+          <div class="fold" style="margin-bottom:4px"><div class="fi" style="color:var(--coral-d)" data-ic="book"></div><div style="flex:1"><div class="fn">共有メモ</div><div class="fc">日付のない自由メモ ・ 5件</div></div></div>
+          <div style="font-size:11px;color:var(--coral-d);font-weight:800;margin:6px 2px 2px">フォルダ（ポケット）</div>
+          <div class="lp-pg">
+            <div class="lp-pk"><span class="pkic" data-ic="map"></span><div><div class="pkn">行きたい場所</div><div class="pkc">4件</div></div></div>
+            <div class="lp-pk cov" style="background:#8A9E86"><span class="pkic" style="background:rgba(255,255,255,.25);color:#fff" data-ic="gift"></span><div><div class="pkn">欲しいもの</div><div class="pkc" style="color:#eef2ec">3件</div></div></div>
+            <div class="lp-pk"><span class="pkic" data-ic="cart"></span><div><div class="pkn">買い物リスト</div><div class="pkc">8件</div></div></div>
+            <div class="lp-pk add">＋ 追加</div>
+          </div>
+        </div>
+        <div class="tab" data-on="share"></div>
+      </div></div></div>
+      <div class="phone"><div class="notch"></div><div class="screen"><div class="app">
+        <div class="app-hd"><div><div class="t">行きたい場所</div><div class="s">ふたりで同期中</div></div></div>
+        <div class="app-body">
+          <div class="ev"><span class="e-ic" data-ic="map" style="color:var(--coral)"></span><div style="flex:1"><div class="e-t">沖縄の旅館</div><div class="e-m">¥40,000/泊 ・ URLメモあり</div></div></div>
+          <div class="ev"><span class="e-ic" data-ic="palm" style="color:var(--coral)"></span><div style="flex:1"><div class="e-t">箱根 温泉</div><div class="e-m">記念日に行きたい</div></div></div>
+          <div class="ev"><span class="e-ic" data-ic="map" style="color:var(--coral)"></span><div style="flex:1"><div class="e-t">草津 旅館</div><div class="e-m">冬がおすすめ</div></div></div>
+          <div class="memo"><h4 style="display:flex;align-items:center;gap:6px"><span data-ic="book" data-sz="14" style="color:var(--coral-d)"></span>メモ</h4><p>Wi-Fi・予約サイトのID/パスもここに残せる</p></div>
+        </div>
+        <div class="tab" data-on="share"></div>
+      </div></div></div>
+    </div>
   </div>
   </div>
   <div class="hint">タブを切り替えて、ぜんぶの画面をのぞいてみてください</div>
@@ -802,7 +893,8 @@ Wi-Fi・サイトのID/パスもここに</p></div>
     coins:'<ellipse cx="9" cy="7" rx="5" ry="2.4"/><path d="M4 7v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"/><path d="M10 14.4c.6 1 2.6 1.8 5 1.8 2.8 0 5-1.1 5-2.4V9.6c0-1.1-1.5-2-3.6-2.3"/>',
     target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/>',
     house:'<path d="M3 10.4 12 3.2l9 7.2"/><path d="M5.5 9.4V20h13V9.4"/><path d="M9.5 20v-5.6h5V20"/>',
-    book:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v16H6.5A1.5 1.5 0 0 0 5 20.5z"/><path d="M5 20.5A1.5 1.5 0 0 1 6.5 19H19"/>'
+    book:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v16H6.5A1.5 1.5 0 0 0 5 20.5z"/><path d="M5 20.5A1.5 1.5 0 0 1 6.5 19H19"/>',
+    palm:'<path d="M12 21V11"/><path d="M12 11c-2-3-6-3-7-1 3-1 5 0 7 1zM12 11c2-3 6-3 7-1-3-1-5 0-7 1zM12 11c0-3-2-6-5-6 1 3 2 5 5 6zM12 11c0-3 2-6 5-6-1 3-2 5-5 6z"/>'
   };
   function lpSvg(name,size){var p=LP_IC[name];if(!p)return '';size=size||16;return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';}
   function lpRenderIcons(){
