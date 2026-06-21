@@ -23,6 +23,7 @@ perl -0pi -e 's{/\* DEMO: ServiceWorker無効\(本番に干渉しない\) \*/}{i
 perl -ni -e 'print unless /position:fixed;top:0;left:0;right:0;z-index:9999;background:#C4521F/' "$OUT"
 # 6. localStorageデータキーを本番へ
 perl -pi -e 's/"imaoka_lifeplan_staging"/"imaoka_lifeplan"/g' "$OUT"
+perl -pi -e 's/"imaoka_owner_staging"/"imaoka_owner"/g' "$OUT"
 # 7. Supabase認証storageKey(staging専用)を本番(デフォルト)へ戻す
 perl -pi -e 's/\{auth:\{persistSession:true,autoRefreshToken:true,storageKey:"sb-mietta-staging-auth"\}\}/{auth:{persistSession:true,autoRefreshToken:true}}/' "$OUT"
 

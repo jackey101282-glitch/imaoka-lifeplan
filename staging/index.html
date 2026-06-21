@@ -2595,15 +2595,15 @@ const App = {
       this._user=r.data.user;await this.afterAuth();
     }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
-  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");}catch(e){} this.showAuth();},
+  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");localStorage.removeItem("imaoka_owner_staging");}catch(e){} this.showAuth();},
   switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
   async afterAuth(){
     try{
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
       if(error)throw error;
-      if(mem&&mem.length){this.householdId=mem[0].household_id;await this.loadCloud();this.hideAuth();}
-      else if(this._pendingInvite){const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
-      else{this._authView="household";this.showAuth();}
+      if(mem&&mem.length){this.householdId=mem[0].household_id;if(localStorage.getItem("imaoka_owner_staging")!==this.householdId){this.state=seedState();}await this.loadCloud();this.hideAuth();}
+      else if(this._pendingInvite){this.state=seedState();const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
+      else{this.state=seedState();this.render();this._authView="household";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
   async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();this.normalize();await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
@@ -2619,6 +2619,7 @@ const App = {
         await this.pushNow(); // 初回: 今のデータをクラウドへ
       }
       this._syncStatus="on";
+      try{localStorage.setItem("imaoka_owner_staging",this.householdId);}catch(e){}
       this.subscribeRealtime();
       this.render();
     }catch(e){console.error(e);this._syncStatus="err";this.render();}
@@ -2649,7 +2650,7 @@ const App = {
     if(!this._client||!this.householdId)return;
     const ts=new Date().toISOString();this._lastPushed=ts;
     const payload=JSON.parse(JSON.stringify(this.state));
-    try{const{error}=await this._client.from("app_state").update({data:payload,updated_at:ts}).eq("household_id",this.householdId);if(error)throw error;if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}}catch(e){console.error(e);this._syncStatus="err";}
+    try{const{error}=await this._client.from("app_state").update({data:payload,updated_at:ts}).eq("household_id",this.householdId);if(error)throw error;try{localStorage.setItem("imaoka_owner_staging",this.householdId);}catch(e){}if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}}catch(e){console.error(e);this._syncStatus="err";}
   },
   /* ---- 認証オーバーレイ ---- */
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
