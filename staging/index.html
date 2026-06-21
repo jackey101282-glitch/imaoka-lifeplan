@@ -913,58 +913,60 @@ const App = {
   shareSummary(hide){
     const M=this.curMonth,s=this.state.settings,d=this.reportData(M),m=d.m;
     const fmt=v=>hide?"¥•••":yen(v);
-    const W=1080,H=1920,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
-    const PX=64,CW=W-PX*2;
+    const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+    const PX=56,CW=W-PX*2;
     const rr=(X,Y,w,h,r,col)=>{x.fillStyle=col;x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();x.fill();};
     const bar=(X,Y,w,h,pct,col)=>{rr(X,Y,w,h,h/2,"#EDE8E0");if(pct>0)rr(X,Y,Math.max(h,w*Math.min(1,pct)),h,h/2,col);};
     x.fillStyle="#FBF7F0";x.fillRect(0,0,W,H);
-    x.textAlign="left";x.fillStyle="#D85A30";x.font="bold 46px sans-serif";x.fillText("Mietta",PX,92);
-    x.textAlign="right";x.fillStyle="#9B8C84";x.font="30px sans-serif";x.fillText(monthLabel(M)+" ・ "+(s.spaceName||"ふたりの家計"),W-PX,88);
-    // ヒーロー: スコアリング
-    const cx=W/2,cy=360,R=150;
-    x.lineWidth=26;x.strokeStyle="#EDE8E0";x.beginPath();x.arc(cx,cy,R,0,Math.PI*2);x.stroke();
-    x.strokeStyle=d.rank.col;x.lineCap="round";x.beginPath();x.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+Math.PI*2*(d.score/100));x.stroke();x.lineCap="butt";
-    x.textAlign="center";x.fillStyle="#3D3530";x.font="bold 120px sans-serif";x.fillText(String(d.score),cx,cy+28);
-    x.fillStyle="#9B8C84";x.font="30px sans-serif";x.fillText("/ 100点",cx,cy+82);
-    x.fillStyle=d.rank.col;x.font="bold 58px sans-serif";x.fillText(d.rank.name,cx,cy+R+92);
-    x.fillStyle="#6B6560";x.font="30px sans-serif";x.fillText(d.rank.msg,cx,cy+R+142);
-    // バッジ
-    const pills=[d.streak+"ヶ月連続 記録中"]; if(d.sav>=25)pills.push("貯蓄の鬼"); if(m.balance>0)pills.push("黒字達成");
-    x.font="28px sans-serif"; const pw=pills.map(p=>x.measureText(p).width+44); const totW=pw.reduce((a,b)=>a+b+12,-12); let bx=cx-totW/2; const by=cy+R+185;
-    pills.forEach((p,i)=>{rr(bx,by,pw[i],50,25,"#F4EFE6");x.fillStyle="#854F0B";x.textAlign="center";x.fillText(p,bx+pw[i]/2,by+33);bx+=pw[i]+12;});
-    // サマリーカード
-    let y=cy+R+270; rr(PX,y,CW,250,28,"#fff");
-    const cw=CW/3; [["収入",fmt(m.totalIncome),"#3D3530"],["支出",fmt(m.totalExpense),"#3D3530"],["貯金できた",fmt(m.balance),"#3B6D11"]].forEach((t,i)=>{x.textAlign="center";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText(t[0],PX+cw*i+cw/2,y+60);x.fillStyle=t[2];x.font="bold 44px sans-serif";x.fillText(t[1],PX+cw*i+cw/2,y+118);});
-    x.textAlign="left";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText("貯蓄率",PX+40,y+178);
-    x.textAlign="right";x.fillStyle="#3B6D11";x.font="bold 29px sans-serif";x.fillText(Math.round(d.sav)+"%（目標20%）",W-PX-40,y+178);
-    bar(PX+40,y+193,CW-80,18,Math.min(1,d.sav/50),"#7BA05B");
+    x.textBaseline="alphabetic";
+    x.textAlign="left";x.fillStyle="#D85A30";x.font="bold 44px sans-serif";x.fillText("Mietta",PX,84);
+    x.textAlign="right";x.fillStyle="#9B8C84";x.font="28px sans-serif";x.fillText(monthLabel(M)+" ・ "+(s.spaceName||"ふたりの家計"),W-PX,80);
+    // ── ヒーロー(横並び): リング左 / ランク・ひとこと・バッジ右 ──
+    const rcx=PX+132,rcy=290,R=112;
+    x.lineWidth=24;x.strokeStyle="#EDE8E0";x.beginPath();x.arc(rcx,rcy,R,0,Math.PI*2);x.stroke();
+    x.strokeStyle=d.rank.col;x.lineCap="round";x.beginPath();x.arc(rcx,rcy,R,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0.001,d.score/100));x.stroke();x.lineCap="butt";
+    x.textAlign="center";x.textBaseline="middle";
+    x.fillStyle="#3D3530";x.font="bold 88px sans-serif";x.fillText(String(d.score),rcx,rcy-4);
+    x.fillStyle="#9B8C84";x.font="25px sans-serif";x.fillText("/ 100点",rcx,rcy+52);
+    x.textBaseline="alphabetic";x.textAlign="left";
+    const RX=PX+288;
+    x.fillStyle=d.rank.col;x.font="bold 52px sans-serif";x.fillText(d.rank.name,RX,250);
+    x.fillStyle="#6B6560";x.font="26px sans-serif";x.fillText(d.rank.msg,RX,296);
+    const pills=[d.streak+"ヶ月連続 記録中"]; if(d.sav>=25)pills.push("貯蓄の鬼"); else if(m.balance>0)pills.push("黒字達成");
+    x.font="25px sans-serif"; let bx=RX; const by=330;
+    pills.forEach(p=>{const w=x.measureText(p).width+36;if(bx+w>W-PX){return;}rr(bx,by,w,46,23,"#F4EFE6");x.fillStyle="#854F0B";x.textAlign="center";x.fillText(p,bx+w/2,by+31);x.textAlign="left";bx+=w+10;});
+    // ── サマリーカード ──
+    let y=430; rr(PX,y,CW,200,26,"#fff");
+    const cw=CW/3; [["収入",fmt(m.totalIncome),"#3D3530"],["支出",fmt(m.totalExpense),"#3D3530"],["貯金できた",fmt(m.balance),"#3B6D11"]].forEach((t,i)=>{x.textAlign="center";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText(t[0],PX+cw*i+cw/2,y+52);x.fillStyle=t[2];x.font="bold 42px sans-serif";x.fillText(t[1],PX+cw*i+cw/2,y+105);});
+    x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("貯蓄率",PX+36,y+150);
+    x.textAlign="right";x.fillStyle="#3B6D11";x.font="bold 28px sans-serif";x.fillText(Math.round(d.sav)+"%（目標20%）",W-PX-36,y+150);
+    bar(PX+36,y+163,CW-72,16,Math.min(1,d.sav/50),"#7BA05B");
     let sub=d.prevExp>0?("先月より "+(m.totalExpense<=d.prevExp?"▼":"▲")+(hide?Math.abs(Math.round((m.totalExpense-d.prevExp)/d.prevExp*100))+"%":yen(Math.abs(m.totalExpense-d.prevExp)))):"";
-    if(!hide)sub=(sub?sub+" ・ ":"")+"1日あたり "+yen(d.perDay);
-    if(sub){x.textAlign="center";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText(sub,W/2,y+232);}
-    // ドーナツカード
-    y+=290; rr(PX,y,CW,330,28,"#fff");
-    x.textAlign="left";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText("支出の内訳",PX+40,y+55);
-    const dcx=PX+185,dcy=y+185,dR=105; const COL=["#7BA05B","#D85A30","#D4A831","#6FA8C4","#C97240"];
-    let ang=-Math.PI/2; d.cats.forEach((ct,i)=>{const frac=ct.v/d.catTotal;x.lineWidth=46;x.strokeStyle=COL[i%COL.length];x.beginPath();x.arc(dcx,dcy,dR,ang,ang+Math.PI*2*frac);x.stroke();ang+=Math.PI*2*frac;});
-    const lx=PX+340; let ly=y+95;
-    d.cats.slice(0,3).forEach((ct,i)=>{x.fillStyle=COL[i%COL.length];rr(lx,ly-22,22,22,5,COL[i%COL.length]);x.textAlign="left";x.fillStyle="#3D3530";x.font="30px sans-serif";x.fillText(ct.l+" "+Math.round(ct.v/d.catTotal*100)+"%",lx+34,ly);x.textAlign="right";x.fillStyle="#9B8C84";x.font="28px sans-serif";x.fillText(fmt(ct.v),W-PX-40,ly);ly+=66;});
-    // ゴールカード
-    if(d.goalInfo){y+=370; rr(PX,y,CW,160,28,"#fff");
-      x.textAlign="left";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText("ふたりのゴール",PX+40,y+52);
-      x.fillStyle="#3D3530";x.font="bold 34px sans-serif";x.fillText(d.goalInfo.label,PX+40,y+95);
-      x.textAlign="right";x.fillStyle="#9B8C84";x.font="30px sans-serif";x.fillText(Math.round(d.goalInfo.pct)+"%",W-PX-40,y+95);
-      bar(PX+40,y+110,CW-80,16,d.goalInfo.pct/100,"#D85A30");
-      if(d.goalInfo.eta){x.textAlign="left";x.fillStyle="#3B6D11";x.font="27px sans-serif";x.fillText("このペースなら "+d.goalInfo.eta+"！",PX+40,y+158);}
-      y+=160;
+    if(!hide)sub=(sub?sub+"  ":"")+"1日あたり "+yen(d.perDay);
+    if(sub){x.textAlign="center";x.fillStyle="#9B8C84";x.font="25px sans-serif";x.fillText(sub,W/2,y+192);}
+    // ── ドーナツカード ──
+    y=650; rr(PX,y,CW,280,26,"#fff");
+    x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("支出の内訳",PX+36,y+48);
+    const dcx=PX+170,dcy=y+165,dR=92; const COL=["#7BA05B","#D85A30","#D4A831","#6FA8C4","#C97240"];
+    let ang=-Math.PI/2; d.cats.forEach((ct,i)=>{const frac=ct.v/d.catTotal;x.lineWidth=40;x.strokeStyle=COL[i%COL.length];x.beginPath();x.arc(dcx,dcy,dR,ang,ang+Math.PI*2*Math.max(0.001,frac));x.stroke();ang+=Math.PI*2*frac;});
+    const lx=PX+320; let ly=y+95;
+    d.cats.slice(0,3).forEach((ct,i)=>{rr(lx,ly-20,20,20,5,COL[i%COL.length]);x.textAlign="left";x.fillStyle="#3D3530";x.font="29px sans-serif";x.fillText(ct.l+" "+Math.round(ct.v/d.catTotal*100)+"%",lx+32,ly);x.textAlign="right";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText(fmt(ct.v),W-PX-36,ly);ly+=62;});
+    // ── ゴールカード ──
+    y=950;
+    if(d.goalInfo){rr(PX,y,CW,145,26,"#fff");
+      x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("ふたりのゴール",PX+36,y+46);
+      x.fillStyle="#3D3530";x.font="bold 33px sans-serif";x.fillText(d.goalInfo.label,PX+36,y+88);
+      x.textAlign="right";x.fillStyle="#9B8C84";x.font="29px sans-serif";x.fillText(Math.round(d.goalInfo.pct)+"%",W-PX-36,y+88);
+      bar(PX+36,y+102,CW-72,15,d.goalInfo.pct/100,"#D85A30");
+      if(d.goalInfo.eta){x.textAlign="left";x.fillStyle="#3B6D11";x.font="26px sans-serif";x.fillText("このペースなら "+d.goalInfo.eta+"！",PX+36,y+138);}
+      y+=165;
     }
-    // メッセージカード
-    y+=20; rr(PX,y,CW,170,28,"#F4EFE6");
-    x.textAlign="center";x.fillStyle="#5F5E5A";x.font="30px sans-serif";
-    x.fillText("今月ふたりで "+d.recCount+"件 記録しました。",W/2,y+62);
-    x.fillStyle="#3B6D11";x.font="bold 36px sans-serif";
-    x.fillText((!hide&&d.yearProj>0)?("このペースなら1年で "+yen(d.yearProj)+" 貯まります"):"記録を続けるほどスコアは伸びます",W/2,y+120);
+    // ── メッセージカード ──
+    rr(PX,y,CW,130,26,"#F4EFE6");
+    x.textAlign="center";x.fillStyle="#5F5E5A";x.font="28px sans-serif";x.fillText("今月ふたりで "+d.recCount+"件 記録しました。",W/2,y+52);
+    x.fillStyle="#3B6D11";x.font="bold 34px sans-serif";x.fillText((!hide&&d.yearProj>0)?("このペースなら1年で "+yen(d.yearProj)+" 貯まります"):"記録を続けるほどスコアは伸びます",W/2,y+100);
     // フッター
-    x.fillStyle="#9B8C84";x.font="28px sans-serif";x.textAlign="center";x.fillText("ふたりで、これからの暮らしを。 ・ Mietta ・ mietta.jp",W/2,H-50);
+    x.fillStyle="#9B8C84";x.font="26px sans-serif";x.textAlign="center";x.fillText("ふたりで、これからの暮らしを。 ・ Mietta ・ mietta.jp",W/2,H-44);
     c.toBlob((blob)=>{
       if(!blob){this.toast("画像を作成できませんでした");return;}
       const file=new File([blob],"mietta-report-"+M+".png",{type:"image/png"});
