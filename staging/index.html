@@ -2595,7 +2595,7 @@ const App = {
       this._user=r.data.user;await this.afterAuth();
     }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
-  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.showAuth();},
+  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");}catch(e){} this.showAuth();},
   switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
   async afterAuth(){
     try{
@@ -2606,7 +2606,7 @@ const App = {
       else{this._authView="household";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();this.normalize();await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
   async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
@@ -2655,7 +2655,7 @@ const App = {
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
   inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
-  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");this.startOnboarding();},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");this.startOnboarding(true);},
   async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
     if(this._authView==="invite"){
