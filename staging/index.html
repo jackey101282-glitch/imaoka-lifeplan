@@ -509,9 +509,9 @@ const GOAL_PARAMS={
 const SPECIAL_CATALOG=[
   {key:"newyear",label:"年末年始",icon:"calendar",cycle:"fixed",units:[{label:"お年玉",amount:25000},{label:"おせち・正月料理",amount:25000},{label:"年始の外食・帰省以外",amount:15000}],src:"インテージ2024/帝国データバンク2024"},
   {key:"homecoming",label:"帰省",icon:"map",cycle:"perYear",count:2,units:[{label:"交通費",amount:20000},{label:"お土産・現地費",amount:8000}],src:"フコク生命2024/JTB2024"},
-  {key:"travel",label:"旅行・レジャー",icon:"plane",cycle:"perYear",count:2,units:[{label:"交通・宿泊",amount:120000},{label:"食事・観光",amount:40000}],src:"観光庁2024(国内宿泊1人約7万円)"},
+  {key:"travel",label:"旅行・レジャー",icon:"plane",cycle:"perYear",count:1,units:[{label:"交通・宿泊",amount:120000},{label:"食事・観光",amount:40000}],src:"観光庁2024(国内宿泊1人約7万円)"},
   {key:"event",label:"クリスマス・誕生日・記念日",icon:"star",cycle:"fixed",units:[{label:"クリスマス",amount:16000},{label:"誕生日プレゼント",amount:15000},{label:"記念日",amount:10000}],src:"インテージ2024/オカネコ2024"},
-  {key:"ceremony",label:"冠婚葬祭（ご祝儀・香典）",icon:"gift",cycle:"perYear",count:2,units:[{label:"1件あたり",amount:30000}],src:"ゼクシィ/小さなお葬式"},
+  {key:"ceremony",label:"冠婚葬祭（ご祝儀・香典）",icon:"gift",cycle:"perYear",count:1,units:[{label:"1件あたり",amount:30000}],src:"ゼクシィ/小さなお葬式"},
   {key:"appliance",label:"家電・家具の買い替え",icon:"sofa",cycle:"everyN",years:10,units:[{label:"冷蔵庫",amount:150000},{label:"洗濯機",amount:100000},{label:"エアコン",amount:120000},{label:"テレビ",amount:120000},{label:"その他(電子レンジ・掃除機等)",amount:80000}],src:"内閣府 消費動向調査2025(冷蔵庫13.5年/エアコン14.2年/テレビ10.5年/洗濯機10年)"},
   {key:"insurance",label:"保険（年払い）",icon:"lifebuoy",cycle:"fixed",units:[{label:"生命・医療保険 年払い分",amount:120000}],src:"生命保険文化センター2024(世帯平均35万/年)"},
   {key:"nhk",label:"NHK・サブスク年払い",icon:"tv",cycle:"fixed",units:[{label:"NHK受信料(地上・年払い)",amount:12276},{label:"サブスク年払い(プライム等)",amount:5900}],src:"NHK公式/Amazon公式"},
@@ -1265,7 +1265,7 @@ const App = {
     }
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
-    this._lpCards={goalsCard,simCard,acctCard,debtCard,wishCard};
+    this._lpCards={budgetCard,goalsCard,simCard,acctCard,debtCard,wishCard};
     // ホーム＝今月のお金(フロー)だけ。支出/収入はヒーロー帯。
     const alerts=storeWarn+warn+remindCard+approveCard;
     const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
@@ -1277,7 +1277,7 @@ const App = {
   view_lifeplan(){
     this.view_dashboard();
     const c=this._lpCards||{};
-    const cards=[c.goalsCard,this.specialCardHtml(),c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    const cards=[c.budgetCard,c.goalsCard,this.specialCardHtml(),c.simCard,c.acctCard,c.debtCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
