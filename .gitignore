@@ -16,3 +16,7 @@ imaoka-lifeplan-backup*.json
 # ローカル設定(端末固有のため公開しない)
 .claude/settings.local.json
 icon-master.png
+
+# IPA診断の元PDF/抽出テキスト(大きいので追跡しない)
+ipa-business.pdf
+ipa-text.txt
