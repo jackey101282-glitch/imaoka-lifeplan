@@ -902,6 +902,20 @@ const App = {
     const projBalance=projIncome-projExpense;
     return {isCur,d,D,pacedVariable,projExpense,projIncome,projBalance,m};
   },
+  // 今月の予算: 収入見込み −(固定費+予定の支出)−(毎月の積立:ゴール+特別費)= 生活に使える予算。日々の変動費をそこから使う。
+  budgetReport(month,mIn){
+    const m=mIn||this.metrics(month);
+    const income=m.totalIncome+m.plannedIncome;                 // 今月の収入見込み(入金済+予定)
+    const specialMonthly=Math.round((this.state.special||[]).reduce((a,it)=>a+specialAnnual(it),0)/12);
+    let goalsMonthly=0;
+    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(pc&&pc.days>=0)goalsMonthly+=pc.perMonth;});
+    const saveTarget=goalsMonthly+specialMonthly;               // 毎月取り分ける積立
+    const committed=m.fixed+m.evConfirmed+m.planned;            // 固定費+確定イベント+これからの予定支出
+    const livingBudget=income-saveTarget-committed;             // 生活に使える予算
+    const livingSpent=m.variable;                              // 今月すでに使った変動費
+    const livingLeft=livingBudget-livingSpent;                  // 残り(=afterPlanned-saveTarget)
+    return {income,saveTarget,goalsMonthly,specialMonthly,committed,livingBudget,livingSpent,livingLeft,hasPlan:saveTarget>0};
+  },
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
   // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
   eventAmountForMonth(e,ym){ if(e&&e.variable)return (e.byMonth&&e.byMonth[ym]!=null)?(+e.byMonth[ym]||0):0; return +(e&&e.amount)||0; },
@@ -1226,13 +1240,36 @@ const App = {
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">'+ic('wallet',30)+'</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
+    // 💰 今月の予算（収入−固定/予定−積立＝使えるお金）当月のみ
+    let budgetCard='';
+    if(this.curMonth===thisMonth()){
+      const bg=this.budgetReport(this.curMonth,m);
+      const neg=bg.livingBudget<0, over=bg.livingLeft<0;
+      const pct=bg.livingBudget>0?Math.min(100,Math.round(bg.livingSpent/bg.livingBudget*100)):(bg.livingSpent>0?100:0);
+      const leftColor=over?'var(--color-danger)':'var(--color-accent-600)';
+      const saveSub=bg.hasPlan?('ゴール '+yen(bg.goalsMonthly)+' ＋ 特別費 '+yen(bg.specialMonthly)):'未設定';
+      budgetCard='<div class="card" style="border-color:var(--color-secondary-300)">'+
+        '<div class="row"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('wallet',16)+'今月の予算</p><span class="link" onclick="App.go(\'lifeplan\')">ライフプラン ›</span></div>'+
+        '<div class="row" style="margin-top:10px"><span class="meta">収入の見込み</span><span class="amt num" style="color:var(--color-primary-500)">'+yen(bg.income)+'</span></div>'+
+        '<div class="row" style="margin-top:6px"><span class="meta">固定費・予定の支出</span><span class="amt num">− '+yen(bg.committed)+'</span></div>'+
+        '<div class="row" style="margin-top:6px;cursor:pointer" onclick="App.go(\'lifeplan\')"><span class="meta">毎月の積立（ゴール＋特別費）<br><span style="font-size:11px;color:var(--color-text-tertiary,#9a978f)">'+saveSub+'</span></span><span class="amt num">− '+yen(bg.saveTarget)+'</span></div>'+
+        '<div style="border-top:1px dashed var(--color-secondary-200);margin:11px 0 0"></div>'+
+        '<div class="row" style="margin-top:11px"><span style="font-weight:700;color:var(--color-secondary-600)">今月 使えるお金</span><span class="mid-num" style="color:'+(neg?'var(--color-danger)':'var(--color-secondary-600)')+'">'+yen(bg.livingBudget)+'</span></div>'+
+        (neg
+          ? '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:var(--color-danger)">'+ic('alert',14)+' 固定費と積立で収入を超えています。積立額か固定費を見直しましょう。</div>'
+          : '<div class="prog" style="margin-top:10px;height:10px"><span class="'+(over?'fill-danger':'fill-primary')+'" style="width:'+pct+'%"></span></div>'+
+            '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">使った（変動費）'+yen(bg.livingSpent)+'</span><span style="font-weight:700;color:'+leftColor+'">残り '+yen(bg.livingLeft)+'</span></div>'+
+            (over?'<div style="margin-top:8px;font-size:var(--text-sm);line-height:1.6;color:var(--color-danger)">'+ic('alert',14)+' 今月の予算を '+yen(-bg.livingLeft)+' オーバー。ここから先は貯金や積立を取り崩すことになります。</div>'
+                 :(bg.hasPlan?'':'<div class="meta" style="margin-top:9px;line-height:1.5"><span class="link" onclick="App.go(\'lifeplan\')">ライフプランでゴールや特別費を設定</span>すると、毎月いくら積み立てて残りで暮らせるかが分かります。</div>')))+
+        '</div>';
+    }
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
     this._lpCards={goalsCard,simCard,acctCard,debtCard,wishCard};
     // ホーム＝今月のお金(フロー)だけ。支出/収入はヒーロー帯。
     const alerts=storeWarn+warn+remindCard+approveCard;
     const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
-    const cards=[plannedCard,recurCard,paceCard,tasksCard]
+    const cards=[budgetCard,plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return alerts+hero+shareLink+'<div class="dash-cols">'+cards+'</div>';
   },
