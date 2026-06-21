@@ -502,8 +502,24 @@ const GOAL_PARAMS={
     }
   }
 };
+/* 特別費カタログ(FP準拠の年間特別費。count=回数(null=固定額)、units=1回あたり/固定なら年額。cond=世帯条件) */
+const SPECIAL_CATALOG=[
+  {key:"newyear",label:"年末年始",icon:"calendar",count:null,units:[{label:"お年玉",amount:30000},{label:"おせち",amount:44000},{label:"ご飯",amount:20000},{label:"移動費",amount:20000},{label:"その他",amount:10000}]},
+  {key:"homecoming",label:"帰省",icon:"map",count:2,units:[{label:"移動費",amount:20000},{label:"食費・お土産",amount:15000}]},
+  {key:"travel",label:"旅行",icon:"plane",count:2,units:[{label:"移動費",amount:50000},{label:"滞在費",amount:60000},{label:"食費",amount:30000}]},
+  {key:"ceremony",label:"冠婚葬祭",icon:"gift",count:2,units:[{label:"ご祝儀・香典",amount:30000}]},
+  {key:"xmas",label:"クリスマス・記念日",icon:"star",count:null,units:[{label:"プレゼント",amount:30000},{label:"食事",amount:20000},{label:"記念日",amount:20000}]},
+  {key:"appliance",label:"家電・家具 買い替え",icon:"sofa",count:null,units:[{label:"買い替え積立",amount:50000}]},
+  {key:"insurance",label:"保険 年払い",icon:"lifebuoy",count:null,units:[{label:"生命・医療保険",amount:120000}]},
+  {key:"other",label:"その他（生活防衛・治療）",icon:"coins",count:null,units:[{label:"生活防衛費 積立",amount:100000},{label:"医療・治療費",amount:50000}]},
+  {key:"renew",label:"賃貸 更新料",icon:"house",count:null,units:[{label:"更新料（2年→年換算）",amount:40000}],cond:"rent"},
+  {key:"property",label:"固定資産税・住宅修繕",icon:"house",count:null,units:[{label:"固定資産税",amount:100000},{label:"修繕積立",amount:50000}],cond:"own"},
+  {key:"car",label:"車（車検・税・保険）",icon:"car",count:null,units:[{label:"車検（2年→年換算）",amount:55000},{label:"自動車税",amount:35000},{label:"任意保険",amount:60000}],cond:"car"},
+  {key:"kids",label:"子どもイベント",icon:"baby",count:null,units:[{label:"入園・入学・行事",amount:50000},{label:"お祝い・記念",amount:30000}],cond:"kids"}
+];
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
+function specialAnnual(it){return (it&&it.count!=null?it.count:1)*((it&&it.units)||[]).reduce((a,b)=>a+(+b.amount||0),0);}
 /* 期日からの逆算ペース */
 function goalPace(g){
   if(!g||!g.targetDate)return null;
@@ -723,6 +739,7 @@ const App = {
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.goals.forEach(g=>{if(!Array.isArray(g.items))g.items=[];});
+    if(!Array.isArray(s.special))s.special=[];
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
     // 旧バージョン(やりたい/リンク)からフォルダ構造へ自動移行
@@ -877,28 +894,100 @@ const App = {
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"&&t.due>=today&&t.due<=end)out.push({date:t.due,kind:"task",title:t.title,amount:0});});
     return out.sort((a,b)=>a.date<b.date?-1:1);
   },
-  shareSummary(){
-    const m=this.metrics(this.curMonth),W=1080,H=1080,c=document.createElement("canvas");c.width=W;c.height=H;
-    const x=c.getContext("2d");
-    x.fillStyle="#FAFAF8";x.fillRect(0,0,W,H);
-    x.fillStyle="#E86A35";x.fillRect(0,0,W,190);
-    x.fillStyle="#fff";x.textAlign="left";x.font="bold 52px sans-serif";x.fillText("Mietta",64,98);
-    x.font="40px sans-serif";x.fillText(monthLabel(this.curMonth)+" の家計",64,158);
-    // 残り(中央・大)
-    x.textAlign="center";x.fillStyle="#6B6560";x.font="40px sans-serif";x.fillText("残り（貯金できる分）",W/2,360);
-    x.fillStyle=m.balance>=0?"#2B7358":"#D94F4F";x.font="bold 140px sans-serif";x.fillText(yen(m.balance),W/2,490);
-    if(m.totalIncome>0){x.fillStyle="#6B6560";x.font="38px sans-serif";x.fillText("貯蓄率 "+m.savingsRate.toFixed(0)+"%",W/2,560);}
-    // 収入/支出 2カラム
-    const card=(cx,label,val,col)=>{x.fillStyle="#fff";rr(x,cx,640,440,200,28);x.fillStyle="#6B6560";x.font="38px sans-serif";x.textAlign="center";x.fillText(label,cx+220,710);x.fillStyle=col;x.font="bold 62px sans-serif";x.fillText(yen(val),cx+220,790);};
-    function rr(ctx,X,Y,w,h,r){ctx.beginPath();ctx.moveTo(X+r,Y);ctx.arcTo(X+w,Y,X+w,Y+h,r);ctx.arcTo(X+w,Y+h,X,Y+h,r);ctx.arcTo(X,Y+h,X,Y,r);ctx.arcTo(X,Y,X+w,Y,r);ctx.closePath();ctx.fill();}
-    card(80,"今月の収入",m.totalIncome,"#E86A35");
-    card(560,"今月の支出",m.totalExpense,"#1A1714");
-    x.fillStyle="#ADA8A2";x.font="32px sans-serif";x.textAlign="center";x.fillText("夫婦の生活管理アプリ「Mietta（ミエッタ）」",W/2,1000);
+  openShareReport(){
+    this.showSheet('<h3>今月のレポートをシェア</h3>'+
+      '<div class="meta" style="margin-bottom:16px;line-height:1.6">スコア・ランク・割合だけの安心バージョンか、金額も入れたバージョンか選べます。</div>'+
+      '<button class="btn btn-primary btn-block ttl-ico" style="justify-content:center" onclick="App.closeSheet();App.shareSummary(true)">'+ic('share',15)+' 金額を隠してシェア（おすすめ）</button>'+
+      '<button class="btn btn-sec btn-block" style="margin-top:10px" onclick="App.closeSheet();App.shareSummary(false)">金額も入れてシェア</button>');
+  },
+  reportData(M){
+    const m=this.metrics(M);
+    let [py,pmo]=M.split("-").map(Number); pmo--; if(pmo<1){pmo=12;py--;} const prevExp=this.metrics(py+"-"+String(pmo).padStart(2,"0")).totalExpense;
+    const md={}; this.state.expenses.forEach(e=>{if(e.month)md[e.month]=1;}); this.state.incomes.forEach(i=>{if(i.month)md[i.month]=1;});
+    let streak=0,sy=+M.split("-")[0],sm=+M.split("-")[1]; while(md[sy+"-"+String(sm).padStart(2,"0")]){streak++;sm--;if(sm<1){sm=12;sy--;}}
+    const exp=this.state.expenses.filter(e=>e.month===M); const incCount=this.state.incomes.filter(i=>i.month===M).length;
+    const byCat={}; exp.forEach(e=>{const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);byCat[c.label]=(byCat[c.label]||0)+(+e.amount||0);});
+    let cats=Object.entries(byCat).map(([l,v])=>({l,v})).sort((a,b)=>b.v-a.v);
+    if(cats.length>5){const t=cats.slice(0,4);t.push({l:"その他",v:cats.slice(4).reduce((a,b)=>a+b.v,0)});cats=t;}
+    const sav=Math.max(0,m.savingsRate);
+    const savComp=Math.max(0,Math.min(40,Math.round(sav/20*40)));
+    const exRate=m.totalIncome>0?m.totalExpense/m.totalIncome*100:100;
+    const balComp=Math.max(0,Math.min(30,Math.round((1-exRate/100)*60)));
+    const recCount=exp.length+incCount;
+    const recComp=Math.min(15,Math.round(recCount*1.5))+Math.min(15,Math.round(streak*2.5));
+    const score=Math.max(0,Math.min(100,savComp+balComp+recComp));
+    const ranks=[{min:90,name:"FIREペンギン",col:"#1D9E75",msg:"もはや家計のプロ。胸を張ってシェアを。"},{min:75,name:"コツコツりす",col:"#C79A1E",msg:"堅実に、着実に。このふたりはブレない。"},{min:60,name:"がんばりゴールデン",col:"#E86A35",msg:"いいペース。あと少しで上が見えてきます。"},{min:45,name:"そこそこカメ",col:"#7BA05B",msg:"ゆっくりでも前進。来月、巻き返そう。"},{min:0,name:"出費おさるさん",col:"#C97240",msg:"使いすぎた項目、来月そこだけ見てみて。"}];
+    const rank=ranks.find(r=>score>=r.min);
+    const gA=g=>(g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+g.target||0);
+    const goal=this.state.goals.filter(g=>{const t=gA(g);return t>0&&(g.current||0)<t;}).sort((a,b)=>(a.targetDate||"9999")<(b.targetDate||"9999")?-1:1)[0];
+    let goalInfo=null;
+    if(goal){const t=gA(goal);const pct=Math.min(100,(goal.current||0)/t*100);let eta="";if(m.balance>0){const months=Math.ceil((t-(goal.current||0))/m.balance);let ey=+M.split("-")[0],em=+M.split("-")[1]+months;while(em>12){em-=12;ey++;}eta=ey+"年"+em+"月に達成ペース";}goalInfo={label:goal.label,pct:pct,eta:eta};}
+    const dim=new Date(+M.split("-")[0],+M.split("-")[1],0).getDate();
+    return {m,score,rank,sav,streak,recCount,cats,catTotal:cats.reduce((a,b)=>a+b.v,0)||1,prevExp,goalInfo,perDay:Math.round(m.totalExpense/dim),yearProj:Math.max(0,m.balance)*12};
+  },
+  shareSummary(hide){
+    const M=this.curMonth,s=this.state.settings,d=this.reportData(M),m=d.m;
+    const fmt=v=>hide?"¥•••":yen(v);
+    const W=1080,H=1420,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+    const PX=56,CW=W-PX*2;
+    const rr=(X,Y,w,h,r,col)=>{x.fillStyle=col;x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();x.fill();};
+    const bar=(X,Y,w,h,pct,col)=>{rr(X,Y,w,h,h/2,"#EDE8E0");if(pct>0)rr(X,Y,Math.max(h,w*Math.min(1,pct)),h,h/2,col);};
+    x.fillStyle="#FBF7F0";x.fillRect(0,0,W,H);
+    x.textBaseline="alphabetic";
+    x.textAlign="left";x.fillStyle="#D85A30";x.font="bold 44px sans-serif";x.fillText("Mietta",PX,84);
+    x.textAlign="right";x.fillStyle="#9B8C84";x.font="28px sans-serif";x.fillText(monthLabel(M)+" ・ "+(s.spaceName||"ふたりの家計"),W-PX,80);
+    // ── ヒーロー(横並び): リング左 / ランク・ひとこと・バッジ右 ──
+    const rcx=PX+132,rcy=290,R=112;
+    x.lineWidth=24;x.strokeStyle="#EDE8E0";x.beginPath();x.arc(rcx,rcy,R,0,Math.PI*2);x.stroke();
+    x.strokeStyle=d.rank.col;x.lineCap="round";x.beginPath();x.arc(rcx,rcy,R,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0.001,d.score/100));x.stroke();x.lineCap="butt";
+    x.textAlign="center";x.textBaseline="middle";
+    x.fillStyle="#3D3530";x.font="bold 88px sans-serif";x.fillText(String(d.score),rcx,rcy-4);
+    x.fillStyle="#9B8C84";x.font="25px sans-serif";x.fillText("/ 100点",rcx,rcy+52);
+    x.textBaseline="alphabetic";x.textAlign="left";
+    const RX=PX+288;
+    x.fillStyle=d.rank.col;x.font="bold 52px sans-serif";x.fillText(d.rank.name,RX,250);
+    x.fillStyle="#6B6560";x.font="26px sans-serif";x.fillText(d.rank.msg,RX,296);
+    const pills=[d.streak+"ヶ月連続 記録中"]; if(d.sav>=25)pills.push("貯蓄の鬼"); else if(m.balance>0)pills.push("黒字達成");
+    x.font="25px sans-serif"; let bx=RX; const by=330;
+    pills.forEach(p=>{const w=x.measureText(p).width+36;if(bx+w>W-PX){return;}rr(bx,by,w,46,23,"#F4EFE6");x.fillStyle="#854F0B";x.textAlign="center";x.fillText(p,bx+w/2,by+31);x.textAlign="left";bx+=w+10;});
+    // ── サマリーカード ──
+    let y=430; rr(PX,y,CW,240,26,"#fff");
+    const cw=CW/3; [["収入",fmt(m.totalIncome),"#3D3530"],["支出",fmt(m.totalExpense),"#3D3530"],["貯金できた",fmt(m.balance),"#3B6D11"]].forEach((t,i)=>{x.textAlign="center";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText(t[0],PX+cw*i+cw/2,y+52);x.fillStyle=t[2];x.font="bold 42px sans-serif";x.fillText(t[1],PX+cw*i+cw/2,y+104);});
+    x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("貯蓄率",PX+36,y+152);
+    x.textAlign="right";x.fillStyle="#3B6D11";x.font="bold 28px sans-serif";x.fillText(Math.round(d.sav)+"%（目標20%）",W-PX-36,y+152);
+    bar(PX+36,y+167,CW-72,16,Math.min(1,d.sav/50),"#7BA05B");
+    let sub=d.prevExp>0?("先月より "+(m.totalExpense<=d.prevExp?"▼":"▲")+(hide?Math.abs(Math.round((m.totalExpense-d.prevExp)/d.prevExp*100))+"%":yen(Math.abs(m.totalExpense-d.prevExp)))):"";
+    if(!hide)sub=(sub?sub+"  ":"")+"1日あたり "+yen(d.perDay);
+    if(sub){x.textAlign="center";x.fillStyle="#9B8C84";x.font="25px sans-serif";x.fillText(sub,W/2,y+216);}
+    // ── ドーナツカード ──
+    y=690; rr(PX,y,CW,280,26,"#fff");
+    x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("支出の内訳",PX+36,y+48);
+    const dcx=PX+170,dcy=y+165,dR=92; const COL=["#7BA05B","#D85A30","#D4A831","#6FA8C4","#C97240"];
+    let ang=-Math.PI/2; d.cats.forEach((ct,i)=>{const frac=ct.v/d.catTotal;x.lineWidth=40;x.strokeStyle=COL[i%COL.length];x.beginPath();x.arc(dcx,dcy,dR,ang,ang+Math.PI*2*Math.max(0.001,frac));x.stroke();ang+=Math.PI*2*frac;});
+    const lx=PX+320; let ly=y+95;
+    d.cats.slice(0,3).forEach((ct,i)=>{rr(lx,ly-20,20,20,5,COL[i%COL.length]);x.textAlign="left";x.fillStyle="#3D3530";x.font="29px sans-serif";x.fillText(ct.l+" "+Math.round(ct.v/d.catTotal*100)+"%",lx+32,ly);x.textAlign="right";x.fillStyle="#9B8C84";x.font="27px sans-serif";x.fillText(fmt(ct.v),W-PX-36,ly);ly+=62;});
+    // ── ゴールカード ──
+    y=990;
+    if(d.goalInfo){const gh=d.goalInfo.eta?170:130; rr(PX,y,CW,gh,26,"#fff");
+      x.textAlign="left";x.fillStyle="#9B8C84";x.font="26px sans-serif";x.fillText("ふたりのゴール",PX+36,y+46);
+      x.fillStyle="#3D3530";x.font="bold 33px sans-serif";x.fillText(d.goalInfo.label,PX+36,y+90);
+      x.textAlign="right";x.fillStyle="#9B8C84";x.font="29px sans-serif";x.fillText(Math.round(d.goalInfo.pct)+"%",W-PX-36,y+90);
+      bar(PX+36,y+106,CW-72,15,d.goalInfo.pct/100,"#D85A30");
+      if(d.goalInfo.eta){x.textAlign="left";x.fillStyle="#3B6D11";x.font="26px sans-serif";x.fillText("このペースなら "+d.goalInfo.eta+"！",PX+36,y+154);}
+      y+=gh+20;
+    }
+    // ── メッセージカード ──
+    rr(PX,y,CW,130,26,"#F4EFE6");
+    x.textAlign="center";x.fillStyle="#5F5E5A";x.font="28px sans-serif";x.fillText("今月ふたりで "+d.recCount+"件 記録しました。",W/2,y+52);
+    x.fillStyle="#3B6D11";x.font="bold 34px sans-serif";x.fillText((!hide&&d.yearProj>0)?("このペースなら1年で "+yen(d.yearProj)+" 貯まります"):"記録を続けるほどスコアは伸びます",W/2,y+100);
+    // フッター
+    x.fillStyle="#9B8C84";x.font="26px sans-serif";x.textAlign="center";x.fillText("ふたりで、これからの暮らしを。 ・ Mietta ・ mietta.jp",W/2,H-46);
     c.toBlob((blob)=>{
       if(!blob){this.toast("画像を作成できませんでした");return;}
-      const file=new File([blob],"kakei-"+this.curMonth+".png",{type:"image/png"});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:monthLabel(this.curMonth)+"の家計"}).catch(()=>{});}
-      else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="kakei-"+this.curMonth+".png";a.click();this.toast("画像を保存しました");}
+      const file=new File([blob],"mietta-report-"+M+".png",{type:"image/png"});
+      const cap=monthLabel(M)+"の家計レポート｜スコア"+d.score+"点・"+d.rank.name+" #Mietta家計 mietta.jp";
+      if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],text:cap}).catch(()=>{});}
+      else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mietta-report-"+M+".png";a.click();this.toast("画像を保存しました");}
     },"image/png");
   },
   eventExpense(month,mode){return this.eventSum(month,mode,false);},
@@ -957,7 +1046,7 @@ const App = {
     if(m.balance<0)warn='<div class="warn-box">'+ic('alert',15)+'支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
     else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
     const remainCard='';
-    const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<div style="text-align:center;margin:4px 0 2px"><span class="link ttl-ico" onclick="App.shareSummary()">'+ic('share',14)+'今月を画像でシェア</span></div>':'';
+    const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin:2px 0 18px" onclick="App.openShareReport()">'+ic('share',16)+' 今月のレポートを画像でシェア</button>':'';
 
     // ふたりの航路（ライフゴールのロードマップ）
     const GOAL_IC={goal_wedding:'heart',goal_honeymoon:'plane',goal_moving:'house',goal_birth:'baby',goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_school:'book',goal_exam:'clipboard',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
@@ -1112,15 +1201,82 @@ const App = {
     const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
     const cards=[plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return alerts+hero+'<div class="dash-cols">'+cards+'</div>'+shareLink;
+    return alerts+hero+shareLink+'<div class="dash-cols">'+cards+'</div>';
   },
   // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
   view_lifeplan(){
     this.view_dashboard();
     const c=this._lpCards||{};
-    const cards=[c.goalsCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    const cards=[c.goalsCard,this.specialCardHtml(),c.simCard,c.acctCard,c.debtCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
+  },
+  // ── 1年の特別費(年間特別費→毎月の積立) ──
+  specialCardHtml(){
+    const sp=this.state.special||[];
+    if(!sp.length){
+      return '<div class="section-title">1年の特別費</div><div class="card"><div class="empty"><span class="e-ic">'+ic('coins',30)+'</span>毎年くる特別費（旅行・帰省・冠婚葬祭・車検・家電…）を見える化して、毎月いくら貯めればいいか出します</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openSpecialSetup()">条件から特別費をつくる</button></div></div>';
+    }
+    const annual=sp.reduce((a,it)=>a+specialAnnual(it),0), monthly=Math.round(annual/12);
+    let h='<div class="section-title">1年の特別費<span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span></div><div class="card">';
+    h+='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px"><div class="meta" style="color:var(--color-secondary-600)">この調子なら、特別費は</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">毎月 '+yen(monthly)+'</div><div class="meta">貯めておけば慌てません（年間 '+yen(annual)+' ／ '+sp.length+'項目）</div></div>';
+    sp.forEach(it=>{const cnt=(it.count!=null)?('<span class="meta"> ・ '+it.count+'回 × '+yen((it.units||[]).reduce((a,b)=>a+(+b.amount||0),0))+'</span>'):'';
+      h+='<div class="li" onclick="App.openSpecialItem(\''+it.id+'\')" style="cursor:pointer"><span class="ic">'+ic(it.icon||'coins',20)+'</span><div class="main"><div class="ttl">'+esc(it.label)+cnt+'</div></div><span class="amt num">'+yen(specialAnnual(it))+'</span></div>';});
+    h+='<div style="text-align:center;margin-top:10px"><span class="link" onclick="App.openSpecialSetup()">条件から作り直す</span></div></div>';
+    return h;
+  },
+  openSpecialSetup(){
+    const seg3=(id,opts,def)=>'<div class="seg" id="'+id+'">'+opts.map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(o[0]===def?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>';
+    const cur=this._spProfile||{home:"rent",car:"no",kids:"no"};
+    this.showSheet('<h3>あなたの世帯にあわせて</h3><div class="meta" style="margin-bottom:14px;line-height:1.5">3つだけ答えると、特別費のテンプレが自動でできます。あとから自由に編集できます。</div>'+
+      this.field("住まい",seg3("sp-home",[["rent","賃貸"],["own","持ち家"]],cur.home))+
+      this.field("車",seg3("sp-car",[["yes","あり"],["no","なし"]],cur.car))+
+      this.field("子ども",seg3("sp-kids",[["yes","いる/予定"],["no","なし"]],cur.kids))+
+      '<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.buildSpecial()">この条件で特別費をつくる</button>');
+  },
+  buildSpecial(){
+    const home=seg("sp-home"),car=seg("sp-car"),kids=seg("sp-kids");
+    this._spProfile={home,car,kids};
+    if((this.state.special||[]).length&&!confirm("今の特別費リストを、この条件で作り直しますか？"))return;
+    const set=SPECIAL_CATALOG.filter(c=>{if(!c.cond)return true;if(c.cond==="rent")return home==="rent";if(c.cond==="own")return home==="own";if(c.cond==="car")return car==="yes";if(c.cond==="kids")return kids==="yes";return false;});
+    this.state.special=set.map(c=>({id:uid(),label:c.label,icon:c.icon,count:c.count,units:c.units.map(u=>({label:u.label,amount:u.amount}))}));
+    this.closeSheet();this.commit();this.toast("特別費をつくりました");
+  },
+  openSpecialItem(id){
+    const it=id?this.state.special.find(x=>x.id===id):null;
+    this._formUnits=it&&it.units?JSON.parse(JSON.stringify(it.units)):[{label:"",amount:""}];
+    const h='<h3>'+(it?"特別費を編集":"特別費を追加")+'</h3>'+
+      this.field("項目名",'<input id="f-splabel" value="'+esc(it?it.label:"")+'" placeholder="例: 旅行">')+
+      this.field("年に何回？（毎年決まった額なら空欄）",'<input id="f-spcount" inputmode="numeric" value="'+(it&&it.count!=null?it.count:"")+'" placeholder="空欄＝固定" oninput="App.updateSpTotal()">')+
+      this.field("内訳（1回あたり／固定なら年額）",'<div id="f-sp-units">'+this.spUnitsHtml()+'</div>')+
+      '<div id="f-sp-total" class="meta" style="margin:6px 0 12px;color:var(--color-secondary-600);font-weight:700"></div>'+
+      this.actions(()=>{
+        const label=val("f-splabel");if(!label){this.toast("項目名を入力してください");return false;}
+        const units=(this._formUnits||[]).filter(u=>(u.label&&String(u.label).trim())||(+u.amount)).map(u=>({label:(String(u.label||"").trim())||"内訳",amount:Math.round(+u.amount||0)}));
+        const cv=String(val("f-spcount")).replace(/[^0-9]/g,"");const count=cv?parseInt(cv,10):null;
+        const data={label,icon:it?it.icon:"coins",count,units};
+        if(it)Object.assign(it,data);else{this.state.special=this.state.special||[];this.state.special.push({id:uid(),...data});}
+        return true;
+      },it?()=>{this.state.special=this.state.special.filter(x=>x.id!==id);}:null);
+    this.showSheet(h);this.updateSpTotal();
+  },
+  spUnitsHtml(){
+    const arr=this._formUnits||[];let h='';
+    arr.forEach((u,i)=>{h+='<div class="row" style="gap:6px;margin-bottom:6px"><input value="'+esc(u.label||"")+'" oninput="App.editSpUnit('+i+',this.value)" placeholder="内訳名" style="flex:1;min-width:0"><input value="'+(u.amount==null||u.amount===""?"":u.amount)+'" inputmode="numeric" oninput="App.editSpUnitAmt('+i+',this.value)" placeholder="0" style="width:92px;flex-shrink:0;text-align:right"><button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;min-height:42px;padding:0 9px" onclick="App.delSpUnit('+i+')">'+ic('trash',16)+'</button></div>';});
+    h+='<button type="button" class="btn btn-sec btn-sm btn-block ttl-ico" style="justify-content:center;margin-top:2px" onclick="App.addSpUnit()">＋ 内訳を追加</button>';
+    return h;
+  },
+  _renderSpUnits(){const el=document.getElementById("f-sp-units");if(el)el.innerHTML=this.spUnitsHtml();this.updateSpTotal();},
+  addSpUnit(){this._formUnits=this._formUnits||[];this._formUnits.push({label:"",amount:""});this._renderSpUnits();},
+  editSpUnit(i,v){const a=this._formUnits;if(a&&a[i])a[i].label=v;},
+  editSpUnitAmt(i,v){const a=this._formUnits;if(a&&a[i]){a[i].amount=parseInt(String(v).replace(/[^0-9-]/g,""),10)||0;this.updateSpTotal();}},
+  delSpUnit(i){const a=this._formUnits;if(a){a.splice(i,1);this._renderSpUnits();}},
+  updateSpTotal(){
+    const el=document.getElementById("f-sp-total");if(!el)return;
+    const per=(this._formUnits||[]).reduce((a,b)=>a+(Math.round(+b.amount)||0),0);
+    const cv=String(val("f-spcount")||"").replace(/[^0-9]/g,"");const cnt=cv?parseInt(cv,10):null;
+    const annual=(cnt!=null?cnt:1)*per;
+    el.innerHTML=(cnt!=null?(cnt+"回 × "+yen(per)+" = "):"")+"年間 "+yen(annual)+" ・ 毎月 "+yen(Math.round(annual/12));
   },
 
   /* ====== income / expense lists ====== */
