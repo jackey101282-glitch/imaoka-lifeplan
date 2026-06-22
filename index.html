@@ -211,6 +211,7 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .scrim.show{opacity:1;pointer-events:auto}
 /* スマホ幅では left:0;right:0 のみで画面いっぱい(width/max-width/vwを使わずはみ出しを根絶) */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box}
+.sheet{max-height:88dvh}
 .sheet.show{transform:translateY(0)}
 .sheet input,.sheet select,.sheet textarea{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){.sheet{max-width:560px;margin:0 auto}}
@@ -263,6 +264,21 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cal-cell.sun{color:var(--color-danger)}.cal-cell.sat{color:var(--color-secondary-500)}
 .cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
 .cdot{width:5px;height:5px;border-radius:50%}
+.cnum{position:relative;z-index:1}
+.cal-cell .cal-dots{position:relative;z-index:1}
+.cstamp{position:absolute;left:0;right:0;bottom:2px;top:auto;height:62%;display:flex;align-items:center;justify-content:center;z-index:0;opacity:.6;pointer-events:none;transform:rotate(-7deg)}
+.cstamp svg{width:64%;max-width:30px;height:auto;stroke-width:1.7}
+.stamp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.stamp-pick{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 5px;border:1.5px solid var(--color-border);border-radius:14px;cursor:pointer;background:var(--color-bg-surface);transition:transform .1s,border-color .1s,box-shadow .1s}
+.stamp-pick .si{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--sc) 15%,transparent);color:var(--sc)}
+.stamp-pick .sl{font-size:var(--text-xs);color:var(--color-text-secondary);text-align:center;line-height:1.25}
+.stamp-pick.on{border-color:var(--sc);box-shadow:0 0 0 2px color-mix(in srgb,var(--sc) 32%,transparent)}
+.stamp-pick:active{transform:scale(.95)}
+.dash-bento{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;align-items:stretch}
+.dash-bento>.b-wide{grid-column:1 / -1}
+.dash-bento .card{margin-bottom:0;height:100%}
+.btile{display:flex;flex-direction:column;justify-content:center;cursor:pointer}
+.btile .mid-num{font-size:var(--text-xl)}
 .cd-pay{background:var(--color-danger)}.cd-task{background:var(--color-primary-500)}.cd-event{background:var(--color-secondary-400)}.cd-wish{background:#9C6ADE}.cd-income{background:var(--color-accent-500)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -570,6 +586,22 @@ const RECUR_PRESETS=[
   {label:"ジム",type:"payment",icon:"flame"},{label:"美容室",type:"payment",icon:"scissors"},{label:"カード引き落とし",type:"payment",icon:"card"},
   {label:"お給料",type:"income",icon:"wallet"},{label:"その他の収入",type:"income",icon:"coins"}
 ];
+/* カレンダーに貼れるスタンプ（既存ラインアイコン流用・和テイスト配色／絵文字は使わない）。idは_ICONS名。 */
+const STAMPS=[
+  {id:"heart",label:"記念日・デート",color:"#E36B8F"},
+  {id:"plane",label:"旅行",color:"#56A8C7"},
+  {id:"utensils",label:"外食・ごはん",color:"#E8744A"},
+  {id:"party",label:"お祝い",color:"#F2994A"},
+  {id:"star",label:"がんばった日",color:"#E0A93A"},
+  {id:"cross",label:"病院",color:"#7BA05B"},
+  {id:"scissors",label:"美容・身だしなみ",color:"#9C6ADE"},
+  {id:"car",label:"おでかけ",color:"#5E7E63"},
+  {id:"music",label:"趣味・ライブ",color:"#C4714A"},
+  {id:"paw",label:"ペット",color:"#B5894A"},
+  {id:"baby",label:"こども",color:"#D98AA0"},
+  {id:"coins",label:"給料日・お金",color:"#4E9C78"}
+];
+function stampDef(id){return STAMPS.find(s=>s.id===id)||null;}
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
 /* 特別費の年額。cycle: perYear=回数×単価 / everyN=総額÷years / fixed=年額。後方互換:cycle無し=count有→perYear,無→fixed */
@@ -632,6 +664,7 @@ function seedState(){
     notes:[],
     projects:[],
     subprojects:[],
+    stamps:{},
     sim:{current:0,monthly:"",bonus:0,years:10,events:[]}
   };
 }
@@ -730,7 +763,8 @@ const EMOJI_ICON={
   "🚃":"train","🎁":"gift","🎮":"gamepad","📖":"book","✈️":"plane","🔧":"wrench","🐾":"paw","❓":"help",
   "🗺️":"map","🌟":"sparkle","🛍️":"bag","👨‍👩‍👧‍👦":"users","📋":"clipboard","🎉":"party","📌":"tag",
   "🆘":"lifebuoy","🎓":"graduation","🏡":"house","🧓":"person","🏖️":"palm","🚘":"car","🛋️":"sofa","✨":"sparkle",
-  "🔒":"lock","📍":"map","🔗":"link","📝":"clipboard","📂":"folder","🗂️":"folder","🍳":"utensils","💍":"sparkle"
+  "🔒":"lock","📍":"map","🔗":"link","📝":"clipboard","📂":"folder","🗂️":"folder","🍳":"utensils","💍":"sparkle",
+  "💴":"wallet","🗓️":"calendar","📅":"calendar","💵":"coins"
 };
 /* カテゴリ等のアイコン文字列(絵文字 or アイコン名)を線アイコンで描画。未対応の絵文字はそのまま表示 */
 function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(s,size);if(EMOJI_ICON[s])return ic(EMOJI_ICON[s],size);return esc(s);}
@@ -811,6 +845,7 @@ const App = {
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.goals.forEach(g=>{if(!Array.isArray(g.items))g.items=[];});
     if(!Array.isArray(s.special))s.special=[];
+    if(s.stamps==null||typeof s.stamps!=="object"||Array.isArray(s.stamps))s.stamps={};
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
     // 旧バージョン(やりたい/リンク)からフォルダ構造へ自動移行
@@ -1382,15 +1417,36 @@ const App = {
                  :(bg.hasPlan?'':'<div class="meta" style="margin-top:9px;line-height:1.5"><span class="link" onclick="App.go(\'lifeplan\')">ライフプランでゴールや特別費を設定</span>すると、毎月いくら積み立てて残りで暮らせるかが分かります。</div>')))+
         '</div>';
     }
+    // 収入/支出の小タイル(bento用・タップで一覧へ)
+    const incTile='<div class="card btile" onclick="App.go(\'income_list\')"><div style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-bottom:4px">今月の収入</div><div class="mid-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</div></div>';
+    const expTile='<div class="card btile" onclick="App.go(\'expense_list\')"><div style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-bottom:4px">今月の支出</div><div class="mid-num">'+yen(m.totalExpense)+'</div></div>';
+    // 支出の内訳ドーナツ(当月・カテゴリ別)
+    let donutTile='';
+    const expsM=this.state.expenses.filter(e=>e.month===this.curMonth);
+    if(expsM.length){
+      const byCat={};
+      expsM.forEach(e=>{const see=this.seeDetail(e);const key=see?((e.type==="fixed"?"f":"v")+e.catId):"__priv";const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[key])byCat[key]=see?{label:c.label,sum:0}:{label:"個人支出",sum:0};byCat[key].sum+=(+e.amount||0);});
+      const arr=Object.values(byCat).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
+      const total=arr.reduce((s,x)=>s+x.sum,0);
+      if(total>0){
+        const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
+        const R=34,CIRC=2*Math.PI*R;let off=0,segs='';
+        arr.forEach((c,i)=>{const len=c.sum/total*CIRC;segs+='<circle cx="50" cy="50" r="'+R+'" fill="none" stroke="'+gpal[i%gpal.length]+'" stroke-width="15" stroke-dasharray="'+len.toFixed(2)+' '+(CIRC-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 50 50)"/>';off+=len;});
+        let legend='';
+        arr.slice(0,4).forEach((c,i)=>{const pct=Math.round(c.sum/total*100);legend+='<div class="row" style="margin-top:6px"><span class="muted" style="display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden"><span style="width:9px;height:9px;border-radius:3px;background:'+gpal[i%gpal.length]+';flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.label)+'</span></span><span class="meta num" style="white-space:nowrap">'+pct+'%</span></div>';});
+        donutTile='<div class="card"><p class="card-title" style="margin:0 0 6px">支出の内訳</p><div style="display:flex;align-items:center;gap:14px"><svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0" role="img" aria-label="支出の内訳">'+segs+'<text x="50" y="47" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">合計</text><text x="50" y="61" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text-primary)" font-family="var(--font-family-number)">'+yen(total)+'</text></svg><div style="flex:1;min-width:0">'+legend+'</div></div></div>';
+      }
+    }
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
     this._lpCards={budgetCard,goalsCard,simCard,acctCard,debtCard,emergencyCard,wishCard};
-    // ホーム＝今月のお金(フロー)だけ。支出/収入はヒーロー帯。
+    // ホーム上部＝bento(使えるお金ヒーロー＋収入/支出タイル＋支出ドーナツ)。下部はリッチカードを縦/段組み。
     const alerts=storeWarn+warn+remindCard+approveCard;
-    const hero='<div class="dash-hero">'+expCard+incCard+'</div>';
-    const cards=[budgetCard,plannedCard,recurCard,paceCard,tasksCard]
+    const heroHtml=budgetCard||expCard;
+    const bento='<div class="dash-bento"><div class="b-wide">'+heroHtml+'</div>'+incTile+expTile+(donutTile?'<div class="b-wide">'+donutTile+'</div>':'')+'</div>';
+    const cards=[plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return alerts+hero+shareLink+'<div class="dash-cols">'+cards+'</div>';
+    return alerts+bento+shareLink+'<div class="dash-cols">'+cards+'</div>';
   },
   // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
   view_lifeplan(){
@@ -1514,12 +1570,12 @@ const App = {
     const inPlan=this.eventIncomeList(this.curMonth,"planned");
     if(inDone.length){
       h+='<p class="set-head">入金(済・カレンダーから)</p><div class="card">';
-      inDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">💰</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+      inDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic('coins',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     if(inPlan.length){
       h+='<p class="set-head">これから入る予定</p><div class="card">';
-      inPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">🗓️</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-accent-600)">'+yen(e.sum)+'</span></div>';});
+      inPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-accent-600)">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     return h;
@@ -1545,12 +1601,12 @@ const App = {
     const evPlan=this.eventExpenseList(this.curMonth,"planned");
     if(evDone.length){
       h+='<p class="set-head">予定・支払い(支払済)</p><div class="card">';
-      evDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">📅</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+      evDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     if(evPlan.length){
       h+='<p class="set-head">これから支払う予定</p><div class="card">';
-      evPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">🗓️</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-warning)">'+yen(e.sum)+'</span></div>';});
+      evPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-warning)">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     return h;
@@ -1819,7 +1875,9 @@ const App = {
       const today=ds===todayStr();
       const types=[...new Set(dayItems.map(x=>x.t))];
       let dots=types.slice(0,4).map(t=>'<span class="cdot cd-'+t+'"></span>').join("");
-      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+c.d+'<div class="cal-dots">'+dots+'</div></div>';
+      const stId=this.state.stamps&&this.state.stamps[ds];const stD=stId&&stampDef(stId);
+      const stHtml=stD?'<span class="cstamp" style="color:'+stD.color+'">'+ic(stD.id,30)+'</span>':'';
+      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+stHtml+'<span class="cnum">'+c.d+'</span><div class="cal-dots">'+dots+'</div></div>';
     });
     h+='</div><div class="legend"><span><span class="cdot cd-income"></span>入金</span><span><span class="cdot cd-pay"></span>支払い</span><span><span class="cdot cd-task"></span>タスク</span><span><span class="cdot cd-event"></span>予定</span><span><span class="cdot cd-wish"></span>目標時期</span></div></div>';
     // ↓ ここから先(予定リスト・カテゴリ別支出)はPCで右カラムに置く
@@ -1905,10 +1963,23 @@ const App = {
     let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
     if(!items.length)h+='<div class="empty">予定はありません</div>';
     items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
+    const stId=(this.state.stamps||{})[ds];const stD=stId&&stampDef(stId);
+    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:6px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div><div class="meta">'+(stD?'タップして変更・はがす':'この日を彩る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
     h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
     h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加（相手に頼む）</button>';
     this.showSheet(h);
   },
+  openStampPicker(ds){
+    const cur=(this.state.stamps||{})[ds];
+    let h='<h3>'+ds.replace(/-/g,"/")+' にスタンプ</h3><p class="muted" style="font-size:var(--text-sm);margin:0 2px 4px">予定にスタンプを貼ると、カレンダーがふたりらしくなります🌿</p>';
+    h+='<div class="stamp-grid">';
+    STAMPS.forEach(s=>{const on=cur===s.id;h+='<div class="stamp-pick'+(on?' on':'')+'" style="--sc:'+s.color+'" onclick="App.setStamp(\''+ds+'\',\''+s.id+'\')"><span class="si">'+ic(s.id,24)+'</span><span class="sl">'+s.label+'</span></div>';});
+    h+='</div>';
+    if(cur)h+='<button class="btn btn-sec btn-block" style="margin-top:14px" onclick="App.removeStamp(\''+ds+'\')">スタンプをはがす</button>';
+    this.showSheet(h);
+  },
+  setStamp(ds,id){this.state.stamps=this.state.stamps||{};const same=this.state.stamps[ds]===id;this.state.stamps[ds]=id;if(navigator.vibrate)try{navigator.vibrate(18);}catch(e){}this.closeSheet();this.commit();this.toast(same?"スタンプを貼り直しました":"スタンプを貼りました");},
+  removeStamp(ds){if(this.state.stamps)delete this.state.stamps[ds];this.closeSheet();this.commit();this.toast("スタンプをはがしました");},
 
   /* ============== SHARE HUB (共有) ============== */
   view_share(){
@@ -2112,6 +2183,10 @@ const App = {
   showSheet(html){
     const sh=document.getElementById("sheet");
     sh.innerHTML='<div class="grip"></div><button class="sheet-close" onclick="App.closeSheet()" aria-label="閉じる">✕</button>'+html;
+    // iOSのSafariは vh が「ツールバーを隠した時の高さ」基準で、機種/版によりシートが画面を覆い上のグリップが画面外に出る。
+    // 実際に見えている高さ(visualViewport)を基準に制限し、必ず上に余白(=暗い所タップ/グリップで閉じれる)を残す。
+    const vvh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight||640;
+    sh.style.maxHeight=Math.round(vvh*0.88)+"px";
     document.getElementById("scrim").classList.add("show");
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
