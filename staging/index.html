@@ -266,8 +266,8 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cdot{width:5px;height:5px;border-radius:50%}
 .cnum{position:relative;z-index:1}
 .cal-cell .cal-dots{position:relative;z-index:1}
-.cstamp{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%) rotate(-7deg);z-index:0;opacity:.62;pointer-events:none;line-height:0}
-.cstamp svg{width:30px;height:30px;stroke-width:1.7}
+.cstamp{position:absolute;left:0;right:0;bottom:2px;top:auto;height:62%;display:flex;align-items:center;justify-content:center;z-index:0;opacity:.6;pointer-events:none;transform:rotate(-7deg)}
+.cstamp svg{width:64%;max-width:30px;height:auto;stroke-width:1.7}
 .stamp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 .stamp-pick{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 5px;border:1.5px solid var(--color-border);border-radius:14px;cursor:pointer;background:var(--color-bg-surface);transition:transform .1s,border-color .1s,box-shadow .1s}
 .stamp-pick .si{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--sc) 15%,transparent);color:var(--sc)}
@@ -759,7 +759,8 @@ const EMOJI_ICON={
   "🚃":"train","🎁":"gift","🎮":"gamepad","📖":"book","✈️":"plane","🔧":"wrench","🐾":"paw","❓":"help",
   "🗺️":"map","🌟":"sparkle","🛍️":"bag","👨‍👩‍👧‍👦":"users","📋":"clipboard","🎉":"party","📌":"tag",
   "🆘":"lifebuoy","🎓":"graduation","🏡":"house","🧓":"person","🏖️":"palm","🚘":"car","🛋️":"sofa","✨":"sparkle",
-  "🔒":"lock","📍":"map","🔗":"link","📝":"clipboard","📂":"folder","🗂️":"folder","🍳":"utensils","💍":"sparkle"
+  "🔒":"lock","📍":"map","🔗":"link","📝":"clipboard","📂":"folder","🗂️":"folder","🍳":"utensils","💍":"sparkle",
+  "💴":"wallet","🗓️":"calendar","📅":"calendar","💵":"coins"
 };
 /* カテゴリ等のアイコン文字列(絵文字 or アイコン名)を線アイコンで描画。未対応の絵文字はそのまま表示 */
 function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(s,size);if(EMOJI_ICON[s])return ic(EMOJI_ICON[s],size);return esc(s);}
@@ -1544,12 +1545,12 @@ const App = {
     const inPlan=this.eventIncomeList(this.curMonth,"planned");
     if(inDone.length){
       h+='<p class="set-head">入金(済・カレンダーから)</p><div class="card">';
-      inDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">💰</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+      inDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic('coins',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     if(inPlan.length){
       h+='<p class="set-head">これから入る予定</p><div class="card">';
-      inPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">🗓️</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-accent-600)">'+yen(e.sum)+'</span></div>';});
+      inPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-accent-600)">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     return h;
@@ -1575,12 +1576,12 @@ const App = {
     const evPlan=this.eventExpenseList(this.curMonth,"planned");
     if(evDone.length){
       h+='<p class="set-head">予定・支払い(支払済)</p><div class="card">';
-      evDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">📅</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
+      evDone.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div></div><span class="amt">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     if(evPlan.length){
       h+='<p class="set-head">これから支払う予定</p><div class="card">';
-      evPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">🗓️</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-warning)">'+yen(e.sum)+'</span></div>';});
+      evPlan.forEach(e=>{h+='<div class="li" onclick="App.openEvent(\''+e.id+'\')" style="cursor:pointer;opacity:.75"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.title)+(e.n>1?'<span class="meta"> ×'+e.n+'回</span>':'')+'</div><div class="meta num">'+(e.next?e.next.slice(5).replace("-","/")+' 予定':'')+'</div></div><span class="amt" style="color:var(--color-warning)">'+yen(e.sum)+'</span></div>';});
       h+='</div>';
     }
     return h;
