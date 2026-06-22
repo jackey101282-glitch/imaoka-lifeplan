@@ -293,6 +293,9 @@ a.tlink{color:var(--color-secondary-500)}
 .authcard{width:100%;max-width:380px;margin:auto;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-md)}
 .authcard h2{font-size:var(--text-xl)}
 .auth-switch{text-align:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--color-border);font-size:var(--text-sm);color:var(--color-text-secondary)}
+.auth-tabs{display:flex;background:var(--color-bg-muted);border-radius:var(--radius-full);padding:4px;margin-bottom:20px}
+.auth-tab{flex:1;text-align:center;padding:10px 0;border-radius:var(--radius-full);font-weight:var(--fw-b);font-size:var(--text-sm);color:var(--color-text-secondary);cursor:pointer;border:none;background:transparent;transition:.15s}
+.auth-tab.on{background:var(--color-bg-surface);color:var(--color-primary-600);box-shadow:var(--shadow-sm)}
 .invite-note{background:var(--color-secondary-50);color:var(--color-secondary-600);border:1px solid var(--color-secondary-200);border-radius:var(--radius-md);padding:10px 12px;font-size:var(--text-sm);line-height:1.6;margin-bottom:16px;align-items:flex-start}
 .invite-note .ico{margin-top:2px;flex-shrink:0}
 .auth-err{background:#FDECEC;color:var(--color-danger);border:1px solid #F3C9C4;border-radius:var(--radius-md);padding:10px 13px;font-size:var(--text-sm);font-weight:var(--fw-m);line-height:1.5;margin-bottom:14px}
@@ -783,6 +786,7 @@ const App = {
   taskView:"home", curProjectId:null, curSubId:null,
   dashOpen:{inc:false,exp:false},
   goalOpen:{},
+  subOpen:{},
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
@@ -936,8 +940,8 @@ const App = {
       {key:"intro"},
       {key:"income",title:"まずは、お給料を登録",desc:"毎月入ってくるお金を入れましょう。",btn:"給料を登録する",act:()=>this.openRecurring(null,{title:"給料",type:"income"}),done:()=>(this.state.events||[]).some(e=>e.fixed&&e.type==="income")},
       {key:"fixed",manual:true,title:"毎月の固定費を入れよう",desc:"家賃・通信費・サブスク・ローン・カード引き落としなど。ジャンルから選べます。いくつでもOK。",btn:"固定費を選んで追加",act:()=>this.openRecurringPicker(true),count:()=>(this.state.events||[]).filter(e=>e.fixed&&e.type==="payment").length},
-      {key:"special",title:"1年の特別費（積立）",desc:"旅行・帰省・車検…年に数回どんと出るお金を、毎月いくら貯めるかに変えます。",btn:"特別費をつくる",act:()=>this.openSpecialSetup(),done:()=>(this.state.special||[]).length>0},
-      {key:"calendar",manual:true,budget:true,title:"今月、もう決まっている予定は？",desc:"病院・美容室・友だちとご飯など、日付と「いくら使いそう」を入れると、使えるお金から引かれます。",btn:"予定を追加する",act:()=>this.openEvent(null,todayStr(),{type:"payment"}),count:()=>(this.state.events||[]).filter(e=>!e.fixed&&(+e.amount>0)).length},
+      {key:"special",manual:true,title:"1年の特別費（積立）",desc:"旅行・帰省・車検…年に数回どんと出るお金を、毎月いくら貯めるかに変えます。",btn:"特別費をつくる",act:()=>this.openSpecialSetup(),count:()=>(this.state.special||[]).length},
+      {key:"calendar",manual:true,budget:true,title:"今月、もう決まっている予定は？",desc:"カレンダーの日付をタップして、病院・美容室・友だちとご飯などの予定と「いくら使いそう」を入れましょう。使えるお金から引かれます。",btn:"カレンダーを開いて追加",act:()=>this.go("calendar"),count:()=>(this.state.events||[]).filter(e=>!e.fixed&&(+e.amount>0)).length},
       {key:"done"}
     ];
   },
@@ -979,12 +983,19 @@ const App = {
     }
     let cntLine="";
     if(st.manual){const c=st.count?st.count():0;if(c>0)cntLine='<div class="onb-cnt">登録済み '+c+' 件</div>';}
+    // 特別費ステップ: つくった内訳をその場で表示＋タップで編集(b-2)
+    let extra="",actLabel=st.btn;
+    if(st.key==="special"){const sp=this.state.special||[];if(sp.length){actLabel="特別費をつくり直す";const monthly=Math.round(sp.reduce((a,it)=>a+specialAnnual(it),0)/12);
+      extra='<div style="margin-top:10px;border-top:1px solid var(--color-border);padding-top:8px">'+
+        sp.map(it=>'<div onclick="App.openSpecialItem(\''+it.id+'\')" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 2px;cursor:pointer;font-size:var(--text-sm)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(it.label)+'</span><span class="num" style="color:var(--color-secondary-600);white-space:nowrap">毎月 '+yen(Math.round(specialAnnual(it)/12))+'</span></div>').join('')+
+        '<div style="display:flex;justify-content:space-between;border-top:1px dashed var(--color-border);margin-top:4px;padding-top:6px;font-weight:700;font-size:var(--text-sm)"><span>合計</span><span class="num">毎月 '+yen(monthly)+'</span></div>'+
+        '<div class="meta" style="margin-top:6px;text-align:center">タップして金額を編集できます</div></div>';}}
     const isLast=(i===steps.length-2);
     const nextBtn=st.manual?'<button class="btn btn-sec btn-block btn-sm" style="margin-top:8px" onclick="App.onbNextStep()">'+(isLast?"これで完了":"次へ")+'</button>':'';
     el.className="onb-coach";
     el.innerHTML='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
       '<div class="onb-ttl">'+esc(st.title)+'</div><div class="onb-desc">'+esc(st.desc)+'</div>'+budgetLine+
-      '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(st.btn)+'</button>'+cntLine+nextBtn+'</div>';
+      '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(actLabel)+'</button>'+cntLine+extra+nextBtn+'</div>';
   },
   onbNext(){if(this._onb){this._onb.step=1;this.go("dashboard");this.renderOnboard();}},
   onbNextStep(){if(this._onb){this._onb.budgetStart=null;this._onb.step++;this.go("dashboard");this.renderOnboard();}},
@@ -994,6 +1005,7 @@ const App = {
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
+  toggleSubOpen(id){this.subOpen[id]=!this.subOpen[id];this.render();},
   dot(plain){
     const s=this._syncStatus; if(s==="off") return plain?"":"";
     const cls=s==="on"?"sync-on":(s==="err"?"sync-err":"sync-off");
@@ -1741,7 +1753,15 @@ const App = {
     if(!subs.length)h+='<div class="card"><div class="empty"><span class="e-ic">'+ic('folder',30)+'</span>グループを作り、その中にタスクを入れます<br>例: ウェルカムスペース<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openSubForm()">＋ グループを作る</button></div></div>';
     subs.forEach(s=>{
       const sts=this.subTasks(s.id),sd=sts.filter(t=>t.status==="done").length,sp=sts.length?Math.round(sd/sts.length*100):0,sc=sts.length>0&&sd===sts.length;
-      h+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openSub(\''+s.id+'\')"><div class="row" style="gap:10px"><div class="check '+(sc?'on':'')+'" style="cursor:default;flex-shrink:0">'+(sc?'✓':'')+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;'+(sc?'color:var(--color-accent-600);':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.name)+'</div><div class="meta">'+sd+'/'+sts.length+'完了</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div><div class="prog" style="margin-top:8px"><span class="'+(sc?'fill-accent':'fill-primary')+'" style="width:'+sp+'%"></span></div></div>';
+      const opened=this.subOpen[s.id];
+      const stsSorted=sts.slice().sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
+      h+='<div class="card" style="padding:16px">'+
+        '<div class="row" style="gap:10px;cursor:pointer" onclick="App.toggleSubOpen(\''+s.id+'\')"><div class="check '+(sc?'on':'')+'" style="cursor:default;flex-shrink:0">'+(sc?'✓':'')+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;'+(sc?'color:var(--color-accent-600);':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.name)+'</div><div class="meta">'+sd+'/'+sts.length+'完了</div></div><span class="chev'+(opened?' open':'')+'">▾</span></div>'+
+        '<div class="prog" style="margin-top:8px"><span class="'+(sc?'fill-accent':'fill-primary')+'" style="width:'+sp+'%"></span></div>'+
+        (opened?('<div class="divider" style="margin:12px 0 2px"></div>'+
+          (stsSorted.length?stsSorted.map(t=>this.taskRow(t)).join(''):'<div class="empty" style="padding:10px 0">このグループにタスクはありません</div>')+
+          '<div style="text-align:right;margin-top:8px"><span class="link" onclick="event.stopPropagation();App.openTask(null,\''+s.id+'\',\''+p.id+'\')">＋ タスクを追加</span>　<span class="link" onclick="event.stopPropagation();App.openSub(\''+s.id+'\')">グループを開く ›</span></div>'):'')+
+        '</div>';
     });
     return h;
   },
@@ -2794,11 +2814,12 @@ const App = {
       '<h2 class="my-wordmark">Miett<span style="color:var(--color-accent-500)">a</span></h2>'+
       '<p class="my-tag">夫婦で、これからの暮らしを。</p></div>'+
       (this._pendingInvite?'<div class="invite-note ttl-ico">'+ic('heart',15)+'パートナーから招待されています。登録するとふたりのスペースに参加できます。</div>':'')+
+      '<div class="auth-tabs"><button class="auth-tab'+(su?"":" on")+'" onclick="App.switchAuth(\'login\')">ログイン</button><button class="auth-tab'+(su?" on":"")+'" onclick="App.switchAuth(\'signup\')">新規登録</button></div>'+
       '<div id="au-err" class="auth-err" style="display:none"></div>'+
       '<label class="fld"><span class="lbl">メールアドレス</span><input id="au-email" type="email" inputmode="email" autocapitalize="off" placeholder="you@example.com" oninput="App.setAuthErr(\'\')"></label>'+
       '<label class="fld"><span class="lbl">パスワード</span><input id="au-pw" type="password" placeholder="6文字以上"></label>'+
       '<button class="btn btn-primary btn-block" style="margin-top:4px" onclick="App.doAuth(\''+(su?"signup":"login")+'\')">'+(su?"新規登録ではじめる":"ログイン")+'</button>'+
-      '<div class="auth-switch">'+(su?"すでにアカウントをお持ちですか？":"アカウントをお持ちでない方")+'<button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="App.switchAuth(\''+(su?"login":"signup")+'\')">'+(su?"ログインに切り替え":"新規登録に切り替え")+'</button></div></div>';
+      '<div class="auth-switch">'+(su?"アカウント作成後、ふたりのスペースをつくれます":"はじめての方は上の「新規登録」を選んでください")+'</div></div>';
   }
 };
 // helpers used inside form callbacks
