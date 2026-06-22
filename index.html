@@ -187,6 +187,27 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .tab .nbadge{position:absolute;top:2px;right:calc(50% - 22px)}
 /* sheet/modal */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.onb-modal{position:fixed;inset:0;z-index:60;background:rgba(40,30,20,.5);display:flex;align-items:center;justify-content:center;padding:24px}
+.onb-card{background:var(--color-bg-surface);border-radius:20px;max-width:380px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.onb-card .onb-ic{color:var(--color-primary-500);display:flex;justify-content:center;margin-bottom:6px}
+.onb-card h2{font-size:var(--text-xl);margin:0 0 10px}
+.onb-card p{font-size:var(--text-sm);line-height:1.85;color:var(--color-text-secondary);margin:0 0 12px}
+.onb-card p b{color:var(--color-text-primary)}
+.onb-card .onb-sub{font-size:var(--text-xs);color:var(--color-text-secondary)}
+.onb-skip{margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary);cursor:pointer;text-decoration:underline}
+.onb-coach{position:fixed;left:0;right:0;bottom:calc(72px + env(safe-area-inset-bottom));z-index:45;display:flex;justify-content:center;padding:0 14px;pointer-events:none}
+.onb-bar{background:var(--color-bg-surface);border:1.5px solid var(--color-primary-300);border-radius:16px;padding:14px 16px;max-width:460px;width:100%;box-shadow:0 12px 30px rgba(60,40,20,.22);pointer-events:auto;animation:onbpop .3s ease}
+@keyframes onbpop{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.onb-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.onb-step{font-size:var(--text-xs);font-weight:800;color:var(--color-primary-500);letter-spacing:.05em}
+.onb-skip2{font-size:var(--text-xs);color:var(--color-text-secondary);cursor:pointer;text-decoration:underline}
+.onb-ttl{font-weight:800;font-size:var(--text-base);margin-bottom:2px}
+.onb-desc{font-size:var(--text-sm);color:var(--color-text-secondary);line-height:1.6;margin-bottom:10px}
+.onb-budget{display:flex;justify-content:space-between;align-items:center;background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:var(--text-sm);color:var(--color-secondary-600);font-weight:700}
+.onb-budget b{font-size:var(--text-lg);font-weight:800;color:var(--color-secondary-600)}
+.onb-budget-sub{font-size:var(--text-xs);color:var(--color-accent-600);margin:-4px 0 9px;text-align:right;font-weight:700}
+.onb-cnt{font-size:var(--text-xs);color:var(--color-text-secondary);text-align:center;margin-top:7px}
+.onb-hidden{display:none}
 .scrim.show{opacity:1;pointer-events:auto}
 /* スマホ幅では left:0;right:0 のみで画面いっぱい(width/max-width/vwを使わずはみ出しを根絶) */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box}
@@ -541,6 +562,14 @@ const SP_PRESETS=[
   {key:"exam",label:"子どもの受験",icon:"graduation",cycle:"fixed",units:[{label:"受験料・季節講習",amount:200000}],src:"河合塾/塾選2026(受験学年)"},
   {key:"club",label:"修学旅行・部活",icon:"baby",cycle:"fixed",units:[{label:"積立・遠征・用具",amount:80000}],src:"日本修学旅行協会2023/文科省"}
 ];
+/* 定期（固定費・毎月の出費・固定収入）をジャンルから選ぶプリセット。type=payment(支出)/income(収入) */
+const RECUR_PRESETS=[
+  {label:"家賃",type:"payment",icon:"house"},{label:"住宅ローン",type:"payment",icon:"house"},{label:"車のローン",type:"payment",icon:"car"},
+  {label:"奨学金の返済",type:"payment",icon:"graduation"},{label:"電気・ガス・水道",type:"payment",icon:"bolt"},{label:"スマホ・通信費",type:"payment",icon:"wifi"},
+  {label:"サブスク",type:"payment",icon:"tv"},{label:"保険",type:"payment",icon:"lifebuoy"},{label:"習い事・塾",type:"payment",icon:"book"},
+  {label:"ジム",type:"payment",icon:"flame"},{label:"美容室",type:"payment",icon:"scissors"},{label:"カード引き落とし",type:"payment",icon:"card"},
+  {label:"お給料",type:"income",icon:"wallet"},{label:"その他の収入",type:"income",icon:"coins"}
+];
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
 /* 特別費の年額。cycle: perYear=回数×単価 / everyN=総額÷years / fixed=年額。後方互換:cycle無し=count有→perYear,無→fixed */
@@ -858,7 +887,75 @@ const App = {
     this.updateBadges();
     this.updateFab();
     if(this.tab==="dashboard")this.animateDashNums();
+    if(this._onb&&this._onb.active)this.renderOnboard();
   },
+  // ===== はじめてガイド（オンボーディング）=====
+  startOnboarding(force){
+    if(!force){try{if(localStorage.getItem("imaoka_onboard"))return;}catch(e){}}
+    this._onb={active:true,step:0};
+    this.renderOnboard();
+  },
+  onbEl(){let el=document.getElementById("onb");if(!el){el=document.createElement("div");el.id="onb";document.body.appendChild(el);}return el;},
+  onbSteps(){
+    return [
+      {key:"intro"},
+      {key:"income",title:"まずは、お給料を登録",desc:"毎月入ってくるお金を入れましょう。",btn:"給料を登録する",act:()=>this.openRecurring(null,{title:"給料",type:"income"}),done:()=>(this.state.events||[]).some(e=>e.fixed&&e.type==="income")},
+      {key:"fixed",manual:true,title:"毎月の固定費を入れよう",desc:"家賃・通信費・サブスク・ローン・カード引き落としなど。ジャンルから選べます。いくつでもOK。",btn:"固定費を選んで追加",act:()=>this.openRecurringPicker(true),count:()=>(this.state.events||[]).filter(e=>e.fixed&&e.type==="payment").length},
+      {key:"special",title:"1年の特別費（積立）",desc:"旅行・帰省・車検…年に数回どんと出るお金を、毎月いくら貯めるかに変えます。",btn:"特別費をつくる",act:()=>this.openSpecialSetup(),done:()=>(this.state.special||[]).length>0},
+      {key:"calendar",manual:true,budget:true,title:"今月、もう決まっている予定は？",desc:"病院・美容室・友だちとご飯など、日付と「いくら使いそう」を入れると、使えるお金から引かれます。",btn:"予定を追加する",act:()=>this.openEvent(null,todayStr(),{type:"payment"}),count:()=>(this.state.events||[]).filter(e=>!e.fixed&&(+e.amount>0)).length},
+      {key:"done"}
+    ];
+  },
+  renderOnboard(){
+    if(!this._onb||!this._onb.active){const e=document.getElementById("onb");if(e)e.remove();return;}
+    const steps=this.onbSteps();let i=this._onb.step;
+    while(i>0&&i<steps.length-1&&steps[i].done&&!steps[i].manual&&steps[i].done())i++;
+    this._onb.step=i;
+    const st=steps[i],el=this.onbEl();
+    if(st.key==="intro"){
+      el.className="onb-modal";
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",34)+'</div>'+
+        '<h2>Miettaへ、ようこそ</h2>'+
+        '<p>Miettaは、毎日コツコツつける家計簿ではありません。<br>先に<b>「毎月の固定費・1年の積立・予定」</b>を入れておくと、<b>今月いくらまで使えるか</b>が先に分かります。</p>'+
+        '<p class="onb-sub">いくつか入れてみましょう。数分で終わります。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.onbNext()">はじめる</button>'+
+        '<div class="onb-skip" onclick="App.onbSkip()">スキップ</div></div>';
+      return;
+    }
+    if(st.key==="done"){
+      const bg=this.budgetReport(this.curMonth);
+      el.className="onb-modal";
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("trophy",34)+'</div>'+
+        '<h2>できました！</h2>'+
+        '<div class="onb-budget" style="margin:10px 0 4px"><span>今月 使えるお金</span><b>'+yen(bg.livingBudget)+'</b></div>'+
+        '<p>これが <b>「今月 使えるお金」</b>。予定を入れるほど、ここがリアルに動きます。<br>ホームでいつでも確認できます。あとは残りの中で、ふたりで楽しむだけ。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.onbFinish()">Miettaを使ってみる</button></div>';
+      return;
+    }
+    const sheetOpen=document.getElementById("scrim")&&document.getElementById("scrim").classList.contains("show");
+    if(sheetOpen){el.className="onb-hidden";el.innerHTML="";return;}
+    const n=steps.filter(s=>s.btn).length,cur=steps.slice(1,i+1).filter(s=>s.btn).length;
+    let budgetLine="";
+    if(st.budget){
+      const bg=this.budgetReport(this.curMonth);
+      if(this._onb.budgetStart==null)this._onb.budgetStart=bg.livingBudget;
+      const now=bg.livingBudget,start=this._onb.budgetStart,diff=start-now;
+      budgetLine='<div class="onb-budget"><span>今月 使えるお金</span><b>'+yen(now)+'</b></div>'+(diff>0?'<div class="onb-budget-sub">予定で '+yen(diff)+' 減りました（最初は '+yen(start)+'）</div>':'');
+    }
+    let cntLine="";
+    if(st.manual){const c=st.count?st.count():0;if(c>0)cntLine='<div class="onb-cnt">登録済み '+c+' 件</div>';}
+    const isLast=(i===steps.length-2);
+    const nextBtn=st.manual?'<button class="btn btn-sec btn-block btn-sm" style="margin-top:8px" onclick="App.onbNextStep()">'+(isLast?"これで完了":"次へ")+'</button>':'';
+    el.className="onb-coach";
+    el.innerHTML='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
+      '<div class="onb-ttl">'+esc(st.title)+'</div><div class="onb-desc">'+esc(st.desc)+'</div>'+budgetLine+
+      '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(st.btn)+'</button>'+cntLine+nextBtn+'</div>';
+  },
+  onbNext(){if(this._onb){this._onb.step=1;this.go("dashboard");this.renderOnboard();}},
+  onbNextStep(){if(this._onb){this._onb.budgetStart=null;this._onb.step++;this.go("dashboard");this.renderOnboard();}},
+  onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
+  onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
+  onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
@@ -1212,7 +1309,7 @@ const App = {
       else{sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');}
       recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+rIcon+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
-    const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurring()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">'+ic('repeat',30)+'</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
+    const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurringPicker()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">'+ic('repeat',30)+'</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
     // 📊 予算ペース管理レポート(当月のみ)
     let paceCard='';
     const pr=this.paceReport(this.curMonth,m);
@@ -1988,6 +2085,8 @@ const App = {
     if(!catHtml)catHtml='<div class="set-cell"><span class="desc">自分で追加したカテゴリがここに表示されます。収入・支出・タスクの入力画面で、カテゴリ欄の「＋ 新しいカテゴリを追加…」から追加できます。</span></div>';
     h+='<p class="set-head">カテゴリ管理（自分で追加した分）</p><div class="set-group">'+catHtml+'</div>';
 
+    h+='<p class="set-head">使い方</p><div class="set-group">'+
+      '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
@@ -2310,12 +2409,13 @@ const App = {
     this.showSheet(h);
   },
   // ---- event ----
-  openEvent(id,presetDate){
+  openEvent(id,presetDate,preset){
     const it=id?this.state.events.find(x=>x.id===id):null;
+    const defType=it?it.type:((preset&&preset.type)?preset.type:"event");
     const h='<h3>'+(it?"予定を編集":"予定を追加")+'</h3>'+
-      this.field("タイトル",'<input id="f-title" placeholder="例: 保育園の運動会 / 家賃引落し" value="'+esc(it?it.title:"")+'">')+
+      this.field("タイトル",'<input id="f-title" placeholder="例: 美容室 / 病院 / 友だちとご飯" value="'+esc(it?it.title:"")+'">')+
       this.field("種別",'<div class="seg" id="f-etype">'+
-        ['event:予定','payment:支払い','income:入金'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.type:"event")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+        ['event:予定','payment:支払い','income:入金'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(defType===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
       this.field("日付",'<input id="f-date" type="date" value="'+(it?it.date:(presetDate||todayStr()))+'">')+
       '<div class="form-row">'+this.field("開始時刻（任意）",'<input id="f-start" type="time" value="'+(it&&it.start?it.start:"")+'">')+
       this.field("終了時刻（任意）",'<input id="f-end" type="time" value="'+(it&&it.end?it.end:"")+'">')+'</div>'+
@@ -2332,15 +2432,25 @@ const App = {
       },it?()=>this.del("events",id):null);
     this.showSheet(h);
   },
-  openRecurring(id){
+  openRecurringPicker(onlyExpense){
+    const list=RECUR_PRESETS.filter(p=>onlyExpense?p.type==="payment":true);
+    const h='<h3>毎月のお金を追加</h3><div class="meta" style="margin-bottom:12px;line-height:1.5">よくある固定費・毎月の出費から選べます'+(onlyExpense?'':'（収入もここから）')+'。タップすると名前が入った状態で開きます。</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">'+
+      list.map(p=>'<button type="button" class="btn btn-sec btn-sm ttl-ico" style="flex:0 0 auto" onclick="App.openRecurring(null,{title:&quot;'+p.label+'&quot;,type:&quot;'+p.type+'&quot;})">'+ic(p.icon||"repeat",15)+esc(p.label)+'</button>').join('')+
+      '</div>'+
+      '<button class="btn btn-ghost btn-block btn-sm" onclick="App.openRecurring()">自分で入力する</button>';
+    this.showSheet(h);
+  },
+  openRecurring(id,preset){
     const it=id?this.state.events.find(x=>x.id===id):null;
+    const pre=(!id&&preset)?preset:null;
     const curDay=(it&&it.date)?((+String(it.date).slice(8))||1):1;
-    const curType=it?it.type:"payment";
+    const curType=it?it.type:(pre&&pre.type?pre.type:"payment");
     const curVar=it?(it.variable?"variable":"fixed"):"fixed";
     const curClose=it&&it.closeDay?(+it.closeDay||0):0;
     const dayOptions=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>'<option value="'+d+'" '+(d===sel?"selected":"")+'>'+d+'日</option>').join("");
     const h='<h3>'+(it?"定期項目を編集":"定期の収入・固定費を追加")+'</h3>'+
-      this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:"")+'">')+
+      this.field("名前",'<input id="f-rtitle" placeholder="例: 家賃 / 給料 / カード引落 / Netflix" value="'+esc(it?it.title:(pre&&pre.title?pre.title:""))+'">')+
       this.field("種別",'<div class="seg" id="f-rtype">'+
         [['payment','支出（固定費）'],['income','収入']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+(curType===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
       this.field("金額タイプ",'<div class="seg" id="f-rvar">'+
@@ -2520,18 +2630,18 @@ const App = {
       this._user=r.data.user;await this.afterAuth();
     }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
-  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.showAuth();},
+  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan");localStorage.removeItem("imaoka_owner");}catch(e){} this.showAuth();},
   switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
   async afterAuth(){
     try{
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
       if(error)throw error;
-      if(mem&&mem.length){this.householdId=mem[0].household_id;await this.loadCloud();this.hideAuth();}
-      else if(this._pendingInvite){const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
-      else{this._authView="household";this.showAuth();}
+      if(mem&&mem.length){this.householdId=mem[0].household_id;if(localStorage.getItem("imaoka_owner")!==this.householdId){this.state=seedState();}await this.loadCloud();this.hideAuth();}
+      else if(this._pendingInvite){this.state=seedState();const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
+      else{this.state=seedState();this.render();this._authView="household";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();this.normalize();await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
   async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
@@ -2544,6 +2654,7 @@ const App = {
         await this.pushNow(); // 初回: 今のデータをクラウドへ
       }
       this._syncStatus="on";
+      try{localStorage.setItem("imaoka_owner",this.householdId);}catch(e){}
       this.subscribeRealtime();
       this.render();
     }catch(e){console.error(e);this._syncStatus="err";this.render();}
@@ -2574,13 +2685,13 @@ const App = {
     if(!this._client||!this.householdId)return;
     const ts=new Date().toISOString();this._lastPushed=ts;
     const payload=JSON.parse(JSON.stringify(this.state));
-    try{const{error}=await this._client.from("app_state").update({data:payload,updated_at:ts}).eq("household_id",this.householdId);if(error)throw error;if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}}catch(e){console.error(e);this._syncStatus="err";}
+    try{const{error}=await this._client.from("app_state").update({data:payload,updated_at:ts}).eq("household_id",this.householdId);if(error)throw error;try{localStorage.setItem("imaoka_owner",this.householdId);}catch(e){}if(this._syncStatus!=="on"){this._syncStatus="on";this.render();}}catch(e){console.error(e);this._syncStatus="err";}
   },
   /* ---- 認証オーバーレイ ---- */
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
   inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
-  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.toast("ようこそ！");},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");this.startOnboarding(true);},
   async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
     if(this._authView==="invite"){
