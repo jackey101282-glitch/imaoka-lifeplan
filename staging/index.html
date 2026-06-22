@@ -785,6 +785,7 @@ const App = {
   taskView:"home", curProjectId:null, curSubId:null,
   dashOpen:{inc:false,exp:false},
   goalOpen:{},
+  subOpen:{},
   filters:{tasks:"open"},
   calMonth:thisMonth(),
   _client:null, _channel:null, _pushTimer:null, _lastPushed:null, _syncStatus:"off",
@@ -996,6 +997,7 @@ const App = {
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
+  toggleSubOpen(id){this.subOpen[id]=!this.subOpen[id];this.render();},
   dot(plain){
     const s=this._syncStatus; if(s==="off") return plain?"":"";
     const cls=s==="on"?"sync-on":(s==="err"?"sync-err":"sync-off");
@@ -1743,7 +1745,15 @@ const App = {
     if(!subs.length)h+='<div class="card"><div class="empty"><span class="e-ic">'+ic('folder',30)+'</span>グループを作り、その中にタスクを入れます<br>例: ウェルカムスペース<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openSubForm()">＋ グループを作る</button></div></div>';
     subs.forEach(s=>{
       const sts=this.subTasks(s.id),sd=sts.filter(t=>t.status==="done").length,sp=sts.length?Math.round(sd/sts.length*100):0,sc=sts.length>0&&sd===sts.length;
-      h+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openSub(\''+s.id+'\')"><div class="row" style="gap:10px"><div class="check '+(sc?'on':'')+'" style="cursor:default;flex-shrink:0">'+(sc?'✓':'')+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;'+(sc?'color:var(--color-accent-600);':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.name)+'</div><div class="meta">'+sd+'/'+sts.length+'完了</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div><div class="prog" style="margin-top:8px"><span class="'+(sc?'fill-accent':'fill-primary')+'" style="width:'+sp+'%"></span></div></div>';
+      const opened=this.subOpen[s.id];
+      const stsSorted=sts.slice().sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
+      h+='<div class="card" style="padding:16px">'+
+        '<div class="row" style="gap:10px;cursor:pointer" onclick="App.toggleSubOpen(\''+s.id+'\')"><div class="check '+(sc?'on':'')+'" style="cursor:default;flex-shrink:0">'+(sc?'✓':'')+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;'+(sc?'color:var(--color-accent-600);':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(s.name)+'</div><div class="meta">'+sd+'/'+sts.length+'完了</div></div><span class="chev'+(opened?' open':'')+'">▾</span></div>'+
+        '<div class="prog" style="margin-top:8px"><span class="'+(sc?'fill-accent':'fill-primary')+'" style="width:'+sp+'%"></span></div>'+
+        (opened?('<div class="divider" style="margin:12px 0 2px"></div>'+
+          (stsSorted.length?stsSorted.map(t=>this.taskRow(t)).join(''):'<div class="empty" style="padding:10px 0">このグループにタスクはありません</div>')+
+          '<div style="text-align:right;margin-top:8px"><span class="link" onclick="event.stopPropagation();App.openTask(null,\''+s.id+'\',\''+p.id+'\')">＋ タスクを追加</span>　<span class="link" onclick="event.stopPropagation();App.openSub(\''+s.id+'\')">グループを開く ›</span></div>'):'')+
+        '</div>';
     });
     return h;
   },
