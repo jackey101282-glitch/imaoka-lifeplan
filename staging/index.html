@@ -264,6 +264,16 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cal-cell.sun{color:var(--color-danger)}.cal-cell.sat{color:var(--color-secondary-500)}
 .cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
 .cdot{width:5px;height:5px;border-radius:50%}
+.cnum{position:relative;z-index:1}
+.cal-cell .cal-dots{position:relative;z-index:1}
+.cstamp{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%) rotate(-7deg);z-index:0;opacity:.62;pointer-events:none;line-height:0}
+.cstamp svg{width:30px;height:30px;stroke-width:1.7}
+.stamp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.stamp-pick{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 5px;border:1.5px solid var(--color-border);border-radius:14px;cursor:pointer;background:var(--color-bg-surface);transition:transform .1s,border-color .1s,box-shadow .1s}
+.stamp-pick .si{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--sc) 15%,transparent);color:var(--sc)}
+.stamp-pick .sl{font-size:var(--text-xs);color:var(--color-text-secondary);text-align:center;line-height:1.25}
+.stamp-pick.on{border-color:var(--sc);box-shadow:0 0 0 2px color-mix(in srgb,var(--sc) 32%,transparent)}
+.stamp-pick:active{transform:scale(.95)}
 .cd-pay{background:var(--color-danger)}.cd-task{background:var(--color-primary-500)}.cd-event{background:var(--color-secondary-400)}.cd-wish{background:#9C6ADE}.cd-income{background:var(--color-accent-500)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -572,6 +582,22 @@ const RECUR_PRESETS=[
   {label:"ジム",type:"payment",icon:"flame"},{label:"美容室",type:"payment",icon:"scissors"},{label:"カード引き落とし",type:"payment",icon:"card"},
   {label:"お給料",type:"income",icon:"wallet"},{label:"その他の収入",type:"income",icon:"coins"}
 ];
+/* カレンダーに貼れるスタンプ（既存ラインアイコン流用・和テイスト配色／絵文字は使わない）。idは_ICONS名。 */
+const STAMPS=[
+  {id:"heart",label:"記念日・デート",color:"#E36B8F"},
+  {id:"plane",label:"旅行",color:"#56A8C7"},
+  {id:"utensils",label:"外食・ごはん",color:"#E8744A"},
+  {id:"party",label:"お祝い",color:"#F2994A"},
+  {id:"star",label:"がんばった日",color:"#E0A93A"},
+  {id:"cross",label:"病院",color:"#7BA05B"},
+  {id:"scissors",label:"美容・身だしなみ",color:"#9C6ADE"},
+  {id:"car",label:"おでかけ",color:"#5E7E63"},
+  {id:"music",label:"趣味・ライブ",color:"#C4714A"},
+  {id:"paw",label:"ペット",color:"#B5894A"},
+  {id:"baby",label:"こども",color:"#D98AA0"},
+  {id:"coins",label:"給料日・お金",color:"#4E9C78"}
+];
+function stampDef(id){return STAMPS.find(s=>s.id===id)||null;}
 /* 目標額＝内訳がある場合はその合計、無ければtarget（後方互換） */
 function goalAmt(g){return (g&&g.items&&g.items.length)?g.items.reduce((a,b)=>a+(+b.amount||0),0):(+(g&&g.target)||0);}
 /* 特別費の年額。cycle: perYear=回数×単価 / everyN=総額÷years / fixed=年額。後方互換:cycle無し=count有→perYear,無→fixed */
@@ -634,6 +660,7 @@ function seedState(){
     notes:[],
     projects:[],
     subprojects:[],
+    stamps:{},
     sim:{current:0,monthly:"",bonus:0,years:10,events:[]}
   };
 }
@@ -813,6 +840,7 @@ const App = {
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.goals.forEach(g=>{if(!Array.isArray(g.items))g.items=[];});
     if(!Array.isArray(s.special))s.special=[];
+    if(s.stamps==null||typeof s.stamps!=="object"||Array.isArray(s.stamps))s.stamps={};
     s.incomes.forEach(i=>{if(!i.date)i.date=(i.month||thisMonth())+"-01";i.month=i.date.slice(0,7);});
     s.expenses.forEach(e=>{if(!e.date)e.date=(e.month||thisMonth())+"-01";e.month=e.date.slice(0,7);});
     // 旧バージョン(やりたい/リンク)からフォルダ構造へ自動移行
@@ -1821,7 +1849,9 @@ const App = {
       const today=ds===todayStr();
       const types=[...new Set(dayItems.map(x=>x.t))];
       let dots=types.slice(0,4).map(t=>'<span class="cdot cd-'+t+'"></span>').join("");
-      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+c.d+'<div class="cal-dots">'+dots+'</div></div>';
+      const stId=this.state.stamps&&this.state.stamps[ds];const stD=stId&&stampDef(stId);
+      const stHtml=stD?'<span class="cstamp" style="color:'+stD.color+'">'+ic(stD.id,30)+'</span>':'';
+      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')">'+stHtml+'<span class="cnum">'+c.d+'</span><div class="cal-dots">'+dots+'</div></div>';
     });
     h+='</div><div class="legend"><span><span class="cdot cd-income"></span>入金</span><span><span class="cdot cd-pay"></span>支払い</span><span><span class="cdot cd-task"></span>タスク</span><span><span class="cdot cd-event"></span>予定</span><span><span class="cdot cd-wish"></span>目標時期</span></div></div>';
     // ↓ ここから先(予定リスト・カテゴリ別支出)はPCで右カラムに置く
@@ -1907,10 +1937,23 @@ const App = {
     let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
     if(!items.length)h+='<div class="empty">予定はありません</div>';
     items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
+    const stId=(this.state.stamps||{})[ds];const stD=stId&&stampDef(stId);
+    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:6px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div><div class="meta">'+(stD?'タップして変更・はがす':'この日を彩る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
     h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
     h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加（相手に頼む）</button>';
     this.showSheet(h);
   },
+  openStampPicker(ds){
+    const cur=(this.state.stamps||{})[ds];
+    let h='<h3>'+ds.replace(/-/g,"/")+' にスタンプ</h3><p class="muted" style="font-size:var(--text-sm);margin:0 2px 4px">予定にスタンプを貼ると、カレンダーがふたりらしくなります🌿</p>';
+    h+='<div class="stamp-grid">';
+    STAMPS.forEach(s=>{const on=cur===s.id;h+='<div class="stamp-pick'+(on?' on':'')+'" style="--sc:'+s.color+'" onclick="App.setStamp(\''+ds+'\',\''+s.id+'\')"><span class="si">'+ic(s.id,24)+'</span><span class="sl">'+s.label+'</span></div>';});
+    h+='</div>';
+    if(cur)h+='<button class="btn btn-sec btn-block" style="margin-top:14px" onclick="App.removeStamp(\''+ds+'\')">スタンプをはがす</button>';
+    this.showSheet(h);
+  },
+  setStamp(ds,id){this.state.stamps=this.state.stamps||{};const same=this.state.stamps[ds]===id;this.state.stamps[ds]=id;if(navigator.vibrate)try{navigator.vibrate(18);}catch(e){}this.closeSheet();this.commit();this.toast(same?"スタンプを貼り直しました":"スタンプを貼りました");},
+  removeStamp(ds){if(this.state.stamps)delete this.state.stamps[ds];this.closeSheet();this.commit();this.toast("スタンプをはがしました");},
 
   /* ============== SHARE HUB (共有) ============== */
   view_share(){
