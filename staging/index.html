@@ -212,6 +212,7 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .scrim.show{opacity:1;pointer-events:auto}
 /* スマホ幅では left:0;right:0 のみで画面いっぱい(width/max-width/vwを使わずはみ出しを根絶) */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box}
+.sheet{max-height:88dvh}
 .sheet.show{transform:translateY(0)}
 .sheet input,.sheet select,.sheet textarea{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){.sheet{max-width:560px;margin:0 auto}}
@@ -2184,6 +2185,10 @@ const App = {
   showSheet(html){
     const sh=document.getElementById("sheet");
     sh.innerHTML='<div class="grip"></div><button class="sheet-close" onclick="App.closeSheet()" aria-label="閉じる">✕</button>'+html;
+    // iOSのSafariは vh が「ツールバーを隠した時の高さ」基準で、機種/版によりシートが画面を覆い上のグリップが画面外に出る。
+    // 実際に見えている高さ(visualViewport)を基準に制限し、必ず上に余白(=暗い所タップ/グリップで閉じれる)を残す。
+    const vvh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight||640;
+    sh.style.maxHeight=Math.round(vvh*0.88)+"px";
     document.getElementById("scrim").classList.add("show");
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
