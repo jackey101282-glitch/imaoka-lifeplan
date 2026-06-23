@@ -2250,6 +2250,7 @@ const App = {
       '<div class="set-cell"><div><span class="lab">ログイン中</span><div class="desc">'+(this._user?esc(this._user.email):"未ログイン")+(stat==="on"?' ・<span style="color:var(--color-accent-600)">クラウド同期中</span>':"")+'</div></div></div>'+
       (this._inviteCode?'<div class="set-cell"><div><span class="lab">パートナー招待コード</span><div class="desc">相手にこのコードを伝え、ログイン後に入力してもらうと2人で共有できます</div></div><div style="display:flex;align-items:center;gap:8px"><span class="num" style="font-weight:700;font-size:var(--text-lg);letter-spacing:2px">'+esc(this._inviteCode)+'</span><button class="btn btn-ghost btn-sm" onclick="App.copy(\''+esc(this._inviteCode)+'\')">コピー</button></div></div>':"")+
       (this._user?'<div class="set-cell" onclick="App.doLogout()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">ログアウト</span></div>':"")+
+      (this._user?'<div class="set-cell" onclick="App.confirmDeleteAccount()" style="cursor:pointer"><span class="lab ttl-ico" style="color:var(--color-danger)">'+ic('trash',16)+'アカウントを削除</span><span class="desc">アカウントと保存データを完全に削除します</span></div>':"")+
       '</div>';
 
     const grpLabel={fixed:"固定費",variable:"変動費",task:"タスク"};
@@ -2813,6 +2814,23 @@ const App = {
     }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
   async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");localStorage.removeItem("imaoka_owner_staging");}catch(e){} this.showAuth();},
+  confirmDeleteAccount(){
+    this.showSheet('<h3 style="color:var(--color-danger)">アカウントを削除しますか？</h3>'+
+      '<div class="meta" style="margin-bottom:14px;line-height:1.8">この操作は取り消せません。次がすべて削除されます。<br>・あなたのアカウント（ログイン情報）<br>・このスペースに保存された家計・予定・タスク・ライフプランのデータ<br>　（同じスペースに他のメンバーがいない場合）<br><br>パートナーが残っている場合は、あなたの参加情報のみ削除されます。</div>'+
+      '<button class="btn btn-block" style="background:var(--color-danger);color:#fff;border:none" onclick="App.deleteAccount()">完全に削除する</button>'+
+      '<button class="btn btn-sec btn-block" style="margin-top:10px" onclick="App.closeSheet()">やめる</button>');
+  },
+  async deleteAccount(){
+    this.closeSheet();this.toast("削除中…");
+    try{
+      const{error}=await this._client.rpc("delete_account");
+      if(error)throw error;
+      try{await this._client.auth.signOut();}catch(e){}
+      if(this._channel){try{this._client.removeChannel(this._channel);}catch(e){}this._channel=null;}
+      try{["imaoka_lifeplan_staging","imaoka_owner_staging","imaoka_onboard","imaoka_funnel"].forEach(k=>localStorage.removeItem(k));}catch(e){}
+      this._user=null;this.householdId=null;this._syncStatus="off";this.state=seedState();this._authView="login";this.showAuth();this.toast("アカウントを削除しました");
+    }catch(e){console.error(e);this.toast("削除に失敗しました。時間をおいて再度お試しください");}
+  },
   switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
   async afterAuth(){
     try{
