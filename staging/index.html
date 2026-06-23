@@ -1004,6 +1004,78 @@ const App = {
   onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
   onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
   onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
+  // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
+  funnelQs(){
+    return [
+      {key:"mode",title:"Miettaを誰と使いますか？",sub:"どちらでもフル機能。あとから切り替えられます。",opts:[
+        {v:"solo",t:"まず自分ひとりで始める",d:"あとでパートナーを招待できます"},
+        {v:"couple",t:"今すぐパートナーと一緒に始める",d:"パートナーと共有"},
+        {v:"solo_only",t:"ひとりで使う",d:"パートナーはいない"}]},
+      {key:"work",title:"今、どんなお仕事をしていますか？",opts:[
+        {v:"homemaker",t:"主婦・主夫"},{v:"employee",t:"会社員・公務員"},{v:"self",t:"経営者"},
+        {v:"freelance",t:"個人事業主・フリーランス"},{v:"part",t:"パート・アルバイト"},{v:"student",t:"学生"}]},
+      {key:"age",title:"年代を教えてください",opts:[
+        {v:"20s",t:"20代"},{v:"30s",t:"30代"},{v:"40s",t:"40代"},{v:"50s",t:"50代以上"}]},
+      {key:"family",title:"一緒に暮らしているのは？",opts:[
+        {v:"couple",t:"夫婦ふたりだけ"},{v:"children",t:"子どもがいる"},{v:"cohabiting",t:"同棲中のカップル"},
+        {v:"planning",t:"これから結婚／一緒に住む予定"},{v:"solo",t:"ひとりで暮らしている"}]},
+      {key:"mgmt",title:"家計の管理は、主に誰が？",sub:"どれを選んでも大丈夫です。後から変えられます。",opts:[
+        {v:"solo",t:"自分がひとりで全部見ている"},{v:"partner",t:"パートナーに任せている"},
+        {v:"both",t:"ふたりでなんとなく分担している"},{v:"none",t:"ほとんど管理できていない"}]},
+      {key:"worry",title:"お金で、いちばん気になることは？",opts:[
+        {v:"future",t:"老後のお金が不安"},{v:"leak",t:"毎月使いすぎて、なかなか貯まらない"},
+        {v:"communication",t:"パートナーとお金の話がうまくできない"},{v:"emergency",t:"急な出費が怖い"},
+        {v:"dream",t:"旅行や夢のために、お金を回せていない"}]},
+      {key:"want",title:"Miettaで、まず何をしたい？",opts:[
+        {v:"visibility",t:"予定を入れて、使えるお金を先に把握したい"},{v:"share",t:"家計をパートナーと共有したい"},
+        {v:"lifeplan",t:"ライフプランを立ててみたい"},{v:"special",t:"特別な出費に備えたい"},{v:"save",t:"とにかく貯金を増やしたい"}]},
+      {key:"income",title:"毎月の手取りは？（世帯の合計）",sub:"あとで変えられます。この金額をもとに使えるお金を計算します。アプリの外に送ることはありません。",opts:[
+        {v:230000,t:"30万円未満"},{v:350000,t:"30〜40万円"},{v:500000,t:"40〜60万円"},
+        {v:700000,t:"60〜80万円"},{v:850000,t:"80万円以上"}],skip:"まだわからない"}
+    ];
+  },
+  startFunnel(force){if(!force){try{if(localStorage.getItem("imaoka_funnel"))return;}catch(e){}}this._fnl={active:true,i:0,ans:{}};this.renderFunnel();},
+  fnlEl(){let el=document.getElementById("fnl");if(!el){el=document.createElement("div");el.id="fnl";document.body.appendChild(el);}return el;},
+  fnlPick(v){const qs=this.funnelQs(),q=qs[this._fnl.i];if(q)this._fnl.ans[q.key]=v;this._fnl.i++;this.renderFunnel();},
+  fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
+  fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
+  fnlTrial(){this.toast("（デモ）ここでApple課金の2週間トライアルに進みます");},
+  fnlToSetup(){this.fnlClose();this.startOnboarding(true);},
+  renderFunnel(){
+    if(!this._fnl||!this._fnl.active){const e=document.getElementById("fnl");if(e)e.remove();return;}
+    const qs=this.funnelQs(),i=this._fnl.i,el=this.fnlEl();el.className="onb-modal";
+    if(i<qs.length){
+      const q=qs[i],cur=i+1,n=qs.length;
+      const optHtml=q.opts.map(o=>'<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:46px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;justify-content:center" onclick="App.fnlPick('+(typeof o.v==="number"?o.v:"'"+o.v+"'")+')"><span style="font-weight:700">'+esc(o.t)+'</span>'+(o.d?'<span class="meta">'+esc(o.d)+'</span>':'')+'</button>').join('');
+      el.innerHTML='<div class="onb-card" style="text-align:left">'+
+        '<div class="onb-step" style="margin-bottom:8px">'+cur+' / '+n+'</div>'+
+        '<h2 style="font-size:var(--text-lg);margin-bottom:'+(q.sub?'6px':'14px')+'">'+esc(q.title)+'</h2>'+
+        (q.sub?'<p class="onb-sub" style="margin-bottom:14px">'+esc(q.sub)+'</p>':'')+optHtml+
+        (q.skip?'<div class="onb-skip" onclick="App.fnlPick(\'unknown\')">'+esc(q.skip)+'</div>':'')+
+        (i>0?'<div class="onb-skip" onclick="App.fnlBack()" style="margin-top:6px">もどる</div>':'')+'</div>';
+      return;
+    }
+    if(i===qs.length){
+      const inc=this._fnl.ans.income,known=(typeof inc==="number");
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",34)+'</div>'+
+        '<h2>入力した金額をもとに計算しました</h2>'+
+        (known?'<div class="onb-budget" style="margin:10px 0 4px"><span>今月 使えるお金（目安）</span><b>'+yen(inc)+'</b></div>'+
+          '<p>ここから<b>固定費・予定・積立</b>を入れていくと、リアルな「使えるお金」になります。</p>':
+          '<p>収入はあとで入力できます。固定費や予定から入れていきましょう。</p>')+
+        '<button class="btn btn-primary btn-block" onclick="App.fnlPick(0)">この続きを見る</button>'+
+        '<div class="onb-skip" onclick="App.fnlBack()">もどる</div></div>';
+      return;
+    }
+    const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};
+    const head=W[this._fnl.ans.worry]||"あなたの家計を、ふたりで見える化。";
+    el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+
+      '<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+
+      '<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+
+      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">14日間 無料 → そのあと ¥980/月</div>'+
+      '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.fnlTrial()">無料で始める</button>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">14日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
+      '<div class="onb-skip" onclick="App.fnlToSetup()">あとで（まず使ってみる）</div></div>';
+  },
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
@@ -2179,7 +2251,8 @@ const App = {
     h+='<p class="set-head">カテゴリ管理（自分で追加した分）</p><div class="set-group">'+catHtml+'</div>';
 
     h+='<p class="set-head">使い方</p><div class="set-group">'+
-      '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div></div>';
+      '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
+      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'新オンボ（アンケート版）を試す</span><span class="desc">デモ・8問</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
