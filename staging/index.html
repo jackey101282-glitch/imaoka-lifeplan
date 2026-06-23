@@ -1017,7 +1017,7 @@ const App = {
       {key:"age",title:"年代を教えてください",opts:[
         {v:"20s",t:"20代"},{v:"30s",t:"30代"},{v:"40s",t:"40代"},{v:"50s",t:"50代以上"}]},
       {key:"family",title:"一緒に暮らしているのは？",opts:[
-        {v:"couple",t:"夫婦ふたりだけ"},{v:"children",t:"子どもがいる"},{v:"cohabiting",t:"同棲中のカップル"},
+        {v:"couple",t:"夫婦ふたりだけ"},{v:"children",t:"子どもがいる（学生・未成年）"},{v:"cohabiting",t:"同棲中のカップル"},
         {v:"planning",t:"これから結婚／一緒に住む予定"},{v:"solo",t:"ひとりで暮らしている"}]},
       {key:"mgmt",title:"家計の管理は、主に誰が？",sub:"どれを選んでも大丈夫です。後から変えられます。",opts:[
         {v:"solo",t:"自分がひとりで全部見ている"},{v:"partner",t:"パートナーに任せている"},
@@ -2064,13 +2064,14 @@ const App = {
   pickThisMonth(){this.calMonth=thisMonth();this.closeSheet();this.render();},
   openDay(ds){
     const items=this.calItems(ds.slice(0,7))[ds]||[];
+    const solo=!!(this.state&&this.state.settings&&this.state.settings.spaceMode==="solo");
     let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
-    if(!items.length)h+='<div class="empty">予定はありません</div>';
-    items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});
+    h+='<button class="btn btn-primary btn-block" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加'+(solo?'':'（相手に頼む）')+'</button>';
+    if(!items.length)h+='<div class="empty" style="margin-top:16px">この日の予定はまだありません</div>';
+    else{h+='<div style="margin-top:16px"></div>';items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});}
     const stId=(this.state.stamps||{})[ds];const stD=stId&&stampDef(stId);
-    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:6px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div><div class="meta">'+(stD?'タップして変更・はがす':'この日を彩る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
-    h+='<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
-    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加（相手に頼む）</button>';
+    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div><div class="meta">'+(stD?'タップして変更・はがす':'この日を彩る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
     this.showSheet(h);
   },
   openStampPicker(ds){
@@ -2290,6 +2291,7 @@ const App = {
   /* ============== Sheets / Forms ============== */
   showSheet(html){
     const sh=document.getElementById("sheet");
+    const _o=document.getElementById("onb");if(_o&&this._onb&&this._onb.active){_o.className="onb-hidden";_o.innerHTML="";}
     sh.innerHTML='<div class="grip"></div><button class="sheet-close" onclick="App.closeSheet()" aria-label="閉じる">✕</button>'+html;
     // iOSのSafariは vh が「ツールバーを隠した時の高さ」基準で、機種/版によりシートが画面を覆い上のグリップが画面外に出る。
     // 実際に見えている高さ(visualViewport)を基準に制限し、必ず上に余白(=暗い所タップ/グリップで閉じれる)を残す。
@@ -2599,13 +2601,13 @@ const App = {
       this.field("タイトル",'<input id="f-title" placeholder="例: 美容室 / 病院 / 友だちとご飯" value="'+esc(it?it.title:"")+'">')+
       this.field("種別",'<div class="seg" id="f-etype">'+
         ['event:予定','payment:支払い','income:入金'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(defType===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      this.field("金額（任意）",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
       this.field("日付",'<input id="f-date" type="date" value="'+(it?it.date:(presetDate||todayStr()))+'">')+
       '<div class="form-row">'+this.field("開始時刻（任意）",'<input id="f-start" type="time" value="'+(it&&it.start?it.start:"")+'">')+
       this.field("終了時刻（任意）",'<input id="f-end" type="time" value="'+(it&&it.end?it.end:"")+'">')+'</div>'+
       this.field("繰り返し",'<select id="f-rec">'+[['none','繰り返さない'],['weekly','毎週（同じ曜日）'],['monthly_date','毎月（同じ日）'],['monthly_nth','毎月（第◯◯曜）'],['yearly','毎年（同じ日付）']].map(o=>'<option value="'+o[0]+'" '+((it&&it.recurrence?it.recurrence:"none")===o[0]?"selected":"")+'>'+o[1]+'</option>').join("")+'</select>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 〇〇小学校 体育館" value="'+esc(it&&it.loc?it.loc:"")+'">')+
       this.field("メモ（任意）",'<textarea id="f-memo" placeholder="持ち物・詳細・URLなど">'+esc(it&&it.memo?it.memo:"")+'</textarea>')+
-      this.field("金額（任意）",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
       (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">📅 Googleカレンダーに追加（1回分）</a>':'')+
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
