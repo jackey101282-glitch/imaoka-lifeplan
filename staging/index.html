@@ -211,9 +211,9 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .onb-hidden{display:none}
 .scrim.show{opacity:1;pointer-events:auto}
 /* スマホ幅では left:0;right:0 のみで画面いっぱい(width/max-width/vwを使わずはみ出しを根絶) */
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--color-bg-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:8px var(--screen-px) calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);width:auto;margin:0;box-sizing:border-box;pointer-events:none}
 .sheet{max-height:88dvh}
-.sheet.show{transform:translateY(0)}
+.sheet.show{transform:translateY(0);pointer-events:auto}
 .sheet input,.sheet select,.sheet textarea{max-width:100%;box-sizing:border-box}
 @media(min-width:600px){.sheet{max-width:560px;margin:0 auto}}
 .sheet .grip{width:44px;height:5px;background:var(--color-border-strong);border-radius:3px;margin:8px auto 12px;cursor:grab;touch-action:none}
@@ -1174,6 +1174,13 @@ const App = {
       '<button class="btn btn-primary btn-block ttl-ico" style="justify-content:center" onclick="App.closeSheet();App.shareSummary(true)">'+ic('share',15)+' 金額を隠してシェア（おすすめ）</button>'+
       '<button class="btn btn-sec btn-block" style="margin-top:10px" onclick="App.closeSheet();App.shareSummary(false)">金額も入れてシェア</button>');
   },
+  openReport(){this.shareSummary(false,"view");},
+  _showReportImage(url){
+    this.showSheet('<h3>今月のレポート</h3>'+
+      '<img src="'+url+'" alt="今月のレポート" style="width:100%;border-radius:var(--radius-lg);border:1px solid var(--color-border);display:block;margin-bottom:14px">'+
+      '<button class="btn btn-primary btn-block" onclick="App.closeSheet();App.shareSummary(false,\'save\')">画像を保存</button>'+
+      '<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin-top:10px" onclick="App.closeSheet();App.openShareReport()">'+ic('share',15)+'シェアする</button>');
+  },
   reportData(M){
     const m=this.metrics(M);
     let [py,pmo]=M.split("-").map(Number); pmo--; if(pmo<1){pmo=12;py--;} const prevExp=this.metrics(py+"-"+String(pmo).padStart(2,"0")).totalExpense;
@@ -1199,7 +1206,7 @@ const App = {
     const dim=new Date(+M.split("-")[0],+M.split("-")[1],0).getDate();
     return {m,score,rank,sav,streak,recCount,cats,catTotal:cats.reduce((a,b)=>a+b.v,0)||1,prevExp,goalInfo,perDay:Math.round(m.totalExpense/dim),yearProj:Math.max(0,m.balance)*12};
   },
-  shareSummary(hide){
+  shareSummary(hide,action){
     const M=this.curMonth,s=this.state.settings,d=this.reportData(M),m=d.m;
     const fmt=v=>hide?"¥•••":yen(v);
     const W=1080,H=1420,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
@@ -1260,8 +1267,11 @@ const App = {
       if(!blob){this.toast("画像を作成できませんでした");return;}
       const file=new File([blob],"mietta-report-"+M+".png",{type:"image/png"});
       const cap=monthLabel(M)+"の家計レポート｜スコア"+d.score+"点・"+d.rank.name+" #Mietta家計 mietta.jp";
+      const url=URL.createObjectURL(blob);
+      if(action==="view"){this._showReportImage(url);return;}
+      if(action==="save"){const a=document.createElement("a");a.href=url;a.download="mietta-report-"+M+".png";a.click();this.toast("画像を保存しました");return;}
       if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],text:cap}).catch(()=>{});}
-      else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mietta-report-"+M+".png";a.click();this.toast("画像を保存しました");}
+      else{const a=document.createElement("a");a.href=url;a.download="mietta-report-"+M+".png";a.click();this.toast("画像を保存しました");}
     },"image/png");
   },
   eventExpense(month,mode){return this.eventSum(month,mode,false);},
@@ -1320,7 +1330,7 @@ const App = {
     if(m.balance<0)warn='<div class="warn-box">'+ic('alert',15)+'支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
     else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
     const remainCard='';
-    const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin:2px 0 18px" onclick="App.openShareReport()">'+ic('share',16)+' 今月のレポートを画像でシェア</button>':'';
+    const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin:2px 0 18px" onclick="App.openReport()">'+ic('eye',16)+' 今月のレポートを見る</button>':'';
 
     // ふたりの航路（ライフゴールのロードマップ）
     const GOAL_IC={goal_wedding:'heart',goal_honeymoon:'plane',goal_moving:'house',goal_birth:'baby',goal_emergency:'lifebuoy',goal_edu:'graduation',goal_housing:'house',goal_school:'book',goal_exam:'clipboard',goal_retirement:'person',goal_travel:'palm',goal_car:'car',goal_home_appliance:'sofa',goal_wish:'sparkle'};
@@ -2286,7 +2296,7 @@ const App = {
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
   },
-  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.style.opacity="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");},
+  closeSheet(){const sh=document.getElementById("sheet");sh.style.transform="";sh.style.opacity="";sh.classList.remove("show");document.getElementById("scrim").classList.remove("show");document.body.classList.remove("noscroll");if(this._onb&&this._onb.active)this.renderOnboard();},
   // 下シートを掴んで下げると閉じる(グリップ/上部ハンドル領域から)。pointer/touch両対応で確実に閉じる
   sheetDrag(){
     const sh=document.getElementById("sheet");if(!sh)return;
@@ -2808,10 +2818,10 @@ const App = {
       if(error)throw error;
       if(mem&&mem.length){this.householdId=mem[0].household_id;if(localStorage.getItem("imaoka_owner_staging")!==this.householdId){this.state=seedState();}await this.loadCloud();this.hideAuth();}
       else if(this._pendingInvite){this.state=seedState();const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
-      else{this.state=seedState();this.render();this._authView="household";this.showAuth();}
+      else{this.state=seedState();this.render();this._authView="mode";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();this.normalize();await this.loadCloud();this._pendingInvite="";this._authView="invite";this.showAuth();}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async createHousehold(mode){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
   async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
@@ -2874,6 +2884,17 @@ const App = {
         '<div class="muted" style="text-align:center;margin:-6px 0 16px">招待コード: <b class="num" style="letter-spacing:2px">'+esc(code)+'</b></div>'+
         '<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center" onclick="App.shareInvite()">'+ic('send',16)+'リンクを送る</button>'+
         '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.finishInvite()">アプリを始める</button></div>';
+    }
+    if(this._authView==="mode"){
+      return '<div class="authcard"><div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('users',40)+'</div>'+
+        '<h2 style="text-align:center;margin:0 0 4px">Miettaを誰と使いますか？</h2>'+
+        '<p class="muted" style="text-align:center;margin:0 0 18px;line-height:1.7">あとから切り替えられます。<br>どちらでもすべての機能が使えます。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.createHousehold(\'solo\')">ひとりで使う</button>'+
+        '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.createHousehold(\'couple\')">パートナーと使う（ふたり）</button>'+
+        '<div class="muted" style="text-align:center;margin:16px 0 12px;display:flex;align-items:center;gap:10px"><span style="flex:1;height:1px;background:var(--color-border)"></span>または<span style="flex:1;height:1px;background:var(--color-border)"></span></div>'+
+        '<input id="au-code" value="'+esc(this._pendingInvite||"")+'" placeholder="招待コード(6文字)" autocapitalize="characters" style="text-align:center;letter-spacing:2px;text-transform:uppercase">'+
+        '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.joinHousehold(document.getElementById(\'au-code\').value)">招待コードで参加</button>'+
+        '<div style="text-align:center;margin-top:16px"><span class="link" onclick="App.doLogout()">ログアウト</span></div></div>';
     }
     if(this._authView==="household"){
       return '<div class="authcard"><div style="text-align:center;color:var(--color-primary-500);margin-bottom:6px">'+ic('users',40)+'</div><h2 style="text-align:center;margin:0 0 4px">ペアを設定</h2><p class="muted" style="text-align:center;margin:0 0 18px">新しく始めるか、パートナーの招待コードで参加します</p>'+
