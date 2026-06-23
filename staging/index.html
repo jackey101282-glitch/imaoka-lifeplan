@@ -2264,7 +2264,8 @@ const App = {
 
     h+='<p class="set-head">使い方</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
-      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'新オンボ（アンケート版）を試す</span><span class="desc">デモ・8問</span></div>'+
+      '<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>'+
+      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
@@ -2843,7 +2844,10 @@ const App = {
       else{this.state=seedState();this.render();this._authView="mode";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
   },
-  async createHousehold(mode){try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  previewSignup(){this._onbTest=true;try{["imaoka_onboard","imaoka_funnel"].forEach(k=>localStorage.removeItem(k));}catch(e){}this._authView="mode";this.showAuth();this.toast("テスト：登録は作成されません");},
+  async createHousehold(mode){
+    if(this._onbTest){this._onbTest=false;if(this.state&&this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.hideAuth();this.go("dashboard");this.startFunnel(true,mode);return;}
+    try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
   async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async loadCloud(){
     try{
