@@ -994,16 +994,20 @@ const App = {
         '<div class="meta" style="margin-top:6px;text-align:center">タップして金額を編集できます</div></div>';}}
     const isLast=(i===steps.length-2);
     const nextBtn=st.manual?'<button class="btn btn-sec btn-block btn-sm" style="margin-top:8px" onclick="App.onbNextStep()">'+(isLast?"これで完了":"次へ")+'</button>':'';
-    el.className="onb-coach";
-    el.innerHTML='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
+    const barHtml='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
       '<div class="onb-ttl">'+esc(st.title)+'</div><div class="onb-desc">'+esc(st.desc)+'</div>'+budgetLine+
       '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(actLabel)+'</button>'+cntLine+extra+nextBtn+'</div>';
+    if(el.className==="onb-coach"&&el._barHtml===barHtml)return;  // 内容が同じ時はDOMを作り直さない（指の下でボタンが消えてタップが外れるのを防ぐ）
+    el.className="onb-coach";el.innerHTML=barHtml;el._barHtml=barHtml;
   },
   onbNext(){if(this._onb){this._onb.step=1;this.go("dashboard");this.renderOnboard();}},
   onbNextStep(){if(this._onb){this._onb.budgetStart=null;this._onb.step++;this.go("dashboard");this.renderOnboard();}},
   onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
   onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
-  onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
+  onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();if(this._pendingPaywall){const a=this._pendingPaywall;this._pendingPaywall=null;this.showPaywall(a);return;}try{this.go("dashboard");}catch(e){}},
+  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">14日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">14日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
+  pwTrial(){this.toast("（デモ）Apple課金の2週間トライアルに進みます");this.pwClose();},
+  pwClose(){const e=document.getElementById("fnl");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
   funnelQs(){
     return [
@@ -1040,7 +1044,7 @@ const App = {
   fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
   fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
   fnlTrial(){this.toast("（デモ）ここでApple課金の2週間トライアルに進みます");this.fnlToSetup();},
-  fnlToSetup(){this.fnlClose();this.startOnboarding(true);},
+  fnlToSetup(){const fs=this._fnl&&this._fnl.fromSignup,ans=(this._fnl&&this._fnl.ans)||{};this.fnlClose();if(fs)this._pendingPaywall=ans;this.startOnboarding(true);},
   renderFunnel(){
     if(!this._fnl||!this._fnl.active){const e=document.getElementById("fnl");if(e)e.remove();return;}
     const qs=this.funnelQs(),i=this._fnl.i,el=this.fnlEl();el.className="onb-modal";
@@ -1056,6 +1060,7 @@ const App = {
       return;
     }
     if(i===qs.length){
+      if(this._fnl.fromSignup){this.fnlToSetup();return;}  // 本登録の流れでは「使えるお金/ペイウォール」を後段(固定費登録の後)に出す
       const inc=this._fnl.ans.income,known=(typeof inc==="number");
       el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",34)+'</div>'+
         '<h2>入力した金額をもとに計算しました</h2>'+
