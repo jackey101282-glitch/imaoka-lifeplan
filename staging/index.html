@@ -2262,7 +2262,9 @@ const App = {
 
     h+='<p class="set-head">使い方</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
-      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'新オンボ（アンケート版）を試す</span><span class="desc">デモ・8問</span></div></div>';
+      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'新オンボ（アンケート版）を試す</span><span class="desc">デモ・8問</span></div>'+
+      '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
+      '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
