@@ -1034,18 +1034,18 @@ const App = {
         {v:700000,t:"60〜80万円"},{v:850000,t:"80万円以上"}],skip:"まだわからない"}
     ];
   },
-  startFunnel(force){if(!force){try{if(localStorage.getItem("imaoka_funnel"))return;}catch(e){}}this._fnl={active:true,i:0,ans:{}};this.renderFunnel();},
+  startFunnel(force,presetMode){if(!force){try{if(localStorage.getItem("imaoka_funnel"))return;}catch(e){}}this._fnl={active:true,i:0,ans:{}};if(presetMode){this._fnl.ans.mode=presetMode;this._fnl.i=1;this._fnl.fromSignup=true;}this.renderFunnel();},
   fnlEl(){let el=document.getElementById("fnl");if(!el){el=document.createElement("div");el.id="fnl";document.body.appendChild(el);}return el;},
   fnlPick(v){const qs=this.funnelQs(),q=qs[this._fnl.i];if(q)this._fnl.ans[q.key]=v;this._fnl.i++;this.renderFunnel();},
   fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
   fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
-  fnlTrial(){this.toast("（デモ）ここでApple課金の2週間トライアルに進みます");},
+  fnlTrial(){this.toast("（デモ）ここでApple課金の2週間トライアルに進みます");this.fnlToSetup();},
   fnlToSetup(){this.fnlClose();this.startOnboarding(true);},
   renderFunnel(){
     if(!this._fnl||!this._fnl.active){const e=document.getElementById("fnl");if(e)e.remove();return;}
     const qs=this.funnelQs(),i=this._fnl.i,el=this.fnlEl();el.className="onb-modal";
     if(i<qs.length){
-      const q=qs[i],cur=i+1,n=qs.length;
+      const fs=this._fnl.fromSignup,q=qs[i],n=fs?qs.length-1:qs.length,cur=fs?i:i+1;
       const optHtml=q.opts.map(o=>'<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:46px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;justify-content:center" onclick="App.fnlPick('+(typeof o.v==="number"?o.v:"'"+o.v+"'")+')"><span style="font-weight:700">'+esc(o.t)+'</span>'+(o.d?'<span class="meta">'+esc(o.d)+'</span>':'')+'</button>').join('');
       el.innerHTML='<div class="onb-card" style="text-align:left">'+
         '<div class="onb-step" style="margin-bottom:8px">'+cur+' / '+n+'</div>'+
@@ -2891,7 +2891,7 @@ const App = {
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
   inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
-  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");this.startOnboarding(true);},
+  finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");const mode=(this.state&&this.state.settings&&this.state.settings.spaceMode)||"couple";this.startFunnel(true,mode);},
   async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
     if(this._authView==="invite"){
