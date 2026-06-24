@@ -232,7 +232,7 @@ label.fld .lbl{font-size:var(--text-sm);font-weight:var(--fw-m);color:var(--colo
 input,select,textarea{width:100%;background:var(--color-bg-muted);border:1.5px solid var(--color-border);border-radius:var(--radius-md);padding:12px 14px;font-size:var(--text-md);font-family:inherit;color:var(--color-text-primary);min-height:48px}
 textarea{min-height:72px;resize:vertical;line-height:1.5}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary-500);background:var(--color-bg-surface);box-shadow:0 0 0 3px rgba(232,106,53,.15)}
-input.amt{font-family:var(--font-family-number);text-align:right;font-size:var(--text-xl);font-weight:var(--fw-b)}
+input.amt{font-family:var(--font-family-number);text-align:left;font-size:var(--text-xl);font-weight:var(--fw-b)}
 .seg{display:flex;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:4px;gap:4px}
 .seg button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-weight:var(--fw-m);color:var(--color-text-secondary);cursor:pointer;font-family:inherit;font-size:var(--text-base)}
 .seg button.on{background:var(--color-bg-surface);color:var(--color-primary-600);font-weight:var(--fw-b);box-shadow:var(--shadow-xs)}
@@ -993,7 +993,7 @@ const App = {
         '<div style="display:flex;justify-content:space-between;border-top:1px dashed var(--color-border);margin-top:4px;padding-top:6px;font-weight:700;font-size:var(--text-sm)"><span>合計</span><span class="num">毎月 '+yen(monthly)+'</span></div>'+
         '<div class="meta" style="margin-top:6px;text-align:center">タップして金額を編集できます</div></div>';}}
     const isLast=(i===steps.length-2);
-    const nextBtn=st.manual?'<button class="btn btn-sec btn-block btn-sm" style="margin-top:8px" onclick="App.onbNextStep()">'+(isLast?"これで完了":"次へ")+'</button>':'';
+    const nextBtn=st.manual?'<button class="btn btn-sec btn-block" style="margin-top:10px" onclick="App.onbNextStep()">'+(isLast?"これで完了":"次へ")+'</button>':'';
     const barHtml='<div class="onb-bar"><div class="onb-bar-top"><span class="onb-step">STEP '+cur+' / '+n+'</span><span class="onb-skip2" onclick="App.onbSkip()">スキップ</span></div>'+
       '<div class="onb-ttl">'+esc(st.title)+'</div><div class="onb-desc">'+esc(st.desc)+'</div>'+budgetLine+
       '<button class="btn btn-primary btn-block" onclick="App.onbDo()">'+esc(actLabel)+'</button>'+cntLine+extra+nextBtn+'</div>';
