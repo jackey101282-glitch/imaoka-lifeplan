@@ -784,7 +784,7 @@ const DIAG_ATTRS=[
   {key:"age",title:"年代を教えてください",opts:["10代","20代","30代","40代","50代","60代以上"]},
   {key:"work",title:"お仕事は？",opts:["会社員・公務員","自営業・個人事業主","専業主婦(主夫)","パート・アルバイト","学生","その他"]},
   {key:"savings",title:"いまの貯蓄は？（世帯ざっくり）",opts:["〜10万円","10〜50万円","50〜100万円","100〜300万円","300万円〜"]},
-  {key:"family",title:"いまの家族のかたちは？",opts:["恋人・パートナーと（結婚はこれから）","夫婦ふたり（子はこれから／予定なし）","子どもがいる"]}
+  {key:"family",title:"いまの家族のかたちは？",opts:["恋人・パートナーと（結婚はこれから）","夫婦ふたり（子はこれから／予定なし）","子どもがいる","ひとり（パートナーはいない）"]}
 ];
 // 診断11問。ax=採点する軸(A貯/使・B計画/感覚・C将来/今)。s=スコア。flavor=味付け(採点しない)。
 const DIAG_QS=[
@@ -1153,6 +1153,7 @@ const App = {
     const ans=this._diag.ans,forPartner=this._diag.forPartner;
     const d=this.computeDiag(ans);d.ans=ans;d.attrs={};
     DIAG_ATTRS.forEach(function(at){var idx=ans[at.key];d.attrs[at.key]=(idx!=null)?at.opts[idx]:null;});
+    d.solo=(d.attrs.family==="ひとり（パートナーはいない）");
     if(forPartner)this.state.diagnosisPartner=d;else this.state.diagnosis=d;
     this.commit();this.showDiagResult(forPartner);
   },
@@ -1182,6 +1183,8 @@ const App = {
     }
     if(partner){
       h+='<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.diagCompat()">ふたりの相性を見る</button>';
+    }else if(d.solo){
+      // 独身（パートナーなし）: パートナー診断・相性レポートは出さない
     }else{
       const hasP=!!this.state.diagnosisPartner;
       h+='<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.diagPartner()">'+(hasP?"パートナーの結果を見る":"パートナーにも診断してもらう")+'</button>';
