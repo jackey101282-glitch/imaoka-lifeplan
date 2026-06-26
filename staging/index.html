@@ -670,7 +670,9 @@ function seedState(){
     projects:[],
     subprojects:[],
     stamps:{},
-    sim:{current:0,monthly:"",bonus:0,years:10,events:[]}
+    sim:{current:0,monthly:"",bonus:0,years:10,events:[]},
+    diagnosis:null,
+    diagnosisPartner:null
   };
 }
 
@@ -775,6 +777,40 @@ const EMOJI_ICON={
 function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(s,size);if(EMOJI_ICON[s])return ic(EMOJI_ICON[s],size);return esc(s);}
 /* フォルダ/プロジェクトのアイコン選択肢 */
 const PICK_ICONS=["folder","house","heart","star","sparkle","map","palm","plane","send","car","train","gift","bag","cart","utensils","book","graduation","gamepad","music","film","tv","paw","baby","users","briefcase","laptop","coins","wallet","card","shield","cross","pill","wrench","bolt","droplet","flame","scissors","shirt","sofa","building","rocket","trophy","target","calendar","clipboard","party","lifebuoy","tag"];
+
+/* ===== お金タイプ診断 データ（提案-お金版MBTI診断.md §6.6/§6.7 準拠） ===== */
+// 属性（採点なし・単タップ）
+const DIAG_ATTRS=[
+  {key:"age",title:"年代を教えてください",opts:["10代","20代","30代","40代","50代","60代以上"]},
+  {key:"work",title:"お仕事は？",opts:["会社員・公務員","自営業・個人事業主","専業主婦(主夫)","パート・アルバイト","学生","その他"]},
+  {key:"savings",title:"いまの貯蓄は？（世帯ざっくり）",opts:["〜10万円","10〜50万円","50〜100万円","100〜300万円","300万円〜"]},
+  {key:"family",title:"いまの家族のかたちは？",opts:["恋人・パートナーと（結婚はこれから）","夫婦ふたり（子はこれから／予定なし）","子どもがいる"]}
+];
+// 診断11問。ax=採点する軸(A貯/使・B計画/感覚・C将来/今)。s=スコア。flavor=味付け(採点しない)。
+const DIAG_QS=[
+  {key:"q1",ax:"A",title:"お金を使うときに近い気持ちは？",opts:[{t:"必要以上に使うと落ち着かない",s:-1},{t:"バランスを取りたい",s:0},{t:"好きに使えると満たされる",s:1}]},
+  {key:"q2",ax:null,flavor:"risk",title:"「将来のためになること」にお金を使うなら？",opts:[{t:"確実に払える範囲だけ",v:"mamori"},{t:"価値に納得できれば出す",v:"mid"},{t:"将来につながるなら多少無理してでも",v:"seme"}]},
+  {key:"q3",ax:"A",title:"自由に使えるお金が手元にあったら？",opts:[{t:"使い道は探さず将来へ貯める",s:-1},{t:"必要なら使い、なければ貯める",s:0},{t:"使い道を見つけて楽しむ",s:1}]},
+  {key:"q4",ax:"A",title:"毎月のお金、近いのは？",opts:[{t:"先取りで貯金してから使う",s:-1},{t:"使って余れば貯金",s:0},{t:"貯金はあまり意識しない",s:1}]},
+  {key:"q5",ax:"B",title:"欲しい物を買う判断基準は？",opts:[{t:"本当に必要か（必要性）",s:-1},{t:"値段に見合う価値か（コスパ）",s:0},{t:"ときめいたか（直感）",s:1}]},
+  {key:"q6",ax:"B",title:"旅行やお出かけの計画は？",opts:[{t:"事前にしっかり立てる",s:-1},{t:"大枠だけ決めて流れで",s:0},{t:"計画せず気分で",s:1}]},
+  {key:"q7",ax:"B",title:"ふだんの家計の把握は？",opts:[{t:"予算を決めて記録",s:-1},{t:"だいたい感覚で把握",s:0},{t:"ほとんど把握していない",s:1}]},
+  {key:"q8",ax:"C",title:"お金を貯めたいのは？",opts:[{t:"特に目的はなく将来のため",s:-1},{t:"叶えたい目的（家・旅行・やりたいこと）のため",s:1}]},
+  {key:"q9",ax:"C",flavor:"who",title:"いちばん「使ってよかった」と思えるのは？",opts:[{t:"将来のためになると思えたとき",s:-1,v:"future"},{t:"大切な人（家族・恋人・仲間）のため",s:0,v:"people"},{t:"自分の「好き・やりたい」",s:1,v:"self"}]},
+  {key:"q10",ax:"C",title:"将来への気持ちは？",opts:[{t:"早めに備えて安心したい",s:-1},{t:"備えつつ今も楽しみたい",s:0},{t:"先より今を大事に",s:1}]},
+  {key:"q11",ax:null,flavor:"kotomono",title:"お金を使うなら？",opts:[{t:"思い出に残る体験（コト）",v:"koto"},{t:"形に残る物・自分へのご褒美（モノ）",v:"mono"}]}
+];
+// 8タイプ（軸の符号 A+B+C → タイプ）。-=貯/計画/将来、+=使う/感覚/今。
+const DIAG_TYPES={
+  "---":{slug:"kame",name:"コツコツ亀",color:"#7c9a5e",img:"assets/types/kame.png",desc:"コツコツ亀タイプ。派手なことはしないけれど、毎月きちんと貯めて将来に備える、いちばん信頼できる堅実派です。「ウサギとカメ」のカメのように、遅くても着実。欲しい物も一度立ち止まって考える慎重さがあります。注意点は、堅実すぎて「今を楽しむこと」を後回しにしがちなこと。たまには自分やパートナーへのご褒美にお金を使っても、あなたの土台ならびくともしません。"},
+  "--+":{slug:"kitsune",name:"抜け目ないキツネ",color:"#c8743c",img:"assets/types/kitsune.png",desc:"抜け目ないキツネタイプ。「ここは締めて、ここは出す」のメリハリが抜群。セールやポイントを賢く使い、同じ物でも誰よりお得に手に入れる知恵の持ち主です。「これは必要経費」が口ぐせで、ちゃんと楽しむのになぜか財布は減らない。我慢ではなく、頭を使って心地よく得をする人。たまには損得抜きで相手の喜ぶことにポンと使うと、その賢さがもっと愛されます。"},
+  "-+-":{slug:"rakko",name:"がっちりラッコ",color:"#9c7b54",img:"assets/types/rakko.png",desc:"がっちりラッコタイプ。理屈より感覚で、お金が手元にあると心から安心する人です。ラッコが大事な石を抱えて離さないように、貯まったお金をぎゅっと抱えていたい。残高が減るとそわそわする繊細さがある一方、いざというときの備えは万全。注意点は、抱え込みすぎて使うことに罪悪感を持ちやすいこと。「使ってよかった」と思える経験を、少しずつ増やしてみてください。"},
+  "-++":{slug:"neko",name:"きまぐれ猫",color:"#9b7bb0",img:"assets/types/neko.png",desc:"きまぐれ猫タイプ。お金との付き合い方は、その日の気分しだい。「猫の目のように変わる」ように、コツコツ貯める月もあれば、ピンときて一点豪華にパーッと使う月もある自由人です。読めないけれど感性が豊かで、お金を「心が動いたこと」に使える才能の持ち主。「これだけは毎月先に貯める」という小さなルールを1つ作ると、自由気ままさはそのままに暮らしが安定します。"},
+  "+--":{slug:"fukurou",name:"賢者フクロウ",color:"#3f5a86",img:"assets/types/fukurou.png",desc:"賢者フクロウタイプ。「森の賢者」のように、いつも一歩先を見据えてお金を動かす戦略家です。出費が多く見えても、その多くは自己投資や将来への仕込み。目先の損得より、5年後・10年後にどう効くかで判断できるのが強みです。注意点は、先を読みすぎて「今の楽しみ」を後回しにしがちなこと。未来への備えは得意だからこそ、今を楽しむ出費も堂々と。"},
+  "+-+":{slug:"kujaku",name:"華やかクジャク",color:"#2e9c8e",img:"assets/types/kujaku.png",desc:"華やかクジャクタイプ。孔雀が羽を広げるように、「今この瞬間」を最高に彩ることにお金を使う人です。ただ派手なのではなく、ちゃんと計画した上で記念日や旅行・体験に惜しみなく投資する「ハレの日プロデューサー」。お金を思い出に変えるのが上手で、まわりを笑顔にする天才です。本当に輝かせたい場面を絞ると、一回ずつの満足度がもっと上がります。"},
+  "++-":{slug:"usagi",name:"そわそわうさぎ",color:"#e08a9a",img:"assets/types/usagi.png",desc:"そわそわうさぎタイプ。「脱兎のごとし」でピンときた瞬間にパッと買って、その直後から「使いすぎたかも」とそわそわする、ちょっと忙しい心の持ち主です。ときめきに正直な一方、買った後に後悔できるのは、お金を大事に思っている証拠。「ほしい!」と思ったら一晩おく「24時間ルール」を試すと、後悔が減って、買った物を心から楽しめるようになります。"},
+  "+++":{slug:"kirigirisu",name:"今を歌うキリギリス",color:"#e0b53c",img:"assets/types/kirigirisu.png",desc:"今を歌うキリギリスタイプ。「アリとキリギリス」のように、未来より「今この瞬間」を全力で楽しむ人です。お金が入ったら今日のワクワクに迷わず使える潔さがあり、あなたが使うお金は世の中をめぐって経済を回す主役。一緒にいると毎日が明るくなるムードメーカーです。「使う前に少しだけ先に貯める」一手間を足すと、今を楽しむ力がもっと自由になります。"}
+};
 
 /* ============================================================ */
 /* ===== 自動同期の埋め込み設定 =====
@@ -1005,8 +1041,8 @@ const App = {
   onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
   onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
   onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();if(this._pendingPaywall){const a=this._pendingPaywall;this._pendingPaywall=null;this.showPaywall(a);return;}try{this.go("dashboard");}catch(e){}},
-  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">14日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">14日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
-  pwTrial(){this.toast("（デモ）Apple課金の2週間トライアルに進みます");this.pwClose();},
+  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
+  pwTrial(){this.toast("（デモ）Apple課金の30日間トライアルに進みます");this.pwClose();},
   pwClose(){const e=document.getElementById("fnl");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
   funnelQs(){
@@ -1043,7 +1079,7 @@ const App = {
   fnlPick(v){const qs=this.funnelQs(),q=qs[this._fnl.i];if(q)this._fnl.ans[q.key]=v;this._fnl.i++;this.renderFunnel();},
   fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
   fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
-  fnlTrial(){this.toast("（デモ）ここでApple課金の2週間トライアルに進みます");this.fnlToSetup();},
+  fnlTrial(){this.toast("（デモ）ここでApple課金の30日間トライアルに進みます");this.fnlToSetup();},
   fnlToSetup(){const fs=this._fnl&&this._fnl.fromSignup,ans=(this._fnl&&this._fnl.ans)||{};this.fnlClose();if(fs)this._pendingPaywall=ans;this.startOnboarding(true);},
   renderFunnel(){
     if(!this._fnl||!this._fnl.active){const e=document.getElementById("fnl");if(e)e.remove();return;}
@@ -1076,11 +1112,131 @@ const App = {
     el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+
       '<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+
       '<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+
-      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">14日間 無料 → そのあと ¥980/月</div>'+
+      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.fnlTrial()">無料で始める</button>'+
-      '<p class="onb-sub" style="text-align:center;margin-top:10px">14日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
       '<div class="onb-skip" onclick="App.fnlToSetup()">あとで（まず使ってみる）</div></div>';
   },
+  /* ============== お金タイプ診断 ============== */
+  isPremium(){try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;}},
+  setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.render();},
+  diagEl(){let el=document.getElementById("diag");if(!el){el=document.createElement("div");el.id="diag";document.body.appendChild(el);}return el;},
+  diagList(){return DIAG_ATTRS.concat(DIAG_QS);},
+  startDiagnosis(forPartner){this._diag={active:true,i:0,ans:{},forPartner:!!forPartner};this.renderDiag();},
+  diagClose(){this._diag={active:false};const e=document.getElementById("diag");if(e)e.remove();},
+  diagBack(){if(this._diag&&this._diag.i>0){this._diag.i--;this.renderDiag();}},
+  diagPick(idx){
+    const list=this.diagList(),q=list[this._diag.i];if(!q)return;
+    this._diag.ans[q.key]=idx;this._diag.i++;
+    const self=this;
+    if(this._diag.i===DIAG_ATTRS.length){this.diagLoading("あなたに合わせて準備中…");setTimeout(function(){if(self._diag&&self._diag.active)self.renderDiag();},900);return;}
+    if(this._diag.i>=list.length){this.diagLoading("あなた専用に分析中…");setTimeout(function(){if(self._diag&&self._diag.active)self.finishDiag();},1200);return;}
+    this.renderDiag();
+  },
+  diagLoading(msg){const el=this.diagEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:center"><div class="onb-ic">'+ic("sparkle",34)+'</div><h2 style="font-size:var(--text-lg)">'+esc(msg)+'</h2></div>';},
+  renderDiag(){
+    if(!this._diag||!this._diag.active){const e=document.getElementById("diag");if(e)e.remove();return;}
+    const list=this.diagList(),i=this._diag.i;if(i>=list.length)return;
+    const el=this.diagEl();el.className="onb-modal";
+    const q=list[i],isAttr=i<DIAG_ATTRS.length;
+    const step=isAttr?("プロフィール "+(i+1)+" / "+DIAG_ATTRS.length):("診断 "+(i-DIAG_ATTRS.length+1)+" / "+DIAG_QS.length);
+    const opts=q.opts.map(function(o,idx){var t=isAttr?o:o.t;return '<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:46px;display:flex;align-items:center" onclick="App.diagPick('+idx+')"><span style="font-weight:600">'+esc(t)+'</span></button>';}).join('');
+    el.innerHTML='<div class="onb-card" style="text-align:left">'+
+      '<div class="onb-step" style="margin-bottom:8px">'+step+'</div>'+
+      '<h2 style="font-size:var(--text-lg);margin-bottom:14px">'+esc(q.title)+'</h2>'+opts+
+      (i>0?'<div class="onb-skip" onclick="App.diagBack()" style="margin-top:6px">もどる</div>':'')+
+      '<div class="onb-skip" onclick="App.diagClose()" style="margin-top:2px">とじる</div>'+'</div>';
+  },
+  computeDiag(ans){
+    let a=0,b=0,c=0;
+    DIAG_QS.forEach(function(q){var idx=ans[q.key];if(idx==null)return;var o=q.opts[idx];if(!o)return;if(q.ax==="A")a+=o.s||0;else if(q.ax==="B")b+=o.s||0;else if(q.ax==="C")c+=o.s||0;});
+    const sg=function(v){return v>0?"+":"-";};
+    const key=sg(a)+sg(b)+sg(c),t=DIAG_TYPES[key];
+    const fv=function(fk){var q=DIAG_QS.find(function(x){return x.flavor===fk;});if(!q)return null;var idx=ans[q.key];if(idx==null)return null;return q.opts[idx].v;};
+    return {a:a,b:b,c:c,sign:key,typeKey:t.slug,name:t.name,color:t.color,img:t.img,desc:t.desc,flavor:{risk:fv("risk"),who:fv("who"),kotomono:fv("kotomono")}};
+  },
+  finishDiag(){
+    const ans=this._diag.ans,forPartner=this._diag.forPartner;
+    const d=this.computeDiag(ans);d.ans=ans;d.attrs={};
+    DIAG_ATTRS.forEach(function(at){var idx=ans[at.key];d.attrs[at.key]=(idx!=null)?at.opts[idx]:null;});
+    if(forPartner)this.state.diagnosisPartner=d;else this.state.diagnosis=d;
+    this.commit();this.showDiagResult(forPartner);
+  },
+  showDiagResult(partner){
+    const d=partner?this.state.diagnosisPartner:this.state.diagnosis;if(!d){this.diagClose();return;}
+    this._diag={active:true,i:999};
+    const el=this.diagEl();el.className="onb-modal";
+    el.innerHTML='<div class="onb-card" style="text-align:left;max-height:90vh;overflow:auto">'+this.diagResultInner(d,partner)+'</div>';
+  },
+  diagBar(leftL,rightL,val,color){
+    const pct=Math.round((val+3)/6*100);
+    return '<div style="margin-bottom:9px"><div class="row" style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px"><span>'+esc(leftL)+'</span><span>'+esc(rightL)+'</span></div><div style="position:relative;height:8px;border-radius:5px;background:var(--color-secondary-50)"><span style="position:absolute;left:calc('+pct+'% - 7px);top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></div></div>';
+  },
+  diagResultInner(d,partner){
+    const FL={mamori:"守り堅実",mid:"納得重視",seme:"攻めの投資",future:"未来思い",people:"人のため",self:"自分の好き",koto:"体験（コト）派",mono:"モノ派"};
+    const chips=[d.flavor&&d.flavor.risk,d.flavor&&d.flavor.who,d.flavor&&d.flavor.kotomono].filter(Boolean).map(function(v){return '<span class="chip chip-todo" style="margin:0 4px 4px 0">'+esc(FL[v]||v)+'</span>';}).join('');
+    const img='<div style="width:178px;height:178px;margin:0 auto 6px;border-radius:18px;background:'+d.color+'1a;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="'+d.img+'" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()"></div>';
+    let h='<div style="text-align:center"><div class="onb-step">'+(partner?"パートナーの":"あなたの")+'お金タイプ</div>'+img+
+      '<h2 style="font-size:22px;color:'+d.color+';margin:4px 0 10px">'+esc(d.name)+'</h2></div>';
+    if(chips)h+='<div style="margin:0 2px 12px">'+chips+'</div>';
+    h+=this.diagBar("貯める","使う",d.a,d.color)+this.diagBar("計画","感覚",d.b,d.color)+this.diagBar("将来","今",d.c,d.color);
+    h+='<p style="font-size:var(--text-sm);line-height:1.85;margin:12px 2px;color:var(--color-text-primary)">'+esc(d.desc)+'</p>';
+    if(partner){
+      h+='<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.diagCompat()">ふたりの相性を見る</button>';
+    }else{
+      const hasP=!!this.state.diagnosisPartner;
+      h+='<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.diagPartner()">'+(hasP?"パートナーの結果を見る":"パートナーにも診断してもらう")+'</button>';
+      h+='<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin-top:8px" onclick="App.diagCompat()">'+ic("heart",15)+'ふたりの相性レポート'+(this.isPremium()?"":" "+ic("lock",13))+'</button>';
+    }
+    h+='<div class="onb-skip" onclick="App.diagRetake('+(partner?"true":"false")+')" style="margin-top:10px">もう一度診断する</div>';
+    h+='<div class="onb-skip" onclick="App.diagClose()" style="margin-top:2px">とじる</div>';
+    return h;
+  },
+  diagPartner(){if(this.state.diagnosisPartner){this.showDiagResult(true);}else{this.startDiagnosis(true);}},
+  diagRetake(partner){this.startDiagnosis(partner);},
+  diagCompat(){
+    if(!this.isPremium()){this.diagPaywall();return;}
+    const d=this.state.diagnosis,p=this.state.diagnosisPartner;
+    if(!d){this.diagClose();return;}
+    const el=this.diagEl();el.className="onb-modal";
+    if(!p){el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("heart",30)+'</div><h2 style="font-size:var(--text-lg)">ふたりの相性レポート</h2><p class="onb-sub" style="margin-bottom:12px">相性を見るには、パートナーにも診断してもらいましょう（スマホを渡して、そのまま診断できます）。</p><button class="btn btn-primary btn-block" onclick="App.diagPartner()">パートナーが診断する</button><div class="onb-skip" onclick="App.showDiagResult(false)" style="margin-top:8px">もどる</div></div>';return;}
+    el.innerHTML='<div class="onb-card" style="text-align:left;max-height:90vh;overflow:auto">'+this.diagCompatInner(d,p)+'</div>';
+  },
+  diagCompatInner(d,p){
+    const axes=[["お金の使い方","貯める寄り","使う寄り",d.a,p.a],["決め方","計画的","感覚的",d.b,p.b],["時間の軸","将来重視","今重視",d.c,p.c]];
+    const sameCnt=axes.filter(function(x){return (x[3]>0)===(x[4]>0);}).length;
+    const head=sameCnt>=2?"似たもの夫婦タイプ":sameCnt===1?"バランス補い合いタイプ":"正反対で引き合うタイプ";
+    let h='<div style="text-align:center"><div class="onb-step">ふたりの相性</div><h2 style="font-size:20px;margin:6px 0 4px">'+esc(d.name)+' × '+esc(p.name)+'</h2><p style="color:var(--color-secondary-600);font-weight:700;margin-bottom:10px">'+esc(head)+'</p></div>';
+    axes.forEach(function(x){
+      var same=(x[3]>0)===(x[4]>0);
+      h+='<div style="border:1px solid var(--color-secondary-100);border-radius:10px;padding:10px 12px;margin-bottom:8px"><div class="row" style="font-weight:700;font-size:var(--text-sm)"><span>'+esc(x[0])+'</span><span style="color:'+(same?"var(--color-accent-600)":"var(--color-primary-600)")+'">'+(same?"似ている":"ちがう")+'</span></div><div class="meta" style="margin-top:4px">あなた＝'+esc(x[3]>0?x[2]:x[1])+' ／ パートナー＝'+esc(x[4]>0?x[2]:x[1])+'</div></div>';
+    });
+    const tip=sameCnt>=2?("お金の感覚が近く、もめにくい二人。一方で同じ弱点を持ちやすいので、どちらかが"+(d.a>0?"貯める":"使う")+"視点を少し意識すると盤石です。"):sameCnt===1?"似ているところと違うところのバランスが良い二人。違いはケンカの種ではなく、役割分担のヒント。お互いの得意を活かしましょう。":"お金の価値観が大きく違う二人。だからこそ補い合えますが、大きな出費の前に一度話す「せーので決めるルール」が効きます。";
+    h+='<p style="font-size:var(--text-sm);line-height:1.8;margin:10px 2px;color:var(--color-text-primary)">'+esc(tip)+'</p>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:6px" onclick="App.showDiagResult(false)">自分の結果にもどる</button>';
+    h+='<div class="onb-skip" onclick="App.diagClose()" style="margin-top:6px">とじる</div>';
+    return h;
+  },
+  diagPaywall(){
+    const el=this.diagEl();el.className="onb-modal";
+    el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("heart",30)+'</div>'+
+      '<h2 style="font-size:var(--text-lg)">ふたりの相性レポート</h2>'+
+      '<p class="onb-sub" style="margin-bottom:12px">お互いのお金タイプから、相性・すれ違いやすい点・うまくいくコツが分かります。</p>'+
+      ["ふたりの相性レポート","将来シミュレーション（住まい・子ども・必要額）","広告なし"].map(function(f){return '<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>';}).join('')+
+      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:8px">30日間 無料 → そのあと ¥980/月</div>'+
+      '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.diagTrial()">無料で始める</button>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
+      '<div class="onb-skip" onclick="App.showDiagResult(false)">あとで</div></div>';
+  },
+  diagTrial(){try{localStorage.setItem("imaoka_premium","1");}catch(e){}this.toast("（デモ）30日トライアルを開始しました");this.diagCompat();},
+  diagCardHtml(){
+    const d=this.state.diagnosis;
+    if(!d){
+      return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-primary-50);border-color:var(--color-primary-200);margin-bottom:14px" onclick="App.startDiagnosis()"><div class="ic" style="background:var(--color-primary-100);color:var(--color-primary-600);width:44px;height:44px">'+ic("sparkle",22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-primary-600)">お金タイプ診断</div><div class="meta">11問であなたのお金タイプが分かる</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+    }
+    return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;border-color:'+d.color+'55;margin-bottom:14px" onclick="App.showDiagResult(false)"><div class="ic" style="width:44px;height:44px;background:'+d.color+'1a;color:'+d.color+'">'+ic("sparkle",22)+'</div><div style="flex:1;min-width:0"><div class="meta">あなたのお金タイプ</div><div style="font-weight:700;font-size:var(--text-md);color:'+d.color+'">'+esc(d.name)+'</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+  },
+
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
@@ -1547,7 +1703,7 @@ const App = {
     const bento='<div class="dash-bento"><div class="b-wide">'+heroHtml+'</div>'+incTile+expTile+(donutTile?'<div class="b-wide">'+donutTile+'</div>':'')+'</div>';
     const cards=[plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return alerts+bento+shareLink+'<div class="dash-cols">'+cards+'</div>';
+    return alerts+bento+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
   },
   // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
   view_lifeplan(){
@@ -2254,7 +2410,7 @@ const App = {
     const stat=this._syncStatus;
     h+='<p class="set-head">アカウント・パートナー</p><div class="set-group">'+
       '<div class="set-cell"><div><span class="lab">ログイン中</span><div class="desc">'+(this._user?esc(this._user.email):"未ログイン")+(stat==="on"?' ・<span style="color:var(--color-accent-600)">クラウド同期中</span>':"")+'</div></div></div>'+
-      (this._inviteCode?'<div class="set-cell"><div><span class="lab">パートナー招待コード</span><div class="desc">相手にこのコードを伝え、ログイン後に入力してもらうと2人で共有できます</div></div><div style="display:flex;align-items:center;gap:8px"><span class="num" style="font-weight:700;font-size:var(--text-lg);letter-spacing:2px">'+esc(this._inviteCode)+'</span><button class="btn btn-ghost btn-sm" onclick="App.copy(\''+esc(this._inviteCode)+'\')">コピー</button></div></div>':"")+
+      (this._inviteCode?'<div class="set-cell"><div><span class="lab">パートナー招待コード</span><div class="desc">相手にこのコードを伝え、ログイン後に入力してもらうと2人で共有できます。<br>使い終わったら「再発行」で無効化できます（他人に知られた時の対策）。</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end"><span class="num" style="font-weight:700;font-size:var(--text-lg);letter-spacing:2px">'+esc(this._inviteCode)+'</span><button class="btn btn-ghost btn-sm" onclick="App.copy(\''+esc(this._inviteCode)+'\')">コピー</button><button class="btn btn-ghost btn-sm" onclick="App.regenInviteCode()">再発行</button></div></div>':"")+
       (this._user?'<div class="set-cell" onclick="App.doLogout()" style="cursor:pointer"><span class="lab" style="color:var(--color-danger)">ログアウト</span></div>':"")+
       (this._user?'<div class="set-cell" onclick="App.confirmDeleteAccount()" style="cursor:pointer"><span class="lab ttl-ico" style="color:var(--color-danger)">'+ic('trash',16)+'アカウントを削除</span><span class="desc">アカウントと保存データを完全に削除します</span></div>':"")+
       '</div>';
@@ -2271,6 +2427,8 @@ const App = {
       '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
       '<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>'+
       '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>'+
+      '<div class="set-cell" onclick="App.startDiagnosis()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'お金タイプ診断をする</span><span class="desc">11問</span></div>'+
+      '<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
@@ -2854,6 +3012,7 @@ const App = {
     if(this._onbTest){this._onbTest=false;if(this.state&&this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.hideAuth();this.go("dashboard");this.startFunnel(true,mode);return;}
     try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
   async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
+  async regenInviteCode(){if(!this._client||!this.householdId){this.toast("再発行できません");return;}if(!confirm("招待コードを再発行しますか?\n今のコードは無効になり、すでに伝えた相手はそのコードでは参加できなくなります。"))return;try{const{data,error}=await this._client.rpc("regenerate_invite_code");if(error)throw error;this._inviteCode=data||"";this.render();this.toast("招待コードを再発行しました");}catch(e){console.error(e);this.toast("再発行に失敗しました");}},
   async loadCloud(){
     try{
       const{data,error}=await this._client.from("app_state").select("data,invite_code").eq("household_id",this.householdId).maybeSingle();
