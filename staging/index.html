@@ -1750,7 +1750,19 @@ const App = {
   view_lifeplan(){
     this.view_dashboard();
     const c=this._lpCards||{};
-    const cards=[c.budgetCard,c.goalsCard,this.specialCardHtml(),c.emergencyCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    const bg=this.budgetReport(thisMonth());
+    // ライフプラン先頭＝「毎月の積立(取っておく額)」をぼんと表示。今月の収支カードは外す。
+    const saveHero='<div class="card" style="border-color:var(--color-secondary-300)">'+
+      '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
+      '<p class="meta" style="margin-top:4px">将来のために、毎月とっておきたい金額です</p>'+
+      '<div class="mid-num" style="font-size:34px;color:var(--color-secondary-600);margin:10px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
+      (bg.hasPlan?
+        ('<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>'+
+         '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('heart',14)+'ゴールのため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
+         '<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('coins',14)+'1年の特別費のため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
+        :'<p class="meta" style="margin-top:10px;line-height:1.6;text-align:center">下の「ふたりのゴール」や「1年の特別費」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
+      '</div>';
+    const cards=[saveHero,c.goalsCard,this.specialCardHtml(),c.emergencyCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
