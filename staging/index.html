@@ -1468,7 +1468,7 @@ const App = {
     // これからの予定(未来の入金・支払い)
     let plannedCard='';
     if(m.planned>0||m.plannedIncome>0){
-      plannedCard='<div class="card card-warn"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('calendar',16)+'これからの予定(入出金)</p>'+
+      plannedCard='<div class="card card-warn"><p class="card-title ttl-ico" style="margin:0;color:var(--color-warning)">'+ic('calendar',16)+'これからの予定(入出金)</p><div class="meta lo" style="margin:2px 0 0">今月まだ発生していない入金・支払いの見込み</div>'+
         (m.plannedIncome>0?'<div class="row" style="margin-top:8px"><span>入る予定</span><span class="num" style="font-weight:700;color:var(--color-accent-600)">＋'+yen(m.plannedIncome)+'</span></div>':'')+
         (m.planned>0?'<div class="row" style="margin-top:8px"><span>支払う予定</span><span class="num" style="font-weight:700;color:var(--color-danger)">－'+yen(m.planned)+'</span></div>':'')+
         '<div class="meta lo" style="margin-top:8px">日付が来たら自動で今月の収入/支出に反映されます。月末の見込み残りは '+yen(m.afterPlanned)+'。</div></div>';
@@ -1571,7 +1571,7 @@ const App = {
       const kindIc={payment:ic('wallet',15),income:ic('trend',15),event:ic('calendar',15),task:ic('check',15),input:ic('chart',15)};
       let r='';
       rem.slice(0,5).forEach(o=>{const d=o.date===todayStr()?"今日":(o.date===addDaysStr(todayStr(),1)?"明日":o.date.slice(5).replace("-","/"));r+='<div class="row" style="margin-top:8px"><span class="muted" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text-primary)">'+(kindIc[o.kind]||ic('calendar',15))+' '+esc(o.title)+'</span><span class="meta num" style="white-space:nowrap">'+d+(o.amount?' ・'+yen(o.amount):'')+'</span></div>';});
-      remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-500)">'+ic('bell',16)+'もうすぐ（7日以内）</p>'+r+'</div>';
+      remindCard='<div class="card" style="border-color:var(--color-secondary-300)"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-500)">'+ic('bell',16)+'もうすぐ（7日以内）</p><div class="meta lo" style="margin:2px 0 0">支払い・入金・予定の締切が近いもの</div>'+r+'</div>';
     }
     // 🤝 承認待ちの支出
     const pend=this.pendingApprovals();
@@ -1603,7 +1603,7 @@ const App = {
       else{sub='毎月'+day+'日'+(e.variable?('・変動'+(e.closeDay?('／締め'+e.closeDay+'日'):'')):'');}
       recRows+='<div class="li" onclick="App.openRecurring(\''+e.id+'\')" style="cursor:pointer"><span class="ic"'+(inc?' style="color:var(--color-accent-600)"':'')+'>'+rIcon+'</span><div class="main"><div class="ttl">'+esc(e.title)+'</div><div class="meta">'+sub+'</div></div>'+right+'</div>';
     });
-    const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurringPicker()">＋ 追加</span></div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">'+ic('repeat',30)+'</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
+    const recurCard='<div class="section-title">定期（毎月の収入・固定費）<span class="link" onclick="App.openRecurringPicker()">＋ 追加</span></div><div class="meta lo" style="margin:0 0 8px">給料・家賃・カード引落など毎月決まって入る・出るお金（一度登録すると毎月自動で計上）</div><div class="card">'+(recRows||'<div class="empty"><span class="e-ic">'+ic('repeat',30)+'</span>給料・家賃・カード引落など毎月決まったものを登録すると自動で計上されます</div>')+'</div>';
     // 📊 予算ペース管理レポート(当月のみ)
     let paceCard='';
     const pr=this.paceReport(this.curMonth,m);
@@ -1680,32 +1680,19 @@ const App = {
     const incTile='<div class="card btile" onclick="App.go(\'income_list\')"><div style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-bottom:4px">今月の収入</div><div class="mid-num" style="color:var(--color-primary-500)">'+yen(m.totalIncome)+'</div></div>';
     const expTile='<div class="card btile" onclick="App.go(\'expense_list\')"><div style="font-size:var(--text-sm);color:var(--color-text-secondary);margin-bottom:4px">今月の支出</div><div class="mid-num">'+yen(m.totalExpense)+'</div></div>';
     // 支出の内訳ドーナツ(当月・カテゴリ別)
-    let donutTile='';
-    const expsM=this.state.expenses.filter(e=>e.month===this.curMonth);
-    if(expsM.length){
-      const byCat={};
-      expsM.forEach(e=>{const see=this.seeDetail(e);const key=see?((e.type==="fixed"?"f":"v")+e.catId):"__priv";const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[key])byCat[key]=see?{label:c.label,sum:0}:{label:"個人支出",sum:0};byCat[key].sum+=(+e.amount||0);});
-      const arr=Object.values(byCat).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
-      const total=arr.reduce((s,x)=>s+x.sum,0);
-      if(total>0){
-        const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
-        const R=34,CIRC=2*Math.PI*R;let off=0,segs='';
-        arr.forEach((c,i)=>{const len=c.sum/total*CIRC;segs+='<circle cx="50" cy="50" r="'+R+'" fill="none" stroke="'+gpal[i%gpal.length]+'" stroke-width="15" stroke-dasharray="'+len.toFixed(2)+' '+(CIRC-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 50 50)"/>';off+=len;});
-        let legend='';
-        arr.slice(0,4).forEach((c,i)=>{const pct=Math.round(c.sum/total*100);legend+='<div class="row" style="margin-top:6px"><span class="muted" style="display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden"><span style="width:9px;height:9px;border-radius:3px;background:'+gpal[i%gpal.length]+';flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.label)+'</span></span><span class="meta num" style="white-space:nowrap">'+pct+'%</span></div>';});
-        donutTile='<div class="card"><p class="card-title" style="margin:0 0 6px">支出の内訳</p><div style="display:flex;align-items:center;gap:14px"><svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0" role="img" aria-label="支出の内訳">'+segs+'<text x="50" y="47" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">合計</text><text x="50" y="61" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text-primary)" font-family="var(--font-family-number)">'+yen(total)+'</text></svg><div style="flex:1;min-width:0">'+legend+'</div></div></div>';
-      }
-    }
+    // 支出の内訳ドーナツは「今月の支出」タップ先(支出一覧)へ移動＝expenseDonutHtml()
     // アラート系は最上部にそのまま。残りはPCでは段組み(.dash-cols)、スマホでは従来通り縦積み。
     // ライフプランタブ用カードを退避(目標/将来/残高はホームから分離)
     this._lpCards={budgetCard,goalsCard,simCard,acctCard,debtCard,emergencyCard,wishCard};
     // ホーム上部＝bento(使えるお金ヒーロー＋収入/支出タイル＋支出ドーナツ)。下部はリッチカードを縦/段組み。
-    const alerts=storeWarn+warn+remindCard+approveCard;
+    const sysWarn=storeWarn+warn;            // 同期エラー等の警告は最上部に残す
+    const remind=remindCard+approveCard;     // もうすぐ／承認待ちは資金サマリーの直後へ
     const heroHtml=budgetCard||expCard;
-    const bento='<div class="dash-bento"><div class="b-wide">'+heroHtml+'</div>'+incTile+expTile+(donutTile?'<div class="b-wide">'+donutTile+'</div>':'')+'</div>';
+    // ユーザー要望：最上部に「今月の収入」「今月の支出」、その下に「今月の予算(使えるお金)」。支出内訳は支出タップ先へ。
+    const bento='<div class="dash-bento">'+incTile+expTile+'<div class="b-wide">'+heroHtml+'</div></div>';
     const cards=[plannedCard,recurCard,paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return alerts+bento+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
+    return sysWarn+bento+remind+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
   },
   // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
   view_lifeplan(){
@@ -1839,12 +1826,29 @@ const App = {
     }
     return h;
   },
+  // 支出の内訳ドーナツ（ホームから移設。「今月の支出」タップ先で表示）
+  expenseDonutHtml(month){
+    const expsM=this.state.expenses.filter(e=>e.month===month);
+    if(!expsM.length)return '';
+    const byCat={};
+    expsM.forEach(e=>{const see=this.seeDetail(e);const key=see?((e.type==="fixed"?"f":"v")+e.catId):"__priv";const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);if(!byCat[key])byCat[key]=see?{label:c.label,sum:0}:{label:"個人支出",sum:0};byCat[key].sum+=(+e.amount||0);});
+    const arr=Object.values(byCat).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
+    const total=arr.reduce((s,x)=>s+x.sum,0);
+    if(total<=0)return '';
+    const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
+    const R=34,CIRC=2*Math.PI*R;let off=0,segs='';
+    arr.forEach((c,i)=>{const len=c.sum/total*CIRC;segs+='<circle cx="50" cy="50" r="'+R+'" fill="none" stroke="'+gpal[i%gpal.length]+'" stroke-width="15" stroke-dasharray="'+len.toFixed(2)+' '+(CIRC-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 50 50)"/>';off+=len;});
+    let legend='';
+    arr.slice(0,6).forEach((c,i)=>{const pct=Math.round(c.sum/total*100);legend+='<div class="row" style="margin-top:6px"><span class="muted" style="display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden"><span style="width:9px;height:9px;border-radius:3px;background:'+gpal[i%gpal.length]+';flex-shrink:0"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.label)+'</span></span><span class="meta num" style="white-space:nowrap">'+pct+'%</span></div>';});
+    return '<div class="card"><p class="card-title" style="margin:0 0 6px">支出の内訳</p><div style="display:flex;align-items:center;gap:14px"><svg width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0" role="img" aria-label="支出の内訳">'+segs+'<text x="50" y="47" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">合計</text><text x="50" y="61" text-anchor="middle" font-size="11" font-weight="700" fill="var(--color-text-primary)" font-family="var(--font-family-number)">'+yen(total)+'</text></svg><div style="flex:1;min-width:0">'+legend+'</div></div></div>';
+  },
   view_expense_list(){
     const list=this.state.expenses.filter(e=>e.month===this.curMonth);
     const fixed=list.filter(e=>e.type==="fixed").sort((a,b)=>b.amount-a.amount);
     const variable=list.filter(e=>e.type==="variable").sort((a,b)=>b.amount-a.amount);
     let h='<button class="back-btn" onclick="App.go(\'dashboard\')">'+ic('back',16)+'ホーム</button>';
     h+='<div class="section-title" style="margin-top:0">'+monthLabel(this.curMonth)+'の支出<span class="link" onclick="App.openExpense()">＋ 追加</span></div>';
+    h+=this.expenseDonutHtml(this.curMonth);
     const block=(arr,title,grp)=>{
       let b='<p class="set-head">'+title+'</p><div class="card">';
       if(!arr.length)b+='<div class="empty" style="padding:14px">なし</div>';
