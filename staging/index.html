@@ -1140,8 +1140,8 @@ const App = {
     el.innerHTML='<div class="onb-card" style="text-align:left">'+
       '<div class="onb-step" style="margin-bottom:8px">'+step+'</div>'+
       '<h2 style="font-size:var(--text-lg);margin-bottom:14px">'+esc(q.title)+'</h2>'+opts+
-      (i>0?'<div class="onb-skip" onclick="App.diagBack()" style="margin-top:6px">もどる</div>':'')+
-      '<div class="onb-skip" onclick="App.diagClose()" style="margin-top:2px">とじる</div>'+'</div>';
+      (i>0?'<button class="btn btn-sec btn-block" style="margin-top:10px" onclick="App.diagBack()">もどる</button>':'')+
+      '<div onclick="App.diagClose()" style="text-align:center;margin-top:14px;padding:9px;font-size:var(--text-sm);color:var(--color-text-secondary);text-decoration:underline;cursor:pointer">とじる</div>'+'</div>';
   },
   computeDiag(ans){
     let a=0,b=0,c=0;
@@ -1192,8 +1192,8 @@ const App = {
       h+='<button class="btn btn-primary btn-block" style="margin-top:6px" onclick="App.diagPartner()">'+(hasP?"パートナーの結果を見る":"パートナーにも診断してもらう")+'</button>';
       h+='<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin-top:8px" onclick="App.diagCompat()">'+ic("heart",15)+'ふたりの相性レポート'+(this.isPremium()?"":" "+ic("lock",13))+'</button>';
     }
-    h+='<div class="onb-skip" onclick="App.diagRetake('+(partner?"true":"false")+')" style="margin-top:10px">もう一度診断する</div>';
-    h+='<div class="onb-skip" onclick="App.diagClose()" style="margin-top:2px">とじる</div>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:12px" onclick="App.diagRetake('+(partner?"true":"false")+')">もう一度診断する</button>';
+    h+='<div onclick="App.diagClose()" style="text-align:center;margin-top:14px;padding:9px;font-size:var(--text-sm);color:var(--color-text-secondary);text-decoration:underline;cursor:pointer">とじる</div>';
     return h;
   },
   diagPartner(){if(this.state.diagnosisPartner){this.showDiagResult(true);}else{this.startDiagnosis(true);}},
@@ -1238,7 +1238,9 @@ const App = {
     if(!d){
       return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-primary-50);border-color:var(--color-primary-200);margin-bottom:14px" onclick="App.startDiagnosis()"><div class="ic" style="background:var(--color-primary-100);color:var(--color-primary-600);width:44px;height:44px">'+ic("sparkle",22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:var(--color-primary-600)">お金タイプ診断</div><div class="meta">11問であなたのお金タイプが分かる</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
     }
-    return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;border-color:'+d.color+'55;margin-bottom:14px" onclick="App.showDiagResult(false)"><div class="ic" style="width:44px;height:44px;background:'+d.color+'1a;color:'+d.color+'">'+ic("sparkle",22)+'</div><div style="flex:1;min-width:0"><div class="meta">あなたのお金タイプ</div><div style="font-weight:700;font-size:var(--text-md);color:'+d.color+'">'+esc(d.name)+'</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+    const dimg=d.img||(DIAG_TYPES[d.sign]&&DIAG_TYPES[d.sign].img)||'';
+    const dic=dimg?('<div style="width:52px;height:52px;border-radius:13px;overflow:hidden;flex-shrink:0;background:'+d.color+'1a"><img src="'+esc(dimg)+'" alt="'+esc(d.name)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML=\'\'"></div>'):('<div class="ic" style="width:52px;height:52px;background:'+d.color+'1a;color:'+d.color+'">'+ic("sparkle",24)+'</div>');
+    return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;border-color:'+d.color+'55;margin-bottom:14px" onclick="App.showDiagResult(false)">'+dic+'<div style="flex:1;min-width:0"><div class="meta">あなたのお金タイプ</div><div style="font-weight:700;font-size:var(--text-md);color:'+d.color+'">'+esc(d.name)+'</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
   },
 
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ ゴール";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
@@ -1705,7 +1707,7 @@ const App = {
       const tabBtn=(key,label)=>'<button onclick="App.setBudgetTab(\''+key+'\')" style="flex:1;border:none;border-radius:7px;padding:7px 4px;font-weight:800;font-size:var(--text-sm);cursor:pointer;background:'+((tab===key)?'#fff':'transparent')+';color:'+((tab===key)?'var(--color-secondary-600)':'var(--color-text-secondary)')+';box-shadow:'+((tab===key)?'0 1px 3px rgba(0,0,0,.08)':'none')+'">'+label+'</button>';
       budgetCard='<div class="card" style="border-color:var(--color-secondary-300)">'+
         '<div class="row"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('wallet',16)+'今月の収支</p><span class="link" onclick="App.go(\'lifeplan\')">ライフプラン ›</span></div>'+
-        '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">'+_bm+'月　'+Dn+'日中 '+dn+'日経過</span><span class="meta num">'+dayPct+'%</span></div>'+
+        '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">'+_bm+'月の経過</span><span class="meta num" style="font-size:var(--text-base)">'+dn+'<span style="color:var(--color-text-tertiary,#9a978f);font-weight:400"> / </span>'+Dn+'日</span></div>'+
         '<div class="prog" style="margin-top:5px;height:6px"><span class="fill-sec" style="width:'+dayPct+'%"></span></div>'+
         '<div style="display:flex;gap:6px;margin:11px 0 2px;background:var(--color-secondary-50);padding:4px;border-radius:10px">'+tabBtn('done','確定（今）')+tabBtn('coming','これから（月末見込み）')+'</div>'+
         '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.toggleDash(\'incd\')"><span class="meta">収入</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num" style="color:var(--color-primary-500)">'+yen(incVal)+'</span>'+chev('incd')+'</span></div>'+
@@ -1739,8 +1741,8 @@ const App = {
     const heroHtml=budgetCard||expCard;
     // ユーザー要望：最上部に「今月の収入」「今月の支出」、その下に「今月の予算(使えるお金)」。支出内訳は支出タップ先へ。
     const bento='<div class="dash-bento">'+incTile+expTile+'<div class="b-wide">'+heroHtml+'</div></div>';
-    // 「定期」「これからの予定」「予算ペース」は今月の収支カードに統合済みのため一覧からは外す
-    const cards=[tasksCard]
+    // 「定期」「これからの予定」「予算ペース」は今月の収支カードに統合済み／直近のタスクはホーム非表示（要望）
+    const cards=[]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return sysWarn+bento+remind+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
   },
