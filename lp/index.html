@@ -255,7 +255,13 @@
   .fnote{font-size:13px;color:#6a6258;line-height:1.75;margin-top:6px}.fnote b{color:var(--coral-d)}
   .fit .punch{margin-top:12px;font-size:13px;font-weight:800;color:var(--coral-d)}
   @media(max-width:860px){.steps,.fit{grid-template-columns:1fr}}
-  @media(max-width:680px){.panel{grid-template-columns:1fr;gap:20px}.panel .txt{order:2;text-align:center}.panel .ph{order:1}}
+  @media(max-width:680px){
+    .panel{grid-template-columns:1fr;gap:20px}.panel .txt{order:2;text-align:center}.panel .ph{order:1}
+    /* タブを上部に固定＝巨大スマホ画像をスクロールせずいつでも切替できる（横スクロール1行） */
+    .tabs{position:sticky;top:64px;z-index:20;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;margin:0 -28px 16px;padding:10px 28px;background:rgba(251,247,238,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tg{flex:0 0 auto}
+  }
   @media(max-width:560px){.hero-phones .pL,.hero-phones .pR{display:none}}
 
   @media(max-width:860px){
@@ -670,8 +676,22 @@
   lpRenderIcons();
 
   function pick(group,i){
-    document.querySelectorAll('[data-tab="'+group+'"]').forEach(function(t,n){t.classList.toggle('on',n===i);});
-    document.querySelectorAll('[data-panel="'+group+'"]').forEach(function(p,n){p.style.display=(n===i)?'grid':'none';});
+    var tabs=document.querySelectorAll('[data-tab="'+group+'"]');
+    tabs.forEach(function(t,n){t.classList.toggle('on',n===i);});
+    var panels=document.querySelectorAll('[data-panel="'+group+'"]');
+    panels.forEach(function(p,n){p.style.display=(n===i)?'grid':'none';});
+    if(window.innerWidth<=680){
+      var active=tabs[i], strip=active&&active.parentElement;
+      // 押したタブを横スクロールバーの中央へ
+      if(strip&&active&&strip.scrollTo){strip.scrollTo({left:active.offsetLeft-strip.clientWidth/2+active.clientWidth/2,behavior:'smooth'});}
+      // 切替えた画面の先頭を、固定ヘッダー＋固定タブの真下に出す（上下往復をなくす）
+      var panel=panels[i];
+      if(panel){
+        var stripH=strip?strip.offsetHeight:0;
+        var y=window.pageYOffset+panel.getBoundingClientRect().top-64-stripH-10;
+        window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+      }
+    }
   }
   (function(){
     var target=new Date('2026-07-15T00:00:00+09:00').getTime();
