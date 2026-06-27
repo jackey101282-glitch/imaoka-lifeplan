@@ -1112,7 +1112,8 @@ const App = {
       '<div class="onb-skip" onclick="App.fnlToSetup()">あとで（まず使ってみる）</div></div>';
   },
   /* ============== お金タイプ診断 ============== */
-  isPremium(){try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;}},
+  isNative(){try{return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==="function"&&window.Capacitor.isNativePlatform());}catch(e){return false;}},
+  isPremium(){ if(!this.isNative())return true; /* web版は当面 有料機能を無料開放（実課金はApp Store版のみ） */ try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;} },
   setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.render();},
   diagEl(){let el=document.getElementById("diag");if(!el){el=document.createElement("div");el.id="diag";document.body.appendChild(el);}return el;},
   diagList(){return DIAG_ATTRS.concat(DIAG_QS);},
@@ -2464,7 +2465,7 @@ const App = {
       '<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>'+
       '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>'+
       '<div class="set-cell" onclick="App.startDiagnosis()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'お金タイプ診断をする</span><span class="desc">11問</span></div>'+
-      '<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>'+
+      (this.isNative()?'<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>':'')+
       '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
