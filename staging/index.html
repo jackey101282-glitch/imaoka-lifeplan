@@ -1661,10 +1661,36 @@ const App = {
       const pct=bg.livingBudget>0?Math.min(100,Math.round(bg.livingSpent/bg.livingBudget*100)):(bg.livingSpent>0?100:0);
       const leftColor=over?'var(--color-danger)':'var(--color-accent-600)';
       const saveSub=bg.hasPlan?('ゴール '+yen(bg.goalsMonthly)+' ＋ 特別費 '+yen(bg.specialMonthly)):'未設定';
+      // 内訳1行ヘルパ
+      const bRow=(label,amt,onclick,sign)=>'<div class="row" style="margin-top:7px'+(onclick?';cursor:pointer':'')+'"'+(onclick?(' onclick="'+onclick+'"'):'')+'><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span class="num" style="white-space:nowrap;font-size:var(--text-sm)">'+(sign||'')+yen(amt)+'</span></div>';
+      const evHandler=(id)=>{const ev=this.state.events.find(x=>x.id===id);return ev&&ev.fixed?('App.openRecurring(\''+id+'\')'):('App.openEvent(\''+id+'\')');};
+      // ── 収入の見込み 内訳（定期収入＋これから入る予定）──
+      const incRecs=this.state.incomes.filter(i=>i.month===this.curMonth);
+      const inC=this.eventIncomeList(this.curMonth,'confirmed'), inP=this.eventIncomeList(this.curMonth,'planned');
+      let incBody='';
+      incRecs.forEach(i=>{const who=i.owner==='husband'?s.husband:(i.owner==='wife'?s.wife:'収入');incBody+=bRow(i.label||who,(+i.amount||0),'App.openIncome(\''+i.id+'\')','+ ');});
+      inC.forEach(e=>{incBody+=bRow(e.title+(e.n>1?(' ×'+e.n):''),e.sum,evHandler(e.id),'+ ');});
+      inP.forEach(e=>{incBody+=bRow('（予定）'+e.title+(e.n>1?(' ×'+e.n):''),e.sum,evHandler(e.id),'+ ');});
+      if(!incBody)incBody='<div class="meta lo" style="margin-top:7px">収入はまだ登録していません</div>';
+      const incHtml=incBody+'<div style="text-align:right;margin-top:9px"><span class="link" onclick="App.openRecurringPicker()">＋ 定期の収入を追加</span></div>';
+      // ── 固定費・予定の支出 内訳（定期の固定費＋今月の固定費＋これから払う予定）──
+      const fixedExps=this.state.expenses.filter(e=>e.month===this.curMonth&&e.type==='fixed');
+      const evC=this.eventExpenseList(this.curMonth,'confirmed'), evP=this.eventExpenseList(this.curMonth,'planned');
+      let commBody='';
+      fixedExps.forEach(e=>{const c=findCat('fixed',e.catId);const see=this.seeDetail(e);commBody+=bRow(see?(c.label+(e.label?'・'+e.label:'')):'個人支出',(+e.amount||0),'App.openExpense(\''+e.id+'\')','− ');});
+      evC.forEach(e=>{commBody+=bRow(e.title+(e.n>1?(' ×'+e.n):''),e.sum,evHandler(e.id),'− ');});
+      evP.forEach(e=>{commBody+=bRow('（予定）'+e.title+(e.n>1?(' ×'+e.n):''),e.sum,evHandler(e.id),'− ');});
+      this.state.events.filter(e=>e.fixed&&e.type!=='income'&&e.variable&&!(e.byMonth&&e.byMonth[this.curMonth]!=null)).forEach(e=>{commBody+='<div class="row" style="margin-top:7px"><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.title)+'</span><button class="btn btn-primary btn-sm" style="min-height:30px;padding:3px 10px;white-space:nowrap" onclick="App.enterRecurAmount(\''+e.id+'\')">金額を入力</button></div>';});
+      if(!commBody)commBody='<div class="meta lo" style="margin-top:7px">固定費・予定の支出はまだありません</div>';
+      const commHtml=commBody+'<div style="text-align:right;margin-top:9px"><span class="link" onclick="App.openRecurringPicker(true)">＋ 定期・固定費を追加</span></div>';
+      // 現状⇄月末見込み残金トグル（旧「これからの予定」カードを統合）
+      const eom=this.dashOpen.eom, eomVal=eom?m.afterPlanned:m.balance;
       budgetCard='<div class="card" style="border-color:var(--color-secondary-300)">'+
         '<div class="row"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('wallet',16)+'今月の予算</p><span class="link" onclick="App.go(\'lifeplan\')">ライフプラン ›</span></div>'+
-        '<div class="row" style="margin-top:10px"><span class="meta">収入の見込み</span><span class="amt num" style="color:var(--color-primary-500)">'+yen(bg.income)+'</span></div>'+
-        '<div class="row" style="margin-top:6px"><span class="meta">固定費・予定の支出</span><span class="amt num">− '+yen(bg.committed)+'</span></div>'+
+        '<div class="row" style="margin-top:10px;cursor:pointer" onclick="App.toggleDash(\'incd\')"><span class="meta">収入の見込み</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num" style="color:var(--color-primary-500)">'+yen(bg.income)+'</span>'+chev('incd')+'</span></div>'+
+        (this.dashOpen.incd?('<div style="padding:0 2px 6px">'+incHtml+'</div>'):'')+
+        '<div class="row" style="margin-top:6px;cursor:pointer" onclick="App.toggleDash(\'commd\')"><span class="meta">固定費・予定の支出</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num">− '+yen(bg.committed)+'</span>'+chev('commd')+'</span></div>'+
+        (this.dashOpen.commd?('<div style="padding:0 2px 6px">'+commHtml+'</div>'):'')+
         '<div class="row" style="margin-top:6px;cursor:pointer" onclick="App.go(\'lifeplan\')"><span class="meta">毎月の積立（ゴール＋特別費）<br><span style="font-size:11px;color:var(--color-text-tertiary,#9a978f)">'+saveSub+'</span></span><span class="amt num">− '+yen(bg.saveTarget)+'</span></div>'+
         '<div style="border-top:1px dashed var(--color-secondary-200);margin:11px 0 0"></div>'+
         '<div class="row" style="margin-top:11px"><span style="font-weight:700;color:var(--color-secondary-600)">今月 使えるお金</span><span class="mid-num" style="color:'+(neg?'var(--color-danger)':'var(--color-secondary-600)')+'">'+yen(bg.livingBudget)+'</span></div>'+
@@ -1674,6 +1700,9 @@ const App = {
             '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">使った（変動費）'+yen(bg.livingSpent)+'</span><span style="font-weight:700;color:'+leftColor+'">残り '+yen(bg.livingLeft)+'</span></div>'+
             (over?'<div style="margin-top:8px;font-size:var(--text-sm);line-height:1.6;color:var(--color-danger)">'+ic('alert',14)+' 今月の予算を '+yen(-bg.livingLeft)+' オーバー。ここから先は貯金や積立を取り崩すことになります。</div>'
                  :(bg.hasPlan?'':'<div class="meta" style="margin-top:9px;line-height:1.5"><span class="link" onclick="App.go(\'lifeplan\')">ライフプランでゴールや特別費を設定</span>すると、毎月いくら積み立てて残りで暮らせるかが分かります。</div>')))+
+        '<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>'+
+        '<div class="row" style="margin-top:10px;cursor:pointer" onclick="App.toggleDash(\'eom\')"><span style="font-weight:700;color:var(--color-secondary-600);display:flex;align-items:center;gap:6px">'+(eom?'月末の見込み残金':'現状の収支（今）')+chev('eom')+'</span><span class="mid-num" style="color:'+(eomVal<0?'var(--color-danger)':'var(--color-secondary-600)')+'">'+yen(eomVal)+'</span></div>'+
+        '<div class="meta lo" style="margin-top:6px;line-height:1.5">'+(eom?('これから入る + '+yen(m.plannedIncome)+' ／ 払う − '+yen(m.planned)+' を反映した月末の見込み残金'):'タップで「これからの予定」を反映した月末の残金に切替')+'</div>'+
         '</div>';
     }
     // 収入/支出の小タイル(bento用・タップで一覧へ)
@@ -1690,7 +1719,8 @@ const App = {
     const heroHtml=budgetCard||expCard;
     // ユーザー要望：最上部に「今月の収入」「今月の支出」、その下に「今月の予算(使えるお金)」。支出内訳は支出タップ先へ。
     const bento='<div class="dash-bento">'+incTile+expTile+'<div class="b-wide">'+heroHtml+'</div></div>';
-    const cards=[plannedCard,recurCard,paceCard,tasksCard]
+    // 「定期」「これからの予定」は今月の予算カードに統合済みのため一覧からは外す
+    const cards=[paceCard,tasksCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return sysWarn+bento+remind+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
   },
