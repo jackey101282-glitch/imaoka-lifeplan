@@ -1243,7 +1243,7 @@ const App = {
     return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;border-color:'+d.color+'55;margin-bottom:14px" onclick="App.showDiagResult(false)">'+dic+'<div style="flex:1;min-width:0"><div class="meta">あなたのお金タイプ</div><div style="font-weight:700;font-size:var(--text-md);color:'+d.color+'">'+esc(d.name)+'</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
   },
 
-  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ 節目";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
+  updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";if(this.tab==="dashboard"){fab.classList.add("wide");fab.innerHTML="＋ 支出";}else if(this.tab==="lifeplan"){fab.classList.add("wide");fab.innerHTML="＋ 追加";}else{fab.classList.remove("wide");fab.innerHTML="＋";}},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
   toggleDash(k){this.dashOpen[k]=!this.dashOpen[k];this.render();},
   setBudgetTab(t){this.budgetTab=t;this.render();},
@@ -1524,7 +1524,7 @@ const App = {
       '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-sm);color:var(--color-secondary-600)">今は「'+esc(phC.label)+'」 ・ '+(phC.kind==="save"?"貯めフェーズ":"使いフェーズ")+'</div>'+
       '<div class="meta" style="margin-top:3px;line-height:1.5">'+esc(phC.guidance)+'</div></div>'+
       '<span class="link" style="white-space:nowrap" onclick="App.openPhase()">変更</span></div>';
-    let body=phaseBanner;
+    let body='';
     if(allg.length===0){
       body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>ふたりの節目を決めて、これからに備えましょう</div>'+
         '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 最初の節目を決める</button></div>';
@@ -1557,7 +1557,7 @@ const App = {
           (this.goalOpen[g.id]?'<div style="padding:2px 4px 8px">'+this.goalItemsView(g)+'</div>':'')+'</div>';
       });
     }
-    const goalsCard='<div class="section-title">ふたりの節目<span class="link" onclick="App.openGoal()">＋ 節目を追加</span></div><div class="card">'+body+'</div>';
+    const goalsCard=phaseBanner+'<div class="card">'+body+(allg.length>0?'<div style="text-align:right;margin-top:6px"><span class="link" onclick="App.openGoal()">＋ 追加</span></div>':'')+'</div>';
 
     // tasks short
     const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
@@ -1658,7 +1658,7 @@ const App = {
     const ef=this.state.emergency||{cost:"",months:6,current:0};
     const efCost=+ef.cost||0,efMonths=+ef.months||6,efTarget=efCost*efMonths,efCur=+ef.current||0;
     const efPct=efTarget>0?Math.min(100,Math.round(efCur/efTarget*100)):0,efDone=efTarget>0&&efCur>=efTarget;
-    let emergencyCard='<div class="section-title">生活防衛費<span class="link" onclick="App.openEmergency()">'+(efCost>0?'編集':'＋ 設定')+'</span></div><div class="card">';
+    let emergencyCard='<div class="card"><div class="row" style="margin-bottom:10px"><p class="card-title" style="margin:0">生活防衛費</p><span class="link" onclick="App.openEmergency()">'+(efCost>0?'編集':'＋ 設定')+'</span></div>';
     if(!efCost){
       emergencyCard+='<div class="empty"><span class="e-ic">'+ic('shield',30)+'</span>急な収入減や万一に備える「生活防衛費」。生活費の3〜6ヶ月分を目安に、別枠で確保しておくと安心です</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openEmergency()">生活防衛費を設定</button></div>';
     }else{
@@ -1768,11 +1768,13 @@ const App = {
       '<div class="mid-num" style="font-size:34px;color:var(--color-secondary-600);margin:10px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
       (bg.hasPlan?
         ('<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>'+
-         '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('heart',14)+'節目のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
-         '<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('coins',14)+'1年の特別費のため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
-        :'<p class="meta" style="margin-top:10px;line-height:1.6;text-align:center">下の「ふたりの節目」や「1年の特別費」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
+         '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('heart',14)+'目標のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
+         '<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('coins',14)+'そなえのため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
+        :'<p class="meta" style="margin-top:10px;line-height:1.6;text-align:center">下の目標や「そなえ」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
       '</div>';
-    const cards=[saveHero,c.goalsCard,this.specialCardHtml(),c.emergencyCard,c.simCard,c.acctCard,c.debtCard,c.wishCard]
+    // 「そなえ」＝1年の特別費＋生活防衛費 を1セクションに統合。返済・ローンはライフプランから外す（固定費に一本化）。
+    const sonae='<div class="section-title">そなえ</div>'+this.specialCardHtml()+'<div style="height:10px"></div>'+c.emergencyCard;
+    const cards=[saveHero,c.goalsCard,sonae,c.simCard,c.acctCard,c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
@@ -1780,11 +1782,11 @@ const App = {
   specialCardHtml(){
     const sp=this.state.special||[];
     if(!sp.length){
-      return '<div class="section-title">1年の特別費</div><div class="card"><div class="empty"><span class="e-ic">'+ic('coins',30)+'</span>毎年くる特別費（旅行・帰省・冠婚葬祭・車検・家電…）を見える化して、毎月いくら貯めればいいか出します</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openSpecialSetup()">条件から特別費をつくる</button></div></div>';
+      return '<div class="card"><p class="card-title" style="margin:0 0 10px">1年の特別費</p><div class="empty"><span class="e-ic">'+ic('coins',30)+'</span>毎年くる特別費（旅行・帰省・冠婚葬祭・車検・家電…）を見える化して、毎月いくら貯めればいいか出します</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openSpecialSetup()">条件から特別費をつくる</button></div></div>';
     }
     const annual=sp.reduce((a,it)=>a+specialAnnual(it),0), monthly=Math.round(annual/12);
     const open=this.dashOpen.lpSpecial;
-    let h='<div class="section-title">1年の特別費<span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span></div><div class="card">';
+    let h='<div class="card"><div class="row" style="margin-bottom:10px"><p class="card-title" style="margin:0">1年の特別費</p><span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span></div>';
     h+='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px"><div class="meta" style="color:var(--color-secondary-600)">この調子なら、特別費は</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">毎月 '+yen(monthly)+'</div><div class="meta">貯めておけば慌てません（年間 '+yen(annual)+' ／ '+sp.length+'項目）</div></div>';
     // 内訳は折りたたみ（全項目をぶわっと出さない・タップで開く）
     h+='<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'lpSpecial\')"><span class="meta">内訳（'+sp.length+'項目）</span><span class="chev'+(open?' open':'')+'">▾</span></div>';
