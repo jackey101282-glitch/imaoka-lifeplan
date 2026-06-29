@@ -638,6 +638,19 @@ function goalPace(g){
   const perMonth=months>0?Math.ceil(need/months/1000)*1000:need;
   return {need,days,months,perMonth};
 }
+/* 目標ごとの答え合わせ：開始月(startYm)〜期日を線形に見て「今あるべき積立額」と実際(current)を比較。fallbackYm=開始未設定時の起点 */
+function goalShould(g,fallbackYm){
+  if(!g||!g.targetDate)return null;
+  const total=goalAmt(g); if(total<=0)return null;
+  const startYm=g.startYm||fallbackYm||thisMonth();
+  const mm=(a,b)=>{const x=String(a).split('-').map(Number),y=String(b).split('-').map(Number);return (y[0]-x[0])*12+(y[1]-x[1]);};
+  const span=mm(startYm,g.targetDate); if(span<=0)return null;
+  const elapsed=Math.max(0,mm(startYm,thisMonth()));
+  const frac=Math.max(0,Math.min(1,elapsed/span));
+  const should=Math.round(total*frac), actual=+g.current||0, gap=actual-should, ok=gap>=0;
+  const pct=should>0?Math.max(0,Math.min(100,Math.round(actual/should*100))):100;
+  return {should,actual,gap,ok,pct,frac,startYm};
+}
 /* ライフフェーズ（貯めどき・使いどき）— FP定説ベース。kind=save:貯めフェーズ / spend:使いフェーズ */
 const PHASES=[
   {key:"newlywed",label:"新婚期",kind:"save",guidance:"二人の収入が高く、人生でいちばん貯めやすい時期。次のゴールに向けて種をまこう。",next:["goal_honeymoon","goal_emergency","goal_birth","goal_housing"]},
@@ -1779,7 +1792,7 @@ const App = {
     // 内訳一覧＝目標／1年の特別費／生活防衛費／返済 を1つに（タップで見積書プレビュー）
     const liRow=(label,right,onclick,tag)=>'<div class="row" style="margin-top:9px;cursor:pointer" onclick="'+onclick+'"><span class="meta" style="color:var(--color-text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+(tag?'<span class="meta" style="margin-left:6px">'+tag+'</span>':'')+'</span><span style="display:flex;align-items:center;gap:6px"><span class="num" style="font-size:var(--text-sm)">'+right+'</span><span style="color:var(--color-text-disabled)">›</span></span></div>';
     let list='';
-    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);const r=(pc&&pc.perMonth>0)?(yen(pc.perMonth)+'/月'):'期日未設定';list+=liRow(g.label,r,'App.openPreview(\'goal\',\''+g.id+'\')');});
+    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);const r=(pc&&pc.perMonth>0)?(yen(pc.perMonth)+'/月'):'期日未設定';const gs=goalShould(g,snaps[0]&&snaps[0].ym);const tag=(gs&&!gs.ok)?'<span style="color:var(--color-danger);font-weight:700">遅れ '+yen(-gs.gap)+'</span>':'';list+=liRow(g.label,r,'App.openPreview(\'goal\',\''+g.id+'\')',tag);});
     if((this.state.special||[]).length){const annual=(this.state.special).reduce((a,it)=>a+specialAnnual(it),0);list+=liRow('1年の特別費',yen(Math.round(annual/12))+'/月','App.openPreview(\'special\')');}
     if(this.state.emergency&&(+this.state.emergency.cost>0)){const mo=+this.state.emergency.monthly||0;list+=liRow('生活防衛費',mo>0?(yen(mo)+'/月'):'設定する','App.openPreview(\'emergency\')');}
     if(!list)list='<div class="meta lo" style="margin-top:9px;line-height:1.6">「＋ 追加」から目標・1年の特別費・生活防衛費を登録しましょう。</div>';
@@ -2278,6 +2291,14 @@ const App = {
       body=hero('目標',total,'var(--color-secondary-600)')+(g.targetDate?meta('期日',monthLabel(g.targetDate)):'');
       if(g.items&&g.items.length){body+=sec('内訳');g.items.forEach(it=>{body+=row(it.label||'項目',+it.amount||0);});body+=row('合計',total,true);}
       body+=sec('進捗')+row('積立済',cur)+row('残り',left)+prog(pct,'fill-sec')+kv('毎月の積立',(pc&&pc.perMonth>0)?yen(pc.perMonth):'—',pc?(pc.days<0?'期日を過ぎています':('あと'+(pc.months>0?pc.months+'ヶ月':pc.days+'日')+'で間に合う')):'期日を決めると毎月額が出ます');
+      const _snaps=(this.state.savingsSnapshots||[]).slice().sort((a,b)=>a.ym<b.ym?-1:1);
+      const gs=goalShould(g,_snaps[0]&&_snaps[0].ym);
+      if(gs){const bc=gs.ok?'var(--color-secondary-500)':'var(--color-danger)';const tc=gs.ok?'var(--color-secondary-600)':'var(--color-danger)';
+        body+=sec('進捗の答え合わせ（今あるべき額）')+
+          '<div style="height:14px;border-radius:7px;background:var(--color-secondary-100);overflow:hidden;margin:2px 0 7px"><div style="height:100%;width:'+gs.pct+'%;background:'+bc+';border-radius:7px"></div></div>'+
+          '<div class="row"><span class="meta" style="color:'+tc+';font-weight:800">'+(gs.ok?ic('check',12):ic('alert',12))+' '+(gs.ok?('順調'+(gs.gap>0?'（+'+yen(gs.gap)+'）':'')):('あと '+yen(-gs.gap)+' 足りていません'))+'</span><span class="meta num">あるべき '+yen(gs.should)+' / 実際 '+yen(gs.actual)+'</span></div>'+
+          (gs.ok?'':'<div class="meta lo" style="margin-top:5px;line-height:1.55">このペースだと「'+esc(g.label)+'」の期日に間に合わないかも。毎月の積立を増やすか、期日の見直しを。</div>');
+      }
     }else if(kind==='special'){
       const sp=this.state.special||[]; title='1年の特別費'; editFn='App.openSpecialSetup()';
       const annual=sp.reduce((a,it)=>a+specialAnnual(it),0),monthly=Math.round(annual/12);
@@ -2867,7 +2888,7 @@ const App = {
         const items=(this._formItems||[]).filter(x=>(x.label&&String(x.label).trim())||(+x.amount)).map(x=>({label:(String(x.label||"").trim())||"項目",amount:Math.round(+x.amount||0)}));
         const target=items.length?items.reduce((a,b)=>a+(+b.amount||0),0):numv("f-target");
         const data={typeId:val("f-type"),label:val("f-label"),target:target,current:numv("f-current"),targetDate:val("f-date"),items:items,params:this._formParams||null,refund:(items.length?this._formRefund:null)||null};
-        if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),...data});
+        if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),startYm:thisMonth(),...data});
         return true;
       },it?()=>this.del("goals",id):null);
     this.showSheet(h);
