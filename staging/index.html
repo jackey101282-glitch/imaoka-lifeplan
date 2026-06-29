@@ -261,11 +261,16 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cal-dow{text-align:center;font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-b);padding:4px 0}
 .cal-cell{aspect-ratio:1;border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:5px;font-size:var(--text-base);cursor:pointer;position:relative;background:var(--color-bg-surface);border:1px solid transparent;font-family:var(--font-family-number)}
 .cal-cell.muted{color:var(--color-text-disabled);background:transparent}
-.cal-cell.today{border-color:var(--color-primary-500);font-weight:var(--fw-b)}
+.cal-cell.today{font-weight:var(--fw-b)}
+.cal-cell.today .cnum{background:var(--color-primary-500);color:#fff;min-width:25px;height:25px;padding:0 3px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 4px rgba(196,82,31,.35)}
 .cal-cell.sun{color:var(--color-danger)}.cal-cell.sat{color:var(--color-secondary-500)}
-.cal-dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center}
+.cal-dots{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;justify-content:center}
 .cdot{width:5px;height:5px;border-radius:50%}
 .cnum{position:relative;z-index:1}
+.cal-head{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;position:relative}
+.cal-nav-btn{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--color-primary-50);color:var(--color-primary-600);cursor:pointer;flex-shrink:0;transition:background .15s}
+.cal-nav-btn:active{background:var(--color-primary-100)}
+.cal-today-jump{position:absolute;right:0;font-size:var(--text-xs);font-weight:var(--fw-b);color:var(--color-primary-600);cursor:pointer;padding:5px 10px;border-radius:var(--radius-full);background:var(--color-primary-50)}
 .cal-cell .cal-dots{position:relative;z-index:1}
 .cstamp{position:absolute;left:0;right:0;bottom:2px;top:auto;height:62%;display:flex;align-items:center;justify-content:center;z-index:0;opacity:.6;pointer-events:none;transform:rotate(-7deg)}
 .cstamp svg{width:64%;max-width:30px;height:auto;stroke-width:1.7}
@@ -281,8 +286,9 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .btile{display:flex;flex-direction:column;justify-content:center;cursor:pointer}
 .btile .mid-num{font-size:var(--text-xl)}
 .cd-pay{background:var(--color-danger)}.cd-task{background:var(--color-primary-500)}.cd-event{background:var(--color-secondary-400)}.cd-wish{background:#9C6ADE}.cd-income{background:var(--color-accent-500)}
-.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:var(--text-sm);color:var(--color-text-secondary)}
+.legend{display:flex;gap:10px 16px;flex-wrap:wrap;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--color-border);font-size:var(--text-xs);color:var(--color-text-secondary)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .cdot{width:7px;height:7px}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--color-text-primary);color:var(--color-bg-surface);padding:11px 18px;border-radius:var(--radius-full);font-size:var(--text-base);font-weight:var(--fw-m);z-index:60;opacity:0;transition:.25s;box-shadow:var(--shadow-lg);max-width:calc(100% - 32px);box-sizing:border-box;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 a.tlink{color:var(--color-secondary-500)}
@@ -2381,9 +2387,11 @@ const App = {
     const days=new Date(y,mo,0).getDate();
     const prevDays=new Date(y,mo-1,0).getDate();
     const items=this.calItems();
-    let h='<div class="card"><div class="row" style="margin-bottom:6px"><span onclick="App.shiftCal(-1)" style="cursor:pointer;font-size:22px;padding:0 10px;color:var(--color-primary-600)">‹</span>'+
-      '<strong class="num" onclick="App.openCalPicker()" style="font-size:var(--text-lg);cursor:pointer;padding:5px 14px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-700)">'+monthLabel(this.calMonth)+' ▾</strong>'+
-      '<span onclick="App.shiftCal(1)" style="cursor:pointer;font-size:22px;padding:0 10px;color:var(--color-primary-600)">›</span></div>';
+    const isCurMonth=this.calMonth===thisMonth();
+    let h='<div class="card"><div class="cal-head"><span class="cal-nav-btn" onclick="App.shiftCal(-1)" aria-label="前の月">'+ic('back',18)+'</span>'+
+      '<strong class="num" onclick="App.openCalPicker()" style="font-size:var(--text-lg);cursor:pointer;padding:6px 16px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-700)">'+monthLabel(this.calMonth)+' ▾</strong>'+
+      '<span class="cal-nav-btn" onclick="App.shiftCal(1)" aria-label="次の月" style="transform:scaleX(-1)">'+ic('back',18)+'</span>'+
+      (isCurMonth?'':'<span class="cal-today-jump" onclick="App.pickThisMonth()">今日</span>')+'</div>';
     h+='<div class="cal-grid">'+["日","月","火","水","木","金","土"].map((d,i)=>'<div class="cal-dow '+(i===0?'sun':i===6?'sat':'')+'">'+d+'</div>').join("");
     let cells=[];
     for(let i=startDow-1;i>=0;i--)cells.push({d:prevDays-i,muted:true});
@@ -2410,8 +2418,13 @@ const App = {
     Object.keys(items).forEach(d=>{if(d.slice(0,7)===this.calMonth)items[d].forEach(it=>flat.push({...it,date:d}))});
     flat.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:((a.start||"")<(b.start||"")?-1:1)));
     if(!flat.length)side+='<div class="empty"><span class="e-ic">'+ic('calendar',30)+'</span>この月の予定はありません</div>';
+    const TCOL={income:'var(--color-accent-600)',pay:'var(--color-danger)',task:'var(--color-primary-600)',event:'var(--color-secondary-600)',wish:'#9C6ADE'};
     flat.slice(0,50).forEach(it=>{
-      side+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div><div class="meta num">'+it.date.replace(/-/g,"/")+'</div></div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>';
+      const col=TCOL[it.t]||'var(--color-text-secondary)';
+      const dd=(+it.date.slice(8))+'日（'+["日","月","火","水","木","金","土"][new Date(it.date).getDay()]+'）';
+      const recIc=it.recur?(' <span style="color:var(--color-text-disabled);vertical-align:-1px">'+ic('repeat',12)+'</span>'):'';
+      const amtHtml=it.amount?('<span class="amt" style="color:'+(it.t==='income'?'var(--color-accent-600)':(it.t==='pay'?'var(--color-danger)':'var(--color-text-primary)'))+'">'+(it.t==='income'?'+':'')+yen(it.amount)+'</span>'):'';
+      side+='<div class="li" '+(it.onclick?('onclick="'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic" style="color:'+col+'">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+recIc+'</div><div class="meta num">'+dd+'</div></div>'+amtHtml+'</div>';
     });
     side+='</div>';
     // この月のカテゴリ別支出
@@ -2439,7 +2452,7 @@ const App = {
     const map={};
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
-    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const rec=(e.recurrence&&e.recurrence!=="none")?" 🔁":"";const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+rec+vTag,amount:cAmt,memo:e.memo||"",start:e.start||"",onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
     this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
     this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
