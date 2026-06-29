@@ -883,7 +883,7 @@ const App = {
     if(s.settings.approveThreshold==null)s.settings.approveThreshold=0;
     if(s.settings.spaceName==null)s.settings.spaceName="";
     if(!s.settings.phase)s.settings.phase="newlywed";
-    ["incomes","expenses","accounts","debts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
+    ["incomes","expenses","accounts","debts","goals","wishes","tasks","events","links","notes","folders","items","projects","subprojects","savingsSnapshots"].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[]});
     s.sim=s.sim||{current:0,monthly:"",bonus:0,years:10,events:[]}; if(!Array.isArray(s.sim.events))s.sim.events=[];
     s.customCats=s.customCats||{}; ["fixed","variable","task","income","wish"].forEach(g=>{if(!Array.isArray(s.customCats[g]))s.customCats[g]=[]});
     s.goals.forEach(g=>{if(!Array.isArray(g.items))g.items=[];});
@@ -1774,7 +1774,7 @@ const App = {
       '</div>';
     // 「そなえ」＝1年の特別費＋生活防衛費 を1セクションに統合。返済・ローンはライフプランから外す（固定費に一本化）。
     const sonae='<div class="section-title">そなえ</div>'+this.specialCardHtml()+'<div style="height:10px"></div>'+c.emergencyCard;
-    const cards=[saveHero,c.goalsCard,sonae,c.simCard,c.acctCard,c.wishCard]
+    const cards=[saveHero,c.goalsCard,sonae,c.simCard,this.savingsCard(),c.wishCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
@@ -2171,6 +2171,48 @@ const App = {
         return true;
       },(this.state.emergency&&this.state.emergency.cost)?()=>{this.state.emergency={cost:"",months:6,current:0};}:null);
     this.showSheet(h);
+  },
+  // 貯蓄の歩み（案A）：残高そのものより「前回からの増減」と「推移」を主役に。棚卸しで更新。
+  savingsCard(){
+    const accts=this.state.accounts||[];
+    let h='<div class="section-title">貯蓄の歩み<span class="link" onclick="App.openStocktake()">棚卸しする</span></div>';
+    if(!accts.length){
+      return h+'<div class="card"><div class="empty"><span class="e-ic">'+ic('card',30)+'</span>口座を登録して月1回「棚卸し」すると、貯蓄が増えた/減ったがひと目で分かります</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openAccount()">＋ 口座を追加</button></div></div>';
+    }
+    const snaps=(this.state.savingsSnapshots||[]).slice().sort((a,b)=>a.ym<b.ym?-1:1);
+    const total=accts.reduce((s,a)=>s+(+a.balance||0),0);
+    const last=snaps[snaps.length-1], prev=snaps[snaps.length-2];
+    const diff=(last&&prev)?(last.total-prev.total):null;
+    const lastDate=last?last.date:null;
+    const daysAgo=lastDate?Math.max(0,Math.round((Date.parse(todayStr())-Date.parse(lastDate))/86400000)):null;
+    const stale=(daysAgo==null||daysAgo>30);
+    h+='<div class="card">';
+    if(diff!==null){const up=diff>=0;h+='<div style="text-align:center"><div class="meta">前回の棚卸しから</div><div class="big-num" style="color:'+(up?'var(--color-secondary-600)':'var(--color-danger)')+';margin:2px 0">'+(up?'+ ':'− ')+yen(Math.abs(diff))+'</div><div class="meta">'+(up?'貯蓄が増えました':'貯蓄が減りました')+'</div></div>';}
+    else{h+='<div style="text-align:center"><div class="meta">いまの貯蓄合計</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">'+yen(total)+'</div><div class="meta">棚卸しを重ねると増減が見えます</div></div>';}
+    if(snaps.length>=2){const recent=snaps.slice(-6);const max=Math.max.apply(null,recent.map(s=>s.total))||1;
+      h+='<div style="display:flex;align-items:flex-end;gap:8px;height:88px;margin:16px 4px 4px">';
+      recent.forEach((s,i)=>{const hp=Math.max(8,Math.round(s.total/max*66));const isLast=i===recent.length-1;h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end"><div style="width:100%;height:'+hp+'px;border-radius:6px 6px 0 0;background:'+(isLast?'var(--color-primary-500)':'var(--color-secondary-200)')+'"></div><div class="meta" style="font-size:10px">'+(+String(s.ym).slice(5))+'月</div></div>';});
+      h+='</div>';}
+    h+='<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>';
+    h+='<div class="row" style="margin-top:10px"><span class="meta">貯蓄合計</span><span class="mid-num">'+yen(total)+'</span></div>';
+    h+='<div class="row" style="margin-top:5px"><span class="meta lo"'+(stale?' style="color:var(--color-primary-600)"':'')+'>'+(lastDate?('最終更新 '+(daysAgo===0?'今日':daysAgo+'日前')):'まだ棚卸ししていません')+'</span>'+(stale?'<span class="link" onclick="App.openStocktake()">棚卸ししよう ›</span>':'<span class="link" onclick="App.openAccount()">口座を追加</span>')+'</div>';
+    h+='</div>';
+    return h;
+  },
+  openStocktake(){
+    const accts=this.state.accounts||[];
+    if(!accts.length){this.openAccount();return;}
+    const s=this.state.settings;
+    const rows=accts.map(a=>{const ol=a.owner==='husband'?esc(s.husband):a.owner==='wife'?esc(s.wife):'共通';return this.field(esc(a.name)+'（'+ol+'）','<input id="stk-'+a.id+'" class="amt" type="text" inputmode="numeric" value="'+cf(a.balance)+'" oninput="App.commaize(this)">');}).join('');
+    this.showSheet('<h3>棚卸し（今の残高に更新）</h3><div class="meta" style="margin-bottom:12px;line-height:1.5">いまの各口座の残高を入れ直すだけ。前回からの増減を記録します。全部やらなくてもOK。</div>'+rows+
+      this.actions(()=>{
+        accts.forEach(a=>{const el=document.getElementById('stk-'+a.id);if(!el)return;a.prevBalance=+a.balance||0;a.balance=numv('stk-'+a.id);a.stocktakeAt=todayStr();});
+        const total=accts.reduce((s,a)=>s+(+a.balance||0),0), ym=thisMonth();
+        const snaps=this.state.savingsSnapshots=(this.state.savingsSnapshots||[]);
+        const ex=snaps.find(s=>s.ym===ym); if(ex){ex.total=total;ex.date=todayStr();}else{snaps.push({ym,total,date:todayStr()});}
+        this.toast('棚卸しを記録しました（'+yen(total)+'）');
+        return true;
+      }));
   },
   openAccount(id){
     const it=id?this.state.accounts.find(x=>x.id===id):null;
