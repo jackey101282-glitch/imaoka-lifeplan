@@ -284,6 +284,7 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cal-nav-btn:active{background:var(--color-primary-100)}
 .cal-today-jump{position:absolute;right:0;font-size:var(--text-xs);font-weight:var(--fw-b);color:var(--color-primary-600);cursor:pointer;padding:5px 10px;border-radius:var(--radius-full);background:var(--color-primary-50)}
 .cal-card{background:transparent;border:none;box-shadow:none;padding:0;margin-bottom:16px}
+.cat-sticky{position:sticky;top:calc(env(safe-area-inset-top) + 67px);z-index:20;background:var(--color-bg-base);margin:14px 0 0;padding:8px 2px;border-bottom:1px solid var(--color-border)}
 main.view-calendar{padding-left:10px;padding-right:10px;padding-top:8px}
 .stamp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 .stamp-pick{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 5px;border:1.5px solid var(--color-border);border-radius:14px;cursor:pointer;background:var(--color-bg-surface);transition:transform .1s,border-color .1s,box-shadow .1s}
@@ -2438,7 +2439,7 @@ const App = {
       if(evExp>0)arr.push({icon:"📅",label:"予定・支払い(済)",sum:evExp,n:evN});
       arr.sort((a,b)=>b.sum-a.sum);
       const total=arr.reduce((s,x)=>s+x.sum,0);
-      side+='<div class="section-title">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
+      side+='<div class="section-title cat-sticky">カテゴリ別支出<span class="num" style="font-weight:700;color:var(--color-primary-600)">'+yen(total)+'</span></div><div class="card">';
       const gpal=['#C4714A','#7A9E7E','#4E9C78','#C4963A','#9DB5A0','#D49274','#5E7E63','#BACBBC'];
       // ドーナツ円グラフ(何がどのくらいを占めるか)
       const R=54,CIRC=2*Math.PI*R; let _off=0,_segs='';
