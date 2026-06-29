@@ -1557,7 +1557,7 @@ const App = {
           (this.goalOpen[g.id]?'<div style="padding:2px 4px 8px">'+this.goalItemsView(g)+'</div>':'')+'</div>';
       });
     }
-    const goalsCard=phaseBanner+'<div class="card">'+body+(allg.length>0?'<div style="text-align:right;margin-top:6px"><span class="link" onclick="App.openGoal()">＋ 追加</span></div>':'')+'</div>';
+    const goalsCard=phaseBanner+'<div class="card">'+body+'</div>';
 
     // tasks short
     const open=this.state.tasks.filter(t=>t.status!=="done").sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:1).slice(0,3);
@@ -1760,20 +1760,40 @@ const App = {
     this.view_dashboard();
     const c=this._lpCards||{};
     const bg=this.budgetReport(thisMonth());
-    // ライフプラン先頭＝「毎月の積立(取っておく額)」をぼんと表示。今月の収支カードは外す。
-    const saveHero='<div class="card" style="border-color:var(--color-secondary-300)">'+
+    // ── 主役ブロック：毎月の積立(目安) ＋ 貯蓄の歩み(実績の推移) を一体に＝「目標への進捗」 ──
+    const accts=this.state.accounts||[];
+    const snaps=(this.state.savingsSnapshots||[]).slice().sort((a,b)=>a.ym<b.ym?-1:1);
+    const totalSav=accts.reduce((s,a)=>s+(+a.balance||0),0);
+    const last=snaps[snaps.length-1], prev=snaps[snaps.length-2];
+    const diff=(last&&prev)?(last.total-prev.total):null;
+    const lastDate=last?last.date:null;
+    const daysAgo=lastDate?Math.max(0,Math.round((Date.parse(todayStr())-Date.parse(lastDate))/86400000)):null;
+    const stale=(daysAgo==null||daysAgo>30);
+    let savBlock='<div style="border-top:1px dashed var(--color-secondary-200);margin:14px 0 0"></div>';
+    if(accts.length){
+      savBlock+='<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('trend',14)+'貯蓄の歩み</span>'+(diff!==null?'<span class="num" style="font-size:18px;font-weight:800;color:'+(diff>=0?'var(--color-secondary-600)':'var(--color-danger)')+'">'+(diff>=0?'+ ':'− ')+yen(Math.abs(diff))+'</span>':'<span class="num" style="font-size:18px;font-weight:800;color:var(--color-text-secondary)">'+yen(totalSav)+'</span>')+'</div>';
+      if(snaps.length>=2){const recent=snaps.slice(-6);const max=Math.max.apply(null,recent.map(s=>s.total))||1;
+        savBlock+='<div style="display:flex;align-items:flex-end;gap:8px;height:70px;margin:12px 4px 4px">';
+        recent.forEach((s,i)=>{const hp=Math.max(8,Math.round(s.total/max*52));const isLast=i===recent.length-1;savBlock+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end"><div style="width:100%;height:'+hp+'px;border-radius:6px 6px 0 0;background:'+(isLast?'var(--color-secondary-600)':'var(--color-secondary-200)')+'"></div><div class="meta" style="font-size:10px">'+(+String(s.ym).slice(5))+'月</div></div>';});
+        savBlock+='</div>';}
+      savBlock+='<div class="row" style="margin-top:8px"><span class="meta">貯蓄合計 '+yen(totalSav)+'</span><span class="meta lo"'+(stale?' style="color:var(--color-primary-600)"':'')+'>'+(lastDate?('最終更新 '+(daysAgo===0?'今日':daysAgo+'日前')):'未棚卸し')+'</span></div>';
+    }else{
+      savBlock+='<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('trend',14)+'貯蓄の歩み</span><span class="meta lo">口座を登録すると増減が見えます</span></div>';
+    }
+    const heroBlock='<div class="card" style="border-color:var(--color-secondary-300)">'+
       '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
-      '<p class="meta" style="margin-top:4px">将来のために、毎月とっておきたい金額です</p>'+
+      '<p class="meta" style="margin-top:4px">目標に向けて、毎月とっておきたい金額</p>'+
       '<div class="mid-num" style="font-size:46px;font-weight:800;letter-spacing:-.02em;color:var(--color-secondary-600);margin:8px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
       (bg.hasPlan?
-        ('<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>'+
-         '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('heart',14)+'目標のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
-         '<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('coins',14)+'そなえのため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
-        :'<p class="meta" style="margin-top:10px;line-height:1.6;text-align:center">下の目標や「そなえ」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
+        ('<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('heart',14)+'目標のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
+         '<div class="row" style="margin-top:6px"><span class="meta ttl-ico">'+ic('coins',14)+'そなえのため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
+        :'<p class="meta" style="margin-top:8px;line-height:1.6;text-align:center">下に目標や「そなえ」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
+      savBlock+
       '</div>';
-    // 「そなえ」＝1年の特別費＋生活防衛費 を1セクションに統合。返済・ローンはライフプランから外す（固定費に一本化）。
+    // 薄緑の二重を解消：シミュ入口は薄緑をやめ白カードに（フェーズ帯のみ緑）。
+    const simCard=(c.simCard||'').replace('background:var(--color-secondary-50);','');
     const sonae='<div class="section-title">そなえ</div>'+this.specialCardHtml()+'<div style="height:10px"></div>'+c.emergencyCard;
-    const cards=[saveHero,c.goalsCard,sonae,c.simCard,this.savingsCard(),c.wishCard]
+    const cards=[heroBlock,c.goalsCard,sonae,c.wishCard,simCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
@@ -2198,6 +2218,17 @@ const App = {
     h+='</div>';
     return h;
   },
+  // ライフプランの入力を1つに集約：FAB「＋追加」→ここで振り分け
+  openLifeplanAdd(){
+    const r=(icon,label,fn)=>'<div class="li" onclick="App.closeSheet();'+fn+'" style="cursor:pointer"><span class="ic">'+ic(icon,20)+'</span><div class="main"><div class="ttl">'+label+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
+    this.showSheet('<h3>何を追加しますか？</h3><div class="card" style="margin-top:10px">'+
+      r('heart','目標を追加','App.openGoal()')+
+      r('coins','1年の特別費を追加','App.openSpecialItem()')+
+      r('shield','生活防衛費を設定・編集','App.openEmergency()')+
+      r('card','貯蓄を棚卸し（口座の残高を更新）','App.openStocktake()')+
+      r('map','やりたい・欲しいものを追加','App.go(\'share\')')+
+    '</div>');
+  },
   openStocktake(){
     const accts=this.state.accounts||[];
     if(!accts.length){this.openAccount();return;}
@@ -2620,7 +2651,7 @@ const App = {
   },
   fabAction(){
     if(this.tab==="dashboard")this.openExpense();
-    else if(this.tab==="lifeplan")this.openGoal();
+    else if(this.tab==="lifeplan")this.openLifeplanAdd();
     else if(this.tab==="tasks"){if(this.taskView==="sub")this.openTask(null,this.curSubId);else if(this.taskView==="project")this.openSubForm();else this.openTask();}
     else if(this.tab==="calendar")this.openEvent();
     else if(this.tab==="share"){if(this.shareView==="notes")this.openNote();else if(this.shareView==="folder")this.openItem(null,this.curFolderId);else this.openFolderForm();}
