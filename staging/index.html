@@ -853,7 +853,7 @@ const App = {
     try{if(!localStorage.getItem("imaoka_theme_mig")){if(localStorage.getItem("imaoka_theme")==="auto")localStorage.setItem("imaoka_theme","light");localStorage.setItem("imaoka_theme_mig","1");}}catch(e){}
     this.applyTheme();
     const _lt=localStorage.getItem("imaoka_tab");
-    this.go(["dashboard","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
+    this.go(["dashboard","lifeplan","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
     this.notifyPending();
     this.sheetDrag();
     this.initCloud();
@@ -1806,20 +1806,28 @@ const App = {
       recent.forEach((s,i)=>{const hp=Math.max(8,Math.round(s.total/max*46));const isLast=i===recent.length-1;graph+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end"><div style="width:100%;height:'+hp+'px;border-radius:6px 6px 0 0;background:'+(isLast?'var(--color-secondary-600)':'var(--color-secondary-200)')+'"></div><div class="meta" style="font-size:10px">'+(+String(s.ym).slice(5))+'月</div></div>';});
       graph+='</div>';}
     // 進捗の答え合わせ（あるべき累計 vs 実際）— 最初の棚卸しを起点に、毎月の積立ペースで「今あるべき額」と実際を比較
-    let integrity='';
-    if(snaps.length>=2&&bg.saveTarget>0){
-      const base=snaps[0], baseTotal=+base.total||0;
-      const mEl=(function(a,b){const x=String(a).split('-').map(Number),y=String(b).split('-').map(Number);return (y[0]-x[0])*12+(y[1]-x[1]);})(base.ym,last.ym);
-      if(mEl>0){
-        const should=baseTotal+bg.saveTarget*mEl, actual=+last.total||0, gap=actual-should, ok=gap>=0;
-        const pct=Math.max(0,Math.min(100,should>0?Math.round(actual/should*100):100));
-        const barColor=ok?'var(--color-secondary-500)':'var(--color-danger)';
-        const verdict=ok?('<span style="color:var(--color-secondary-600);font-weight:800;font-size:var(--text-xs)">'+ic('check',12)+' ペース順調'+(gap>0?'（+'+yen(gap)+'）':'')+'</span>'):('<span style="color:var(--color-danger);font-weight:800;font-size:var(--text-xs)">'+ic('alert',12)+' '+yen(-gap)+' 不足</span>');
-        integrity='<div style="border-top:1px dashed var(--color-secondary-200);margin:13px 0 0"></div>'+
-          '<div class="row" style="margin-top:10px"><span style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em">進捗の答え合わせ</span>'+verdict+'</div>'+
-          '<div style="height:14px;border-radius:7px;background:var(--color-secondary-100);margin:9px 0 0;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:7px"></div></div>'+
-          '<div class="row" style="margin-top:6px"><span class="meta lo">あるべき '+yen(should)+'</span><span class="meta lo">実際 '+yen(actual)+'</span></div>'+
-          '<div class="meta lo" style="margin-top:4px;line-height:1.5">'+(+String(base.ym).slice(5))+'月の棚卸し '+yen(baseTotal)+' から毎月 '+yen(bg.saveTarget)+' ペースなら、今ごろ '+yen(should)+' あるはず。</div>';
+    // 進捗の答え合わせ（合計・常時表示）：各目標の「今あるべき積立額」を合算し、いまの貯蓄(口座合計)と比較
+    let answer='';
+    {
+      const firstYm=snaps[0]&&snaps[0].ym;
+      let shouldTotal=0, hasDL=false;
+      (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const gs=goalShould(g,firstYm);if(gs){shouldTotal+=gs.should;hasDL=true;}});
+      if(hasDL){
+        const actual=totalSav, gap=actual-shouldTotal, ok=gap>=0;
+        const pct=shouldTotal>0?Math.max(0,Math.min(100,Math.round(actual/shouldTotal*100))):100;
+        const bc=ok?'var(--color-secondary-500)':'var(--color-danger)';
+        const tc=ok?'var(--color-secondary-600)':'var(--color-danger)';
+        const verdict=(shouldTotal<=0)
+          ? '<span style="color:var(--color-secondary-600);font-weight:800;font-size:var(--text-xs)">'+ic('check',12)+' 計画スタート</span>'
+          : (ok?('<span style="color:'+tc+';font-weight:800;font-size:var(--text-xs)">'+ic('check',12)+' 足りています'+(gap>0?'（+'+yen(gap)+'）':'')+'</span>')
+                :('<span style="color:'+tc+';font-weight:800;font-size:var(--text-xs)">'+ic('alert',12)+' '+yen(-gap)+' 足りていません</span>'));
+        answer='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:12px;padding:12px 13px;margin-top:13px">'+
+          '<div class="row"><span style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em">進捗の答え合わせ</span>'+verdict+'</div>'+
+          '<div style="height:16px;border-radius:8px;background:#fff;overflow:hidden;margin:10px 0 9px;border:1px solid var(--color-secondary-100)"><div style="height:100%;width:'+pct+'%;background:'+bc+';border-radius:8px"></div></div>'+
+          '<div class="row"><span class="meta">今あるべき貯蓄</span><span class="num" style="font-weight:800">'+yen(shouldTotal)+'</span></div>'+
+          '<div class="row" style="margin-top:3px"><span class="meta">いまの貯蓄（口座合計）</span><span class="num" style="font-weight:800;color:'+tc+'">'+yen(totalSav)+'</span></div>'+
+          '<div class="meta lo" style="margin-top:7px;line-height:1.5">'+(shouldTotal<=0?('期日までまだ余裕。毎月 '+yen(bg.saveTarget)+' のペースで積み立てていきましょう。'):(ok?'目標の期日に対して、いまの貯蓄は十分なペースです。':('目標に間に合わせるには、あと '+yen(-gap)+' 必要。貯蓄を増やすか、期日・金額の見直しを。')))+'</div>'+
+        '</div>';
       }
     }
     // 大きな1つのポケット
@@ -1827,6 +1835,7 @@ const App = {
       '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
       '<div class="mid-num" style="font-size:44px;font-weight:800;letter-spacing:-.02em;color:var(--color-secondary-600);margin:6px 0 0;text-align:center">'+yen(bg.saveTarget)+'</div>'+
       '<p class="meta" style="text-align:center;margin-top:2px">目標に向けて、毎月とっておきたい金額</p>'+
+      answer+
       '<div style="border-top:1px dashed var(--color-secondary-200);margin:13px 0 0"></div>'+
       '<div class="row" style="margin-top:10px"><span style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em">内訳</span><span class="link" onclick="App.openLifeplanAdd()">＋ 追加</span></div>'+
       list+
@@ -1834,7 +1843,6 @@ const App = {
       '<div style="border-top:1px dashed var(--color-secondary-200);margin:13px 0 0"></div>'+
       '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('trend',14)+'いまの貯蓄</span><span style="display:flex;align-items:center;gap:10px"><span class="num" style="font-size:var(--text-xl);font-weight:800">'+yen(totalSav)+'</span><span class="link" onclick="App.openStocktake()">'+(accts.length?'編集':'設定')+'</span></span></div>'+
       (snaps.length>=2?(graph+'<div class="row" style="margin-top:2px"><span class="meta lo">前回から '+(diff!=null?((diff>=0?'+':'−')+yen(Math.abs(diff))):'—')+'</span><span class="meta lo"'+(stale?' style="color:var(--color-primary-600)"':'')+'>'+(lastDate?('最終更新 '+(daysAgo===0?'今日':daysAgo+'日前')):'')+'</span></div>'):'<div class="meta lo" style="margin-top:4px;line-height:1.5">「編集」で口座の残高を棚卸しすると、貯蓄の増減が見えます。</div>')+
-      integrity+
       '</div>';
     // シミュ入口（薄緑をやめ白カード・下部）
     const simCard=(c.simCard||'').replace('background:var(--color-secondary-50);','');
@@ -2877,6 +2885,7 @@ const App = {
       '<div id="f-note" class="meta" style="margin:-6px 0 12px;line-height:1.5">'+(t0.note?esc(t0.note):"")+'</div>'+
       this.field("名前",'<input id="f-label" value="'+esc(it?it.label:t0.label)+'">')+
       this.field("いつまでに（任意）",'<input id="f-date" type="month" value="'+(it&&it.targetDate?it.targetDate:"")+'" oninput="App.updateGoalTotal()">')+
+      this.field("貯め始め（任意・いつから貯めてる？）",'<input id="f-startym" type="month" value="'+(it&&it.startYm?it.startYm:"")+'">')+
       this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(tgt0)+'" oninput="App.commaize(this);App.updateGoalTotal()">')+
       '<div id="f-goal-pace" class="meta" style="margin:-6px 0 12px;line-height:1.6;color:var(--color-secondary-600)"></div>'+
       this.field("内訳（任意・合計が目標額になります）",'<div id="f-goal-items">'+this.goalItemsEditorHtml()+'</div>')+
@@ -2887,8 +2896,8 @@ const App = {
       this.actions(()=>{
         const items=(this._formItems||[]).filter(x=>(x.label&&String(x.label).trim())||(+x.amount)).map(x=>({label:(String(x.label||"").trim())||"項目",amount:Math.round(+x.amount||0)}));
         const target=items.length?items.reduce((a,b)=>a+(+b.amount||0),0):numv("f-target");
-        const data={typeId:val("f-type"),label:val("f-label"),target:target,current:numv("f-current"),targetDate:val("f-date"),items:items,params:this._formParams||null,refund:(items.length?this._formRefund:null)||null};
-        if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),startYm:thisMonth(),...data});
+        const data={typeId:val("f-type"),label:val("f-label"),target:target,current:numv("f-current"),targetDate:val("f-date"),startYm:val("f-startym")||(it&&it.startYm)||thisMonth(),items:items,params:this._formParams||null,refund:(items.length?this._formRefund:null)||null};
+        if(it)Object.assign(it,data);else this.state.goals.push({id:uid(),...data});
         return true;
       },it?()=>this.del("goals",id):null);
     this.showSheet(h);
