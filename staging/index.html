@@ -186,10 +186,12 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .task-list{margin-top:2px}
 .task-list .li:last-child{border-bottom:none}
 .tcat-ic{color:var(--color-secondary-500);display:inline-flex;flex-shrink:0}
-.proj-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px}
-.proj-head .ph-toggle{display:inline-flex;align-items:center;gap:0;font-size:var(--text-lg);font-weight:var(--fw-b);cursor:pointer}
-.proj-head .ph-chev{color:var(--color-text-disabled);font-size:13px;margin-left:8px}
-.proj-collapsed{margin:0 4px;line-height:1.6;color:var(--color-text-secondary);font-size:var(--text-sm);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-list{margin-top:2px}
+.proj-row{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--color-border);cursor:pointer}
+.proj-row:last-child{border-bottom:none}
+.proj-ic{width:34px;height:34px;border-radius:10px;flex-shrink:0;color:var(--color-primary-600);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center}
+.proj-name{font-weight:var(--fw-b);font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.proj-chev{color:var(--color-text-disabled);font-size:20px;flex-shrink:0}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
@@ -814,10 +816,11 @@ const EMOJI_ICON={
   "🗺️":"map","🌟":"sparkle","🛍️":"bag","👨‍👩‍👧‍👦":"users","📋":"clipboard","🎉":"party","📌":"tag",
   "🆘":"lifebuoy","🎓":"graduation","🏡":"house","🧓":"person","🏖️":"palm","🚘":"car","🛋️":"sofa","✨":"sparkle",
   "🔒":"lock","📍":"map","🔗":"link","📝":"clipboard","📂":"folder","🗂️":"folder","🍳":"utensils","💍":"sparkle",
-  "💴":"wallet","🗓️":"calendar","📅":"calendar","💵":"coins"
+  "💴":"wallet","🗓️":"calendar","📅":"calendar","💵":"coins",
+  "🪙":"coins","🤑":"coins","💲":"coins","💸":"coins","🏦":"building","🛟":"lifebuoy"
 };
-/* カテゴリ等のアイコン文字列(絵文字 or アイコン名)を線アイコンで描画。未対応の絵文字はそのまま表示 */
-function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(s,size);if(EMOJI_ICON[s])return ic(EMOJI_ICON[s],size);return esc(s);}
+/* カテゴリ等のアイコン文字列(絵文字 or アイコン名)を線アイコンで描画。ブランド原則: UIに生の絵文字は出さず、未対応も線アイコン(tag)にフォールバック */
+function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(s,size);if(EMOJI_ICON[s])return ic(EMOJI_ICON[s],size);return ic("tag",size);}
 /* フォルダ/プロジェクトのアイコン選択肢 */
 const PICK_ICONS=["folder","house","heart","star","sparkle","map","palm","plane","send","car","train","gift","bag","cart","utensils","book","graduation","gamepad","music","film","tv","paw","baby","users","briefcase","laptop","coins","wallet","card","shield","cross","pill","wrench","bolt","droplet","flame","scissors","shirt","sofa","building","rocket","trophy","target","calendar","clipboard","party","lifebuoy","tag"];
 
@@ -2156,27 +2159,23 @@ const App = {
     if(!list.length)tasks+='<div class="empty"><span class="e-ic">'+ic('check',30)+'</span>該当するタスクはありません</div>';
     list.forEach(t=>tasks+=this.taskRow(t));
     tasks+='</div>';
-    // ── プロジェクト（下・折りたたみ。まとまった計画。既定は畳む）──
+    // ── プロジェクト（下・展開固定。まとまった計画をコンパクトな行で表示。進捗バーなし）──
     const projs=this.state.projects||[];
-    let proj='';
+    let proj='<div class="section-title">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ 追加</span></div>';
     if(!projs.length){
-      proj='<div class="section-title">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ 追加</span></div>'+
-        '<div class="meta lo" style="margin:0 4px;line-height:1.6">結婚式準備・引っ越しなど、まとまった計画はプロジェクトに整理できます。</div>';
+      proj+='<div class="meta lo" style="margin:0 4px;line-height:1.6">結婚式準備・引っ越しなど、まとまった計画はプロジェクトに整理できます。</div>';
     }else{
-      const open=!!this._projOpen;
-      proj='<div class="proj-head"><span class="ph-toggle" onclick="App.toggleProjects()">プロジェクト<span class="meta" style="font-weight:400;margin-left:8px">'+projs.length+'件</span><span class="ph-chev">'+(open?'▴':'▾')+'</span></span><span class="link" onclick="App.openProjectForm()">＋ 追加</span></div>';
-      if(!open){
-        proj+='<div class="proj-collapsed" onclick="App.toggleProjects()">'+projs.map(p=>esc(p.name)).join(' ・ ')+'</div>';
-      }else{
-        projs.forEach(p=>{
-          const ts=this.projTasks(p.id),done=ts.filter(t=>t.status==="done").length,pct=ts.length?Math.round(done/ts.length*100):0;
-          const subCnt=this.state.subprojects.filter(s=>s.projectId===p.id).length;
-          const comp=ts.length>0&&done===ts.length;
-          proj+='<div class="card" style="padding:16px;cursor:pointer" onclick="App.openProject(\''+p.id+'\')">'+
-            '<div class="row" style="gap:12px"><div class="ic" style="width:42px;height:42px;border-radius:12px;flex-shrink:0;color:var(--color-primary-600)">'+renderCatIc(p.icon,22)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+(comp?' <span style="color:var(--color-accent-600)">'+ic('check',16)+'</span>':'')+'</div><div class="meta">'+subCnt+'グループ・'+done+'/'+ts.length+'完了</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>'+
-            '<div class="prog" style="margin-top:10px"><span class="'+(comp?'fill-accent':'fill-primary')+'" style="width:'+pct+'%"></span></div></div>';
-        });
-      }
+      proj+='<div class="proj-list">';
+      projs.forEach(p=>{
+        const ts=this.projTasks(p.id),done=ts.filter(t=>t.status==="done").length;
+        const subCnt=this.state.subprojects.filter(s=>s.projectId===p.id).length;
+        const comp=ts.length>0&&done===ts.length;
+        proj+='<div class="proj-row" onclick="App.openProject(\''+p.id+'\')">'+
+          '<div class="proj-ic">'+renderCatIc(p.icon,17)+'</div>'+
+          '<div class="main" style="min-width:0"><div class="proj-name">'+esc(p.name)+(comp?' <span style="color:var(--color-accent-600)">'+ic('check',14)+'</span>':'')+'</div><div class="meta">'+subCnt+'グループ・'+done+'/'+ts.length+'完了</div></div>'+
+          '<span class="proj-chev">›</span></div>';
+      });
+      proj+='</div>';
     }
     return '<div>'+tasks+'<div style="margin-top:26px">'+proj+'</div></div>';
   },
