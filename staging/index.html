@@ -1292,7 +1292,8 @@ const App = {
     const D=new Date(y,mo,0).getDate();
     const d=isCur?(+today.slice(8)):D;
     const pacedVariable=(isCur&&d>0)?Math.round(m.variable/d*D):m.variable;
-    const projExpense=pacedVariable+m.fixed+m.evConfirmed+m.planned;
+    const _debtM=(this.state.debts||[]).reduce((a,dd)=>{const left=Math.max(0,(+dd.count||0)-(+dd.paid||0));return a+(left>0?(+dd.monthly||0):0);},0);
+    const projExpense=pacedVariable+m.fixed+m.evConfirmed+m.planned+_debtM; // ローン返済(固定費)も含める
     const projIncome=m.totalIncome+m.plannedIncome;
     const projBalance=projIncome-projExpense;
     return {isCur,d,D,pacedVariable,projExpense,projIncome,projBalance,m};
@@ -1303,14 +1304,16 @@ const App = {
     const income=m.totalIncome+m.plannedIncome;                 // 今月の収入見込み(入金済+予定)
     const specialMonthly=Math.round((this.state.special||[]).reduce((a,it)=>a+specialAnnual(it),0)/12);
     const emergencyMonthly=Math.max(0,+((this.state.emergency&&this.state.emergency.monthly))||0);
+    // ローン返済は「積立」ではなく「固定費(支出)」＝毎月の返済額を committed に算入（残あり分のみ）
+    const debtMonthly=(this.state.debts||[]).reduce((a,d)=>{const left=Math.max(0,(+d.count||0)-(+d.paid||0));return a+(left>0?(+d.monthly||0):0);},0);
     let goalsMonthly=0;
     (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(pc&&pc.days>=0)goalsMonthly+=pc.perMonth;});
     const saveTarget=goalsMonthly+specialMonthly+emergencyMonthly; // 毎月取り分ける積立（ゴール＋特別費＋生活防衛費）
-    const committed=m.fixed+m.evConfirmed+m.planned;            // 固定費+確定イベント+これからの予定支出
+    const committed=m.fixed+m.evConfirmed+m.planned+debtMonthly; // 固定費+確定イベント+これからの予定支出+ローン返済
     const livingBudget=income-saveTarget-committed;             // 生活に使える予算
     const livingSpent=m.variable;                              // 今月すでに使った変動費
     const livingLeft=livingBudget-livingSpent;                  // 残り(=afterPlanned-saveTarget)
-    return {income,saveTarget,goalsMonthly,specialMonthly,emergencyMonthly,committed,livingBudget,livingSpent,livingLeft,hasPlan:saveTarget>0};
+    return {income,saveTarget,goalsMonthly,specialMonthly,emergencyMonthly,debtMonthly,committed,livingBudget,livingSpent,livingLeft,hasPlan:saveTarget>0};
   },
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
   // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
@@ -1675,7 +1678,7 @@ const App = {
       const tab=this.budgetTab||'done', coming=(tab==='coming');
       // タブ別の数値：確定(今)＝入金済/支払済のみ／これから(月末見込み)＝予定も含む総額
       const incVal=coming?(m.totalIncome+m.plannedIncome):m.totalIncome;            // 収入
-      const fixVal=coming?(m.fixed+m.evConfirmed+m.planned):(m.fixed+m.evConfirmed); // 固定費
+      const fixVal=(coming?(m.fixed+m.evConfirmed+m.planned):(m.fixed+m.evConfirmed))+bg.debtMonthly; // 固定費（ローン返済を含む）
       const zankin=incVal-fixVal;          // 残金＝収入−固定費
       const saveT=bg.saveTarget;           // 積立
       const usable=zankin-saveT;           // 今月使えるお金＝残金−積立
@@ -1702,10 +1705,10 @@ const App = {
       const fixedRec=this.state.expenses.filter(e=>e.month===this.curMonth&&e.type==='fixed').reduce((sm,e)=>sm+(+e.amount||0),0);
       const splitEv=(list)=>{let fx=0,ot=0;list.forEach(e=>{const ev=this.state.events.find(x=>x.id===e.id);if(ev&&ev.fixed)fx+=e.sum;else ot+=e.sum;});return {fx,ot};};
       let fixedSum,spotSum;
-      if(!coming){const c=splitEv(evC);fixedSum=fixedRec+c.fx;spotSum=c.ot;}
-      else{const c=splitEv(evC),p=splitEv(evP);fixedSum=fixedRec+c.fx+p.fx;spotSum=c.ot+p.ot;}
+      if(!coming){const c=splitEv(evC);fixedSum=fixedRec+c.fx+bg.debtMonthly;spotSum=c.ot;}
+      else{const c=splitEv(evC),p=splitEv(evP);fixedSum=fixedRec+c.fx+p.fx+bg.debtMonthly;spotSum=c.ot+p.ot;}
       const sumRow=(label,amt)=>'<div class="row" style="margin-top:7px;cursor:pointer" onclick="App.go(\'expense_list\')"><span class="meta">'+label+'</span><span style="display:flex;align-items:center;gap:6px"><span class="num" style="font-size:var(--text-sm)">− '+yen(amt)+'</span><span style="color:var(--color-text-disabled)">›</span></span></div>';
-      let commHtml=sumRow('固定費 合計',fixedSum)+sumRow('予定の支出 合計',spotSum);
+      let commHtml=sumRow('固定費 合計',fixedSum)+(bg.debtMonthly>0?'<div class="row" style="margin-top:6px"><span class="meta">　└ ローン返済</span><span class="num" style="font-size:var(--text-sm);color:var(--color-text-secondary)">− '+yen(bg.debtMonthly)+'</span></div>':'')+sumRow('予定の支出 合計',spotSum);
       this.state.events.filter(e=>e.fixed&&e.type!=='income'&&e.variable&&!(e.byMonth&&e.byMonth[this.curMonth]!=null)).forEach(e=>{commHtml+='<div class="row" style="margin-top:7px"><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.title)+'</span><button class="btn btn-primary btn-sm" style="min-height:30px;padding:3px 10px;white-space:nowrap" onclick="App.enterRecurAmount(\''+e.id+'\')">金額を入力</button></div>';});
       commHtml+='<div style="text-align:right;margin-top:9px"><span class="link" onclick="App.go(\'expense_list\')">支出の一覧を見る ›</span></div>';
       // 経過日数バー（旧「予算ペース」カードの経過表示だけを上部に移設）
@@ -1779,8 +1782,10 @@ const App = {
     (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);const r=(pc&&pc.perMonth>0)?(yen(pc.perMonth)+'/月'):'期日未設定';list+=liRow(g.label,r,'App.openPreview(\'goal\',\''+g.id+'\')');});
     if((this.state.special||[]).length){const annual=(this.state.special).reduce((a,it)=>a+specialAnnual(it),0);list+=liRow('1年の特別費',yen(Math.round(annual/12))+'/月','App.openPreview(\'special\')');}
     if(this.state.emergency&&(+this.state.emergency.cost>0)){const mo=+this.state.emergency.monthly||0;list+=liRow('生活防衛費',mo>0?(yen(mo)+'/月'):'設定する','App.openPreview(\'emergency\')');}
-    (this.state.debts||[]).forEach(d=>{const leftN=Math.max(0,(+d.count||0)-(+d.paid||0));list+=liRow(d.name,'残 '+yen((+d.monthly||0)*leftN),'App.openPreview(\'debt\',\''+d.id+'\')','返済');});
-    if(!list)list='<div class="meta lo" style="margin-top:9px;line-height:1.6">「＋ 追加」から目標・1年の特別費・生活防衛費・返済を登録しましょう。</div>';
+    if(!list)list='<div class="meta lo" style="margin-top:9px;line-height:1.6">「＋ 追加」から目標・1年の特別費・生活防衛費を登録しましょう。</div>';
+    // 返済（ローン）は積立でなく固定費。積立とは分けて表示し、毎月分はホームの固定費に計上。
+    let debtList='';
+    (this.state.debts||[]).forEach(d=>{const leftN=Math.max(0,(+d.count||0)-(+d.paid||0));debtList+=liRow(d.name,'残 '+yen((+d.monthly||0)*leftN),'App.openPreview(\'debt\',\''+d.id+'\')','毎月 '+yen(+d.monthly||0));});
     // 貯蓄推移グラフ
     let graph='';
     if(snaps.length>=2){const recent=snaps.slice(-6);const max=Math.max.apply(null,recent.map(s=>s.total))||1;
@@ -1795,6 +1800,7 @@ const App = {
       '<div style="border-top:1px dashed var(--color-secondary-200);margin:13px 0 0"></div>'+
       '<div class="row" style="margin-top:10px"><span style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em">内訳</span><span class="link" onclick="App.openLifeplanAdd()">＋ 追加</span></div>'+
       list+
+      (debtList?('<div style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em;margin:14px 0 0">返済・ローン<span class="meta" style="font-weight:400;margin-left:6px">毎月分は固定費に計上</span></div>'+debtList):'')+
       '<div style="border-top:1px dashed var(--color-secondary-200);margin:13px 0 0"></div>'+
       '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('trend',14)+'いまの貯蓄</span><span style="display:flex;align-items:center;gap:10px"><span class="num" style="font-size:var(--text-xl);font-weight:800">'+yen(totalSav)+'</span><span class="link" onclick="App.openStocktake()">'+(accts.length?'編集':'設定')+'</span></span></div>'+
       (snaps.length>=2?(graph+'<div class="row" style="margin-top:2px"><span class="meta lo">前回から '+(diff!=null?((diff>=0?'+':'−')+yen(Math.abs(diff))):'—')+'</span><span class="meta lo"'+(stale?' style="color:var(--color-primary-600)"':'')+'>'+(lastDate?('最終更新 '+(daysAgo===0?'今日':daysAgo+'日前')):'')+'</span></div>'):'<div class="meta lo" style="margin-top:4px;line-height:1.5">「編集」で口座の残高を棚卸しすると、貯蓄の増減が見えます。</div>')+
@@ -2173,7 +2179,7 @@ const App = {
       '<div class="form-row">'+this.field("毎月の返済額",'<input id="f-dmonthly" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.monthly)+'" oninput="App.commaize(this)">')+
       this.field("総回数",'<input id="f-dcount" type="number" inputmode="numeric" placeholder="例: 12" value="'+(it&&it.count?it.count:"")+'">')+'</div>'+
       this.field("返済済みの回数",'<input id="f-dpaid" type="number" inputmode="numeric" placeholder="0" value="'+(it&&it.paid?it.paid:"0")+'">')+
-      '<div class="desc" style="margin:-6px 2px 12px">登録後は「返済した」ボタンで1回ずつ進められます。</div>'+
+      '<div class="desc" style="margin:-6px 2px 12px">毎月の返済額は「今月の収支」の<b>固定費</b>に入り、使えるお金から引かれます（積立ではありません）。登録後は「返済した」で1回ずつ進められます。</div>'+
       this.actions(()=>{
         const name=val("f-dname");if(!name){this.toast("名前を入力してください");return false;}
         const data={name,total:numv("f-dtotal"),monthly:numv("f-dmonthly"),count:Math.max(0,parseInt(val("f-dcount"))||0),paid:Math.max(0,parseInt(val("f-dpaid"))||0)};
