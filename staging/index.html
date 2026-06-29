@@ -1538,7 +1538,7 @@ const App = {
       if(hero){
         body+='<div onclick="App.toggleGoalItems(\''+hero.id+'\')" style="border:1.5px solid var(--color-accent-500);border-radius:12px;padding:14px 15px;margin-bottom:14px;cursor:pointer">'+
           '<div class="row" style="margin-bottom:8px"><span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="ic" style="background:var(--color-secondary-50);color:var(--color-accent-600);flex-shrink:0">'+ic(GOAL_IC[hero.typeId]||'target',20)+'</span><span style="min-width:0"><span style="font-size:11px;color:var(--color-accent-600);display:block">いま、ここに向かってます</span><span style="font-weight:700">'+esc(hero.label)+'</span></span></span><span style="display:flex;align-items:center;gap:8px;flex-shrink:0">'+untilChip(hero)+'<span class="chev'+(this.goalOpen[hero.id]?' open':'')+'">▾</span></span></div>'+
-          '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="mid-num" style="color:var(--color-accent-600)">'+yen(hero.current)+'</span><span class="meta">/ '+yen(goalAmt(hero))+'</span></div>'+
+          '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="num" style="font-size:19px;font-weight:800;color:var(--color-accent-600)">'+yen(hero.current)+'</span><span class="meta">/ '+yen(goalAmt(hero))+'</span></div>'+
           '<div class="prog" style="height:10px"><span class="fill-accent" style="width:'+gprog(hero)+'%"></span></div>'+
           '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">あと '+yen(Math.max(0,goalAmt(hero)-(hero.current||0)))+'</span><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">積み立てる ›</span></div>'+
           (function(){var pc=goalPace(hero);if(!pc)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200)"><span class="link" onclick="event.stopPropagation();App.openGoal(\''+hero.id+'\')">期日を決めると、毎月いくら貯めれば間に合うか分かります ›</span></div>';if(pc.days<0)return '<div class="meta" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-secondary-200);color:var(--color-danger)">'+ic('alert',13)+' 期日を過ぎています。期日を見直しましょう。</div>';return '<div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--color-secondary-200);font-size:var(--text-sm);line-height:1.6;color:var(--color-secondary-600)">'+ic('calendar',13)+' 毎月 <b>'+yen(pc.perMonth)+'</b> 貯めれば間に合います</div>';})()+
@@ -1662,9 +1662,8 @@ const App = {
     if(!efCost){
       emergencyCard+='<div class="empty"><span class="e-ic">'+ic('shield',30)+'</span>急な収入減や万一に備える「生活防衛費」。生活費の3〜6ヶ月分を目安に、別枠で確保しておくと安心です</div><div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openEmergency()">生活防衛費を設定</button></div>';
     }else{
-      emergencyCard+='<div class="row"><span class="card-title" style="margin:0">目標（生活費'+efMonths+'ヶ月分）</span><span class="mid-num">'+yen(efTarget)+'</span></div>'+
-        '<div class="prog" style="margin-top:10px;height:10px"><span class="'+(efDone?'fill-accent':'fill-primary')+'" style="width:'+efPct+'%"></span></div>'+
-        '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">今 '+yen(efCur)+'（'+efPct+'%）</span>'+(efDone?'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'達成</span>':'<span style="font-weight:700;color:var(--color-secondary-600)">あと '+yen(Math.max(0,efTarget-efCur))+'</span>')+'</div>';
+      emergencyCard+='<div class="prog" style="margin-top:2px;height:10px"><span class="'+(efDone?'fill-accent':'fill-sec')+'" style="width:'+efPct+'%"></span></div>'+
+        '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">目標 '+yen(efTarget)+'（'+efMonths+'ヶ月）・今 '+yen(efCur)+'</span>'+(efDone?'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'達成</span>':'<span style="font-weight:800;color:var(--color-secondary-600)">'+efPct+'%</span>')+'</div>';
     }
     emergencyCard+='</div>';
     const storeWarn=(this._user&&!this.householdId)?'<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span>クラウドに接続できていません(オフラインの可能性)。変更はこの端末に保存され、接続が戻ると同期されます。</span></div></div>':'';
@@ -1765,7 +1764,7 @@ const App = {
     const saveHero='<div class="card" style="border-color:var(--color-secondary-300)">'+
       '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
       '<p class="meta" style="margin-top:4px">将来のために、毎月とっておきたい金額です</p>'+
-      '<div class="mid-num" style="font-size:34px;color:var(--color-secondary-600);margin:10px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
+      '<div class="mid-num" style="font-size:46px;font-weight:800;letter-spacing:-.02em;color:var(--color-secondary-600);margin:8px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
       (bg.hasPlan?
         ('<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>'+
          '<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('heart',14)+'目標のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
@@ -1786,14 +1785,14 @@ const App = {
     }
     const annual=sp.reduce((a,it)=>a+specialAnnual(it),0), monthly=Math.round(annual/12);
     const open=this.dashOpen.lpSpecial;
-    let h='<div class="card"><div class="row" style="margin-bottom:10px"><p class="card-title" style="margin:0">1年の特別費</p><span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span></div>';
-    h+='<div style="background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px"><div class="meta" style="color:var(--color-secondary-600)">この調子なら、特別費は</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">毎月 '+yen(monthly)+'</div><div class="meta">貯めておけば慌てません（年間 '+yen(annual)+' ／ '+sp.length+'項目）</div></div>';
-    // 内訳は折りたたみ（全項目をぶわっと出さない・タップで開く）
-    h+='<div class="row" style="cursor:pointer" onclick="App.toggleDash(\'lpSpecial\')"><span class="meta">内訳（'+sp.length+'項目）</span><span class="chev'+(open?' open':'')+'">▾</span></div>';
+    // 主役は積立ヒーローのみ。特別費は「毎月◯」を要約数字(20px)で右に、内訳はタップ展開。
+    let h='<div class="card">'+
+      '<div class="row"><p class="card-title" style="margin:0">1年の特別費</p><span class="num" style="font-size:20px;font-weight:800;color:var(--color-text-secondary)">毎月 '+yen(monthly)+'</span></div>'+
+      '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.toggleDash(\'lpSpecial\')"><span class="meta">年間 '+yen(annual)+' ／ '+sp.length+'項目</span><span class="meta ttl-ico">内訳<span class="chev'+(open?' open':'')+'" style="margin-left:2px">▾</span></span></div>';
     if(open){
       sp.forEach(it=>{
         h+='<div class="li" onclick="App.openSpecialItem(\''+it.id+'\')" style="cursor:pointer"><span class="ic">'+ic(it.icon||'coins',20)+'</span><div class="main"><div class="ttl">'+esc(it.label)+'</div><div class="meta">'+specialCycleDesc(it)+'</div></div><span class="amt num">'+yen(specialAnnual(it))+'</span></div>';});
-      h+='<div style="text-align:center;margin-top:10px"><span class="link" onclick="App.openSpecialSetup()">条件から作り直す</span></div>';
+      h+='<div style="text-align:right;margin-top:10px"><span class="link" onclick="App.openSpecialItem()">＋ 項目を追加</span>　<span class="link" onclick="App.openSpecialSetup()">作り直す</span></div>';
     }
     h+='</div>';
     return h;
@@ -2187,14 +2186,14 @@ const App = {
     const daysAgo=lastDate?Math.max(0,Math.round((Date.parse(todayStr())-Date.parse(lastDate))/86400000)):null;
     const stale=(daysAgo==null||daysAgo>30);
     h+='<div class="card">';
-    if(diff!==null){const up=diff>=0;h+='<div style="text-align:center"><div class="meta">前回の棚卸しから</div><div class="big-num" style="color:'+(up?'var(--color-secondary-600)':'var(--color-danger)')+';margin:2px 0">'+(up?'+ ':'− ')+yen(Math.abs(diff))+'</div><div class="meta">'+(up?'貯蓄が増えました':'貯蓄が減りました')+'</div></div>';}
-    else{h+='<div style="text-align:center"><div class="meta">いまの貯蓄合計</div><div class="big-num" style="color:var(--color-secondary-600);margin:2px 0">'+yen(total)+'</div><div class="meta">棚卸しを重ねると増減が見えます</div></div>';}
+    if(diff!==null){const up=diff>=0;h+='<div class="row"><span class="meta">前回の棚卸しから</span><span class="num" style="font-size:20px;font-weight:800;color:'+(up?'var(--color-secondary-600)':'var(--color-danger)')+'">'+(up?'+ ':'− ')+yen(Math.abs(diff))+'</span></div>';}
+    else{h+='<div class="row"><span class="meta">いまの貯蓄合計</span><span class="num" style="font-size:20px;font-weight:800;color:var(--color-text-secondary)">'+yen(total)+'</span></div>';}
     if(snaps.length>=2){const recent=snaps.slice(-6);const max=Math.max.apply(null,recent.map(s=>s.total))||1;
       h+='<div style="display:flex;align-items:flex-end;gap:8px;height:88px;margin:16px 4px 4px">';
-      recent.forEach((s,i)=>{const hp=Math.max(8,Math.round(s.total/max*66));const isLast=i===recent.length-1;h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end"><div style="width:100%;height:'+hp+'px;border-radius:6px 6px 0 0;background:'+(isLast?'var(--color-primary-500)':'var(--color-secondary-200)')+'"></div><div class="meta" style="font-size:10px">'+(+String(s.ym).slice(5))+'月</div></div>';});
+      recent.forEach((s,i)=>{const hp=Math.max(8,Math.round(s.total/max*66));const isLast=i===recent.length-1;h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end"><div style="width:100%;height:'+hp+'px;border-radius:6px 6px 0 0;background:'+(isLast?'var(--color-secondary-600)':'var(--color-secondary-200)')+'"></div><div class="meta" style="font-size:10px">'+(+String(s.ym).slice(5))+'月</div></div>';});
       h+='</div>';}
     h+='<div style="border-top:1px dashed var(--color-secondary-200);margin:12px 0 0"></div>';
-    h+='<div class="row" style="margin-top:10px"><span class="meta">貯蓄合計</span><span class="mid-num">'+yen(total)+'</span></div>';
+    h+='<div class="row" style="margin-top:10px"><span class="meta">貯蓄合計</span><span class="num" style="font-size:var(--text-base);font-weight:700;color:var(--color-text-secondary)">'+yen(total)+'</span></div>';
     h+='<div class="row" style="margin-top:5px"><span class="meta lo"'+(stale?' style="color:var(--color-primary-600)"':'')+'>'+(lastDate?('最終更新 '+(daysAgo===0?'今日':daysAgo+'日前')):'まだ棚卸ししていません')+'</span>'+(stale?'<span class="link" onclick="App.openStocktake()">棚卸ししよう ›</span>':'<span class="link" onclick="App.openAccount()">口座を追加</span>')+'</div>';
     h+='</div>';
     return h;
