@@ -171,7 +171,7 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .top-add{flex:0 0 auto;width:40px;height:40px;border-radius:var(--radius-full);border:none;background:var(--color-primary-500);color:var(--color-text-on-primary);font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-primary);font-family:inherit}
 .top-add:active{transform:scale(.94)}
 /* FAB */
-.fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:28px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.fab{position:fixed;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:var(--radius-full);background:var(--color-primary-500);color:#fff;font-size:23px;border:none;box-shadow:var(--shadow-primary);cursor:pointer;z-index:25;display:flex;align-items:center;justify-content:center;white-space:nowrap}
 .fab.wide{width:auto;height:52px;padding:0 22px;font-size:var(--text-md);font-weight:var(--fw-b);gap:4px}
 .fab:active{transform:scale(.94)}
 /* filters */
@@ -2500,11 +2500,11 @@ const App = {
     const solo=!!(this.state&&this.state.settings&&this.state.settings.spaceMode==="solo");
     let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
     h+='<button class="btn btn-primary btn-block" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
-    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日のタスクを追加'+(solo?'':'（相手に頼む）')+'</button>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日にタスクを追加</button>';
     if(!items.length)h+='<div class="empty" style="margin-top:16px">この日の予定はまだありません</div>';
     else{h+='<div style="margin-top:16px"></div>';items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});}
     const stId=(this.state.stamps||{})[ds];const stD=stId&&stampDef(stId);
-    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div><div class="meta">'+(stD?'タップして変更・はがす':'この日を彩る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
+    h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
     this.showSheet(h);
   },
   openStampPicker(ds){
