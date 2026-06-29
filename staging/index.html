@@ -179,6 +179,13 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .filters::-webkit-scrollbar{display:none}
 .fchip{border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text-secondary);border-radius:var(--radius-full);padding:7px 14px;font-size:var(--text-base);white-space:nowrap;cursor:pointer;font-weight:var(--fw-m)}
 .fchip.on{background:var(--color-primary-500);color:#fff;border-color:var(--color-primary-500)}
+.quickadd{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.quickadd input{flex:1;min-width:0}
+.qa-btn{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:var(--color-primary-500);color:#fff;border:none;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-xs)}
+.qa-btn:active{transform:scale(.94)}
+.task-list{margin-top:2px}
+.task-list .li:last-child{border-bottom:none}
+.tcat-ic{color:var(--color-secondary-500);display:inline-flex;flex-shrink:0}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
@@ -2115,7 +2122,7 @@ const App = {
     const clChip=cl.length?('<span class="chip '+(clDone===cl.length?'chip-both':'chip-todo')+' ttl-ico">'+ic('check',12)+clDone+'/'+cl.length+'</span>'):'';
     return '<div class="li '+(t.status==="done"?"done":"")+'">'+
       '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?ic('check',14):'')+'</div>'+
-      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico">'+ic(TASK_IC[t.cat]||'tag',15)+esc(t.title)+'</div>'+
+      '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico"><span class="tcat-ic">'+ic(TASK_IC[t.cat]||'tag',15)+'</span>'+esc(t.title)+'</div>'+
       '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div></div></div>';
   },
   projTasks(pid){return this.state.tasks.filter(t=>t.projectId===pid);},
@@ -2126,7 +2133,7 @@ const App = {
   view_tasks(){
     if(this.taskView==="project")return this.view_taskproject();
     if(this.taskView==="sub")return this.view_tasksub();
-    let left='<div class="section-title" style="margin-top:0">プロジェクト<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openProjectForm()">＋ 追加</button></div>';
+    let left='<div class="section-title" style="margin-top:0">プロジェクト<span class="link" onclick="App.openProjectForm()">＋ 追加</span></div>';
     if(!this.state.projects.length){
       left+='<div class="card"><div class="empty"><span class="e-ic">'+ic('folder',30)+'</span>大きな計画はプロジェクトに整理。<br>例: 結婚式 → ウェルカムスペース → 席札作成<br><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="App.openProjectForm()">＋ プロジェクトを作る</button></div></div>';
     }
@@ -2147,13 +2154,13 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    let right='<div class="section-title">個別タスク<button class="btn btn-sec btn-sm" style="min-height:34px;padding:5px 14px" onclick="App.openTask()">＋ 詳しく追加</button></div>';
-    right+='<div class="card" style="padding:10px;margin-bottom:10px"><div class="row" style="gap:8px;align-items:center">'+
-      '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}" style="flex:1;min-width:0">'+
-      '<button class="btn btn-primary" onclick="App.quickAddTask()" style="flex-shrink:0;min-height:42px;padding:0 16px">追加</button>'+
-      '</div></div>';
+    let right='<div class="section-title">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
+    right+='<div class="quickadd">'+
+      '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}">'+
+      '<button class="qa-btn" onclick="App.quickAddTask()" aria-label="追加">＋</button>'+
+      '</div>';
     right+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
-    right+='<div class="card">';
+    right+='<div class="task-list">';
     if(!list.length)right+='<div class="empty"><span class="e-ic">'+ic('check',30)+'</span>該当するタスクはありません</div>';
     list.forEach(t=>right+=this.taskRow(t));
     right+='</div>';
