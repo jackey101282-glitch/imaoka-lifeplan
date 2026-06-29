@@ -1526,8 +1526,8 @@ const App = {
       '<span class="link" style="white-space:nowrap" onclick="App.openPhase()">変更</span></div>';
     let body='';
     if(allg.length===0){
-      body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>ふたりの節目を決めて、これからに備えましょう</div>'+
-        '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 最初の節目を決める</button></div>';
+      body+='<div class="empty"><span class="e-ic">'+ic('map',30)+'</span>これから叶えたいこと・備えたいことを登録しましょう</div>'+
+        '<div style="text-align:center;margin-top:10px"><button class="btn btn-primary" onclick="App.openGoal()">＋ 追加する</button></div>';
     }else{
       justWon.forEach(g=>{
         body+='<div style="background:var(--color-secondary-50);border:1.5px solid var(--color-secondary-400);border-radius:12px;padding:13px 14px;margin-bottom:12px">'+

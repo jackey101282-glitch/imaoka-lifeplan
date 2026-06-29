@@ -1,5 +1,5 @@
 /* Mietta（ミエッタ） — service worker (オフライン対応) */
-const CACHE = "imaoka-lifeplan-v33";
+const CACHE = "imaoka-lifeplan-v34";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {
