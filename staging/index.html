@@ -1652,7 +1652,7 @@ const App = {
     const debts=this.state.debts||[];
     let debtRows='',debtRemain=0;
     debts.forEach(d=>{const total=+d.count||0,paid=+d.paid||0,left=Math.max(0,total-paid),remainAmt=(+d.monthly||0)*left,pct=total?Math.round(paid/total*100):0;debtRemain+=remainAmt;
-      debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openDebt(\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'完済</span>')+'</div></div>';});
+      debtRows+='<div class="li" style="display:block;cursor:pointer" onclick="App.openPreview(\'debt\',\''+d.id+'\')"><div class="row"><div class="main" style="min-width:0"><div class="ttl">'+esc(d.name)+'</div><div class="meta">毎月 '+yen(d.monthly)+' ・ あと'+left+'回</div></div><span class="amt num">残 '+yen(remainAmt)+'</span></div><div class="prog" style="margin-top:8px"><span class="fill-primary" style="width:'+pct+'%"></span></div><div class="row" style="margin-top:6px"><span class="meta">'+paid+'/'+total+'回 完了</span>'+(left>0?'<button class="btn btn-sec btn-sm" style="min-height:30px;padding:3px 12px" onclick="event.stopPropagation();App.repayDebt(\''+d.id+'\')">返済した</button>':'<span class="chip chip-full ttl-ico" style="background:var(--color-accent-500);color:#fff">'+ic('check',13)+'完済</span>')+'</div></div>';});
     const debtCard='<div class="section-title">返済・ローン<span class="link" onclick="App.openDebt()">＋ 追加</span></div><div class="card">'+
       (debts.length?('<div class="row"><span class="card-title" style="margin:0">残り返済額</span><span class="mid-num">'+yen(debtRemain)+'</span></div>'+debtRows):'<div class="empty" style="padding:14px 0"><span class="e-ic">'+ic('wallet',30)+'</span>ローン・立替・奨学金などを登録すると、毎月いくら・あと何回が見えます</div>')+'</div>';
     // 🛟 生活防衛費（生活費×3〜6ヶ月を別枠で確保）
@@ -1784,9 +1784,9 @@ const App = {
     // 積立の内訳＝実名（各目標＋1年の特別費＋生活防衛費）。タップで詳細へ。
     const bdRow=(label,amt,onclick)=>'<div class="row" style="margin-top:8px;cursor:pointer" onclick="'+onclick+'"><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span style="display:flex;align-items:center;gap:6px"><span class="num">'+yen(amt)+'/月</span><span style="color:var(--color-text-disabled)">›</span></span></div>';
     let bd='';
-    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(!(pc&&pc.days>=0&&pc.perMonth>0))return;bd+=bdRow(g.label,pc.perMonth,'App.openGoal(\''+g.id+'\')');});
-    if(bg.specialMonthly>0)bd+=bdRow('1年の特別費',bg.specialMonthly,'App.toggleDash(\'lpSpecial\')');
-    if(bg.emergencyMonthly>0)bd+=bdRow('生活防衛費',bg.emergencyMonthly,'App.openEmergency()');
+    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(!(pc&&pc.days>=0&&pc.perMonth>0))return;bd+=bdRow(g.label,pc.perMonth,'App.openPreview(\'goal\',\''+g.id+'\')');});
+    if(bg.specialMonthly>0)bd+=bdRow('1年の特別費',bg.specialMonthly,'App.openPreview(\'special\')');
+    if(bg.emergencyMonthly>0)bd+=bdRow('生活防衛費',bg.emergencyMonthly,'App.openPreview(\'emergency\')');
     const heroBlock='<div class="card" style="border-color:var(--color-secondary-300)">'+
       '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
       '<p class="meta" style="margin-top:4px">目標に向けて、毎月とっておきたい金額</p>'+
@@ -1797,7 +1797,7 @@ const App = {
     // 薄緑の二重を解消：シミュ入口は薄緑をやめ白カードに（フェーズ帯のみ緑）。
     const simCard=(c.simCard||'').replace('background:var(--color-secondary-50);','');
     const sonae='<div class="section-title">そなえ</div>'+this.specialCardHtml()+'<div style="height:10px"></div>'+c.emergencyCard;
-    const cards=[heroBlock,c.goalsCard,sonae,c.wishCard,simCard]
+    const cards=[heroBlock,c.goalsCard,sonae,c.debtCard,c.wishCard,simCard]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
     return '<div class="dash-cols">'+cards+'</div>';
   },
@@ -2226,14 +2226,46 @@ const App = {
   },
   // ライフプランの入力を1つに集約：FAB「＋追加」→ここで振り分け
   openLifeplanAdd(){
-    const r=(icon,label,fn)=>'<div class="li" onclick="App.closeSheet();'+fn+'" style="cursor:pointer"><span class="ic">'+ic(icon,20)+'</span><div class="main"><div class="ttl">'+label+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
-    this.showSheet('<h3>何を追加しますか？</h3><div class="card" style="margin-top:10px">'+
-      r('heart','目標を追加','App.openGoal()')+
-      r('coins','1年の特別費を追加','App.openSpecialItem()')+
-      r('shield','生活防衛費を設定・編集','App.openEmergency()')+
-      r('card','貯蓄を棚卸し（口座の残高を更新）','App.openStocktake()')+
-      r('map','やりたい・欲しいものを追加','App.go(\'share\')')+
-    '</div>');
+    const card=(icon,label,desc,fn)=>'<div onclick="App.closeSheet();'+fn+'" style="border:1px solid var(--color-secondary-200);border-radius:14px;padding:14px 12px;cursor:pointer;text-align:center"><div style="color:var(--color-secondary-600);display:flex;justify-content:center;margin-bottom:6px">'+ic(icon,24)+'</div><div style="font-weight:800;font-size:var(--text-base)">'+label+'</div><div class="meta" style="margin-top:2px;font-size:var(--text-xs)">'+desc+'</div></div>';
+    this.showSheet('<h3>何を追加しますか？</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
+      card('heart','目標貯蓄','旅行・結婚式・出産など','App.openGoal()')+
+      card('wallet','ローン返済','住宅・車・奨学金など','App.openDebt()')+
+      card('coins','1年の特別費','車検・帰省など','App.openSpecialSetup()')+
+      card('shield','生活防衛費','急な出費に備える','App.openEmergency()')+
+    '</div><div style="text-align:center;margin-top:14px"><span class="link" onclick="App.closeSheet();App.openStocktake()">貯蓄を棚卸し（残高の更新）</span></div>');
+  },
+  // 見積書/請求書風の読み取りプレビュー（タップで開く。編集は「編集する」から）
+  openPreview(kind,id){
+    const hero=(label,amt,col)=>'<div style="text-align:right;padding:4px 0 12px"><div style="font-size:var(--text-xs);color:var(--color-text-secondary)">'+label+'</div><div class="big-num" style="color:'+col+'">'+yen(amt)+'</div></div>';
+    const sec=(t)=>'<div style="font-size:var(--text-xs);font-weight:800;color:var(--color-text-secondary);letter-spacing:.04em;margin:14px 0 4px">'+t+'</div>';
+    const row=(label,amt,total)=>'<div class="row" style="padding:7px 0;'+(total?'border-top:1px dashed var(--color-secondary-300);font-weight:800':'border-bottom:1px solid var(--color-secondary-100)')+'"><span class="meta" style="color:var(--color-text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span class="num" style="white-space:nowrap;font-size:var(--text-sm)">'+yen(amt)+'</span></div>';
+    const rowClick=(label,amt,fn)=>'<div class="row" style="padding:7px 0;border-bottom:1px solid var(--color-secondary-100);cursor:pointer" onclick="App.closeSheet();'+fn+'"><span class="meta" style="color:var(--color-text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span class="num" style="white-space:nowrap;font-size:var(--text-sm)">'+yen(amt)+' ›</span></div>';
+    const kv=(label,val,sub)=>'<div class="row" style="margin-top:12px"><span style="font-weight:700">'+label+'</span><span class="num" style="font-size:var(--text-xl);font-weight:800">'+val+'</span></div>'+(sub?'<div class="meta lo" style="margin-top:2px;text-align:right">'+esc(sub)+'</div>':'');
+    const meta=(label,val)=>'<div class="row" style="margin-top:6px"><span class="meta">'+label+'</span><span class="meta num">'+esc(val)+'</span></div>';
+    const prog=(pct,fill)=>'<div class="prog" style="margin-top:8px;height:10px"><span class="'+fill+'" style="width:'+Math.max(0,Math.min(100,pct))+'%"></span></div>';
+    let title='',body='',editFn='';
+    if(kind==='goal'){
+      const g=(this.state.goals||[]).find(x=>x.id===id); if(!g)return; title=esc(g.label); editFn='App.openGoal(\''+g.id+'\')';
+      const total=goalAmt(g),cur=+g.current||0,left=Math.max(0,total-cur),pct=total>0?Math.round(cur/total*100):0,pc=goalPace(g);
+      body=hero('目標',total,'var(--color-secondary-600)')+(g.targetDate?meta('期日',monthLabel(g.targetDate)):'');
+      if(g.items&&g.items.length){body+=sec('内訳');g.items.forEach(it=>{body+=row(it.label||'項目',+it.amount||0);});body+=row('合計',total,true);}
+      body+=sec('進捗')+row('積立済',cur)+row('残り',left)+prog(pct,'fill-sec')+kv('毎月の積立',(pc&&pc.perMonth>0)?yen(pc.perMonth):'—',pc?(pc.days<0?'期日を過ぎています':('あと'+(pc.months>0?pc.months+'ヶ月':pc.days+'日')+'で間に合う')):'期日を決めると毎月額が出ます');
+    }else if(kind==='special'){
+      const sp=this.state.special||[]; title='1年の特別費'; editFn='App.openSpecialSetup()';
+      const annual=sp.reduce((a,it)=>a+specialAnnual(it),0),monthly=Math.round(annual/12);
+      body=hero('年額合計',annual,'var(--color-secondary-600)')+sec('内訳');
+      sp.forEach(it=>{body+=rowClick(esc(it.label)+'（'+specialCycleDesc(it)+'）',specialAnnual(it),'App.openSpecialItem(\''+it.id+'\')');});
+      body+=row('合計（年額）',annual,true)+kv('毎月の積立',yen(monthly),'年額 ÷ 12');
+    }else if(kind==='emergency'){
+      const ef=this.state.emergency||{}; title='生活防衛費'; editFn='App.openEmergency()';
+      const target=(+ef.cost||0)*(+ef.months||6),cur=+ef.current||0,left=Math.max(0,target-cur),pct=target>0?Math.round(cur/target*100):0,mo=+ef.monthly||0;
+      body=hero('目標額',target,'var(--color-secondary-600)')+meta('目安','生活費 '+yen(+ef.cost||0)+' × '+(+ef.months||6)+'ヶ月')+sec('進捗')+row('積立済',cur)+row('残り',left)+prog(pct,pct>=100?'fill-accent':'fill-sec')+kv('毎月の積立',mo>0?yen(mo):'—','');
+    }else if(kind==='debt'){
+      const d=(this.state.debts||[]).find(x=>x.id===id); if(!d)return; title=esc(d.name); editFn='App.openDebt(\''+d.id+'\')';
+      const cnt=+d.count||0,paid=+d.paid||0,leftN=Math.max(0,cnt-paid),m=+d.monthly||0,remain=m*leftN,tot=m*cnt,pct=cnt?Math.round(paid/cnt*100):0;
+      body=hero('残債',remain,'var(--color-danger)')+meta('借入総額',yen(tot))+sec('返済状況')+row('返済済',m*paid)+prog(pct,'fill-danger')+meta('進捗',paid+' / '+cnt+'回（'+pct+'%）')+kv('毎月の返済',yen(m),'残り '+leftN+'回');
+    }else return;
+    this.showSheet('<h3 style="margin:0 0 4px">'+title+'</h3>'+body+'<button class="btn btn-sec btn-block" style="margin-top:16px" onclick="App.closeSheet();'+editFn+'">編集する</button>');
   },
   openStocktake(){
     const accts=this.state.accounts||[];
