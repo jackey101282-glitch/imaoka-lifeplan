@@ -259,7 +259,7 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 /* calendar */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
 .cal-dow{text-align:center;font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-b);padding:4px 0}
-.cal-cell{min-height:60px;border-radius:8px;display:flex;flex-direction:column;align-items:stretch;padding:3px 3px 2px;cursor:pointer;position:relative;background:var(--color-bg-surface);overflow:hidden;font-family:var(--font-family-number)}
+.cal-cell{min-height:clamp(76px,calc((100dvh - 232px)/6),124px);border-radius:8px;display:flex;flex-direction:column;align-items:stretch;padding:3px 3px 2px;cursor:pointer;position:relative;background:var(--color-bg-surface);overflow:hidden;font-family:var(--font-family-number)}
 .cal-cell.muted{background:transparent}
 .cal-cell.muted .cnum{color:var(--color-text-disabled)}
 .cal-cell-top{display:flex;align-items:flex-start;justify-content:space-between;line-height:1;min-height:17px}
@@ -277,6 +277,8 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cev-task{background:color-mix(in srgb,var(--color-primary-500) 14%,transparent);color:var(--color-primary-600)}
 .cev-wish{background:color-mix(in srgb,#9C6ADE 16%,transparent);color:#7a45c0}
 .cev-more{font-size:9px;line-height:1.3;color:var(--color-text-secondary);padding:1px 3px 0;font-weight:var(--fw-b)}
+.cev-exp{position:absolute;right:4px;bottom:3px;color:var(--color-primary-500);opacity:.9;display:flex;align-items:center;line-height:1;pointer-events:none}
+.cev-exp svg{width:13px;height:13px}
 .cal-head{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;position:relative}
 .cal-nav-btn{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--color-primary-50);color:var(--color-primary-600);cursor:pointer;flex-shrink:0;transition:background .15s}
 .cal-nav-btn:active{background:var(--color-primary-100)}
@@ -2406,20 +2408,23 @@ const App = {
     let cells=[];
     for(let i=startDow-1;i>=0;i--)cells.push({d:prevDays-i,muted:true});
     for(let d=1;d<=days;d++)cells.push({d,muted:false});
-    while(cells.length%7!==0)cells.push({d:cells.length-(startDow+days)+1,muted:true});
+    while(cells.length<42)cells.push({d:cells.length-(startDow+days)+1,muted:true}); // 常に6週(42セル)＝前後の週も表示
     const MAXC=3;
     cells.forEach((c,idx)=>{
       const dow=idx%7;
       if(c.muted){h+='<div class="cal-cell muted"><div class="cal-cell-top"><span class="cnum">'+c.d+'</span></div></div>';return;}
       const ds=this.calMonth+"-"+String(c.d).padStart(2,"0");
       const dayItems=items[ds]||[];
+      const evItems=dayItems.filter(it=>!it.exp);   // 予定・タスク・収入・定期 → 文字チップ
+      const hasExp=dayItems.some(it=>it.exp);        // 支出明細 → 小アイコンのみ（内訳はタップで）
       const today=ds===todayStr();
       const stId=this.state.stamps&&this.state.stamps[ds];const stD=stId&&stampDef(stId);
       const stHtml=stD?'<span class="cstamp" style="color:'+stD.color+'">'+ic(stD.id,15)+'</span>':'';
       let evs='';
-      dayItems.slice(0,MAXC).forEach(it=>{evs+='<span class="cev cev-'+it.t+'">'+esc(String(it.title).replace(/^\d{1,2}:\d{2}(〜\d{1,2}:\d{2})?\s*/,''))+'</span>';});
-      if(dayItems.length>MAXC)evs+='<span class="cev-more">+'+(dayItems.length-MAXC)+'</span>';
-      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')"><div class="cal-cell-top"><span class="cnum">'+c.d+'</span>'+stHtml+'</div><div class="cal-evs">'+evs+'</div></div>';
+      evItems.slice(0,MAXC).forEach(it=>{evs+='<span class="cev cev-'+it.t+'">'+esc(String(it.title).replace(/^\d{1,2}:\d{2}(〜\d{1,2}:\d{2})?\s*/,''))+'</span>';});
+      if(evItems.length>MAXC)evs+='<span class="cev-more">+'+(evItems.length-MAXC)+'</span>';
+      const expHtml=hasExp?'<span class="cev-exp" title="支出あり">'+ic('coins',13)+'</span>':'';
+      h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')"><div class="cal-cell-top"><span class="cnum">'+c.d+'</span>'+stHtml+'</div><div class="cal-evs">'+evs+'</div>'+expHtml+'</div>';
     });
     h+='</div></div>';
     // 予定の一覧は各日のタップ(openDay)で確認。追加は右下のFAB。下はカテゴリ別支出のみ
@@ -2450,7 +2455,7 @@ const App = {
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
     this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
     this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
-    this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
+    this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",exp:true,icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
     this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
     return map;
