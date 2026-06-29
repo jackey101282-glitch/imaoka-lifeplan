@@ -1302,14 +1302,15 @@ const App = {
     const m=mIn||this.metrics(month);
     const income=m.totalIncome+m.plannedIncome;                 // 今月の収入見込み(入金済+予定)
     const specialMonthly=Math.round((this.state.special||[]).reduce((a,it)=>a+specialAnnual(it),0)/12);
+    const emergencyMonthly=Math.max(0,+((this.state.emergency&&this.state.emergency.monthly))||0);
     let goalsMonthly=0;
     (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(pc&&pc.days>=0)goalsMonthly+=pc.perMonth;});
-    const saveTarget=goalsMonthly+specialMonthly;               // 毎月取り分ける積立
+    const saveTarget=goalsMonthly+specialMonthly+emergencyMonthly; // 毎月取り分ける積立（ゴール＋特別費＋生活防衛費）
     const committed=m.fixed+m.evConfirmed+m.planned;            // 固定費+確定イベント+これからの予定支出
     const livingBudget=income-saveTarget-committed;             // 生活に使える予算
     const livingSpent=m.variable;                              // 今月すでに使った変動費
     const livingLeft=livingBudget-livingSpent;                  // 残り(=afterPlanned-saveTarget)
-    return {income,saveTarget,goalsMonthly,specialMonthly,committed,livingBudget,livingSpent,livingLeft,hasPlan:saveTarget>0};
+    return {income,saveTarget,goalsMonthly,specialMonthly,emergencyMonthly,committed,livingBudget,livingSpent,livingLeft,hasPlan:saveTarget>0};
   },
   // カレンダーの金額入り予定を集計。isIncome=false:支出(予定/支払い)、true:入金。mode:'confirmed'(日付到来)/'planned'(未来)
   // 変動項目(e.variable)はその月に入力された金額(e.byMonth[ym])を使う。未入力なら0。固定はe.amount。
@@ -1682,7 +1683,7 @@ const App = {
       const neg=usable<0, over=left<0;
       const pct=usable>0?Math.min(100,Math.round(spent/usable*100)):(spent>0?100:0);
       const leftColor=over?'var(--color-danger)':'var(--color-accent-600)';
-      const saveSub=bg.hasPlan?('ゴール '+yen(bg.goalsMonthly)+' ＋ 特別費 '+yen(bg.specialMonthly)):'未設定';
+      const saveSub=bg.hasPlan?[bg.goalsMonthly>0?'目標 '+yen(bg.goalsMonthly):'',bg.specialMonthly>0?'特別費 '+yen(bg.specialMonthly):'',bg.emergencyMonthly>0?'防衛費 '+yen(bg.emergencyMonthly):''].filter(Boolean).join(' ＋ '):'未設定';
       // 内訳1行ヘルパ
       const bRow=(label,amt,onclick,sign)=>'<div class="row" style="margin-top:7px'+(onclick?';cursor:pointer':'')+'"'+(onclick?(' onclick="'+onclick+'"'):'')+'><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span class="num" style="white-space:nowrap;font-size:var(--text-sm)">'+(sign||'')+yen(amt)+'</span></div>';
       const evHandler=(id)=>{const ev=this.state.events.find(x=>x.id===id);return ev&&ev.fixed?('App.openRecurring(\''+id+'\')'):('App.openEvent(\''+id+'\')');};
@@ -1780,14 +1781,17 @@ const App = {
     }else{
       savBlock+='<div class="row" style="margin-top:10px"><span class="meta ttl-ico">'+ic('trend',14)+'貯蓄の歩み</span><span class="meta lo">口座を登録すると増減が見えます</span></div>';
     }
+    // 積立の内訳＝実名（各目標＋1年の特別費＋生活防衛費）。タップで詳細へ。
+    const bdRow=(label,amt,onclick)=>'<div class="row" style="margin-top:8px;cursor:pointer" onclick="'+onclick+'"><span class="meta" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(label)+'</span><span style="display:flex;align-items:center;gap:6px"><span class="num">'+yen(amt)+'/月</span><span style="color:var(--color-text-disabled)">›</span></span></div>';
+    let bd='';
+    (this.state.goals||[]).forEach(g=>{const t=goalAmt(g);if(t>0&&(g.current||0)>=t)return;const pc=goalPace(g);if(!(pc&&pc.days>=0&&pc.perMonth>0))return;bd+=bdRow(g.label,pc.perMonth,'App.openGoal(\''+g.id+'\')');});
+    if(bg.specialMonthly>0)bd+=bdRow('1年の特別費',bg.specialMonthly,'App.toggleDash(\'lpSpecial\')');
+    if(bg.emergencyMonthly>0)bd+=bdRow('生活防衛費',bg.emergencyMonthly,'App.openEmergency()');
     const heroBlock='<div class="card" style="border-color:var(--color-secondary-300)">'+
       '<p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('coins',16)+'毎月の積立</p>'+
       '<p class="meta" style="margin-top:4px">目標に向けて、毎月とっておきたい金額</p>'+
       '<div class="mid-num" style="font-size:46px;font-weight:800;letter-spacing:-.02em;color:var(--color-secondary-600);margin:8px 0 2px;text-align:center">'+yen(bg.saveTarget)+'</div>'+
-      (bg.hasPlan?
-        ('<div class="row" style="margin-top:8px"><span class="meta ttl-ico">'+ic('heart',14)+'目標のため</span><span class="num">'+yen(bg.goalsMonthly)+'</span></div>'+
-         '<div class="row" style="margin-top:6px"><span class="meta ttl-ico">'+ic('coins',14)+'そなえのため</span><span class="num">'+yen(bg.specialMonthly)+'</span></div>')
-        :'<p class="meta" style="margin-top:8px;line-height:1.6;text-align:center">下に目標や「そなえ」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
+      (bd?('<div style="border-top:1px dashed var(--color-secondary-200);margin:10px 0 0"></div>'+bd):'<p class="meta" style="margin-top:8px;line-height:1.6;text-align:center">下に目標や「そなえ」を登録すると、毎月いくら積み立てればいいかが自動で出ます。</p>')+
       savBlock+
       '</div>';
     // 薄緑の二重を解消：シミュ入口は薄緑をやめ白カードに（フェーズ帯のみ緑）。
@@ -2183,12 +2187,14 @@ const App = {
       this.field("月の生活費",'<input id="f-efcost" class="amt" type="text" inputmode="numeric" placeholder="例: 250,000" value="'+cf(ef.cost)+'" oninput="App.commaize(this)">')+
       this.field("目標（何ヶ月分）",seg3("f-efmonths",[["3","3ヶ月"],["6","6ヶ月"],["12","12ヶ月"]],String(ef.months||6)))+
       this.field("今あるお金（防衛費として）",'<input id="f-efcur" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(ef.current)+'" oninput="App.commaize(this)">')+
+      this.field("毎月の積立（任意）",'<input id="f-efmonthly" class="amt" type="text" inputmode="numeric" placeholder="例: 20,000" value="'+cf(ef.monthly)+'" oninput="App.commaize(this)">')+
+      '<div class="desc" style="margin:-6px 2px 12px">入れると「毎月の積立」に含まれ、ライフプランの内訳に出ます。</div>'+
       this.actions(()=>{
-        const cost=numv("f-efcost"),months=parseInt(seg("f-efmonths"))||6,current=numv("f-efcur");
+        const cost=numv("f-efcost"),months=parseInt(seg("f-efmonths"))||6,current=numv("f-efcur"),monthly=numv("f-efmonthly");
         if(!cost){this.toast("月の生活費を入力してください");return false;}
-        this.state.emergency={cost,months,current};
+        this.state.emergency={cost,months,current,monthly};
         return true;
-      },(this.state.emergency&&this.state.emergency.cost)?()=>{this.state.emergency={cost:"",months:6,current:0};}:null);
+      },(this.state.emergency&&this.state.emergency.cost)?()=>{this.state.emergency={cost:"",months:6,current:0,monthly:0};}:null);
     this.showSheet(h);
   },
   // 貯蓄の歩み（案A）：残高そのものより「前回からの増減」と「推移」を主役に。棚卸しで更新。
