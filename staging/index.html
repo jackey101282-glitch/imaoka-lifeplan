@@ -22,6 +22,8 @@
   --color-secondary-300:#93A996;--color-secondary-400:#76907A;--color-secondary-500:#5E7A62;
   --color-secondary-600:#4A624E;--color-secondary-700:#384B3C;
   --color-accent-400:#5BA784;--color-accent-500:#3D8A66;--color-accent-600:#2E6C50;
+  /* 感情アクセント=くすみコーラル(大人かわいい・達成/ごほうび/キャラ背景に限定) */
+  --color-coral-50:#FBEEEA;--color-coral-100:#F6DCD3;--color-coral-300:#EEB6A7;--color-coral-500:#E8A598;--color-coral-600:#D17F6E;--color-coral-700:#B5634F;
   --color-warning:#CE9233;--color-danger:#C0584B;
   --color-bg-base:#EFE7D8;--color-bg-surface:#FFFDF7;--color-bg-muted:#E8DECF;
   --color-border:#E4DBCE;--color-border-strong:#CBC1B2;
@@ -34,7 +36,7 @@
   --fw-r:400;--fw-m:500;--fw-b:700;
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;
   --space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--screen-px:16px;
-  --radius-sm:6px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
+  --radius-sm:7px;--radius-md:14px;--radius-lg:20px;--radius-xl:26px;--radius-full:9999px;
   --shadow-xs:0 1px 2px rgba(0,0,0,.06);--shadow-sm:0 2px 8px rgba(0,0,0,.08);
   --shadow-md:0 4px 16px rgba(0,0,0,.10);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
   --shadow-primary:0 4px 12px rgba(196,113,74,.28);
@@ -154,7 +156,10 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--color-border-strong);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
 .check.on{background:var(--color-accent-500);border-color:var(--color-accent-500)}
 .empty{text-align:center;color:var(--color-text-secondary);padding:24px 8px;font-size:var(--text-base)}
-.empty .e-ic{font-size:30px;width:64px;height:64px;border-radius:20px;background:var(--color-bg-muted);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;line-height:1}
+.empty .e-ic{font-size:30px;width:64px;height:64px;border-radius:50%;background:var(--color-coral-50);color:var(--color-coral-600);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;line-height:1}
+.empty-char{width:84px;height:84px;object-fit:contain;display:block;margin:0 auto 10px;background:var(--color-coral-50);border-radius:50%;padding:8px;box-sizing:border-box}
+.empty-msg{font-size:var(--text-base);color:var(--color-text-secondary);line-height:1.6}
+.empty-sub{font-size:var(--text-sm);color:var(--color-text-disabled);margin-top:4px;line-height:1.5}
 /* buttons */
 .btn{border:none;border-radius:var(--radius-md);padding:12px 20px;font-size:var(--text-md);font-weight:var(--fw-b);min-height:48px;cursor:pointer;font-family:inherit;transition:all .12s ease-out;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn:active{transform:scale(.98)}
@@ -2165,7 +2170,7 @@ const App = {
     let tasks='<div class="section-title" style="margin-top:0">個別タスク</div>';
     tasks+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
     tasks+='<div class="task-list">';
-    if(!list.length)tasks+='<div class="empty"><span class="e-ic">'+ic('check',30)+'</span>該当するタスクはありません</div>';
+    if(!list.length)tasks+=this.emptyc(f==="open"?"やることは全部おわってます":"まだタスクはありません",f==="open"?"いい調子！":"右下の＋から、やることをメモしましょう");
     list.forEach(t=>tasks+=this.taskRow(t));
     tasks+='</div>';
     // ── プロジェクト（下・展開固定。まとまった計画をコンパクトな行で表示。進捗バーなし）──
@@ -2189,6 +2194,8 @@ const App = {
     return '<div>'+tasks+'<div style="margin-top:26px">'+proj+'</div></div>';
   },
   toggleProjects(){this._projOpen=!this._projOpen;this.render();},
+  /* 空状態に診断キャラ（無ければコツコツ亀）を出して"大人かわいい"に */
+  emptyc(msg,sub){const d=this.state.diagnosis;const slug=(d&&d.slug)||'kame';return '<div class="empty"><img class="empty-char" src="assets/types/'+slug+'.png" alt="" loading="lazy"><div class="empty-msg">'+esc(msg)+'</div>'+(sub?'<div class="empty-sub">'+esc(sub)+'</div>':'')+'</div>';},
   view_taskproject(){
     const p=this.state.projects.find(x=>x.id===this.curProjectId);
     if(!p){this.taskView="home";return this.view_tasks();}
