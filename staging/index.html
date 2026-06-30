@@ -197,6 +197,7 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .qset-chip{border:1px solid var(--color-border);background:var(--color-bg-surface);border-radius:var(--radius-full);padding:3px 12px;font-size:var(--text-sm);cursor:pointer;color:var(--color-text-secondary);font-weight:var(--fw-m)}
 .qset-chip.on{background:var(--color-primary-500);color:#fff;border-color:var(--color-primary-500)}
 .qset-more{margin-left:auto;font-size:var(--text-sm);color:var(--color-secondary-600);font-weight:var(--fw-m);cursor:pointer}
+.detail-toggle{color:var(--color-secondary-600);font-weight:var(--fw-m);font-size:var(--text-sm);cursor:pointer;padding:4px 2px 14px;display:inline-block}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
@@ -2132,17 +2133,10 @@ const App = {
     const attChip=att?('<span class="chip chip-todo ttl-ico">'+att+'</span>'):'';
     const cl=t.checklist||[];const clDone=cl.filter(c=>c.done).length;
     const clChip=cl.length?('<span class="chip '+(clDone===cl.length?'chip-both':'chip-todo')+' ttl-ico">'+ic('check',12)+clDone+'/'+cl.length+'</span>'):'';
-    let qset='';
-    if(this._lastAdded===t.id&&t.status!=="done"){
-      const who=[["husband",esc(this.state.settings.husband)],["wife",esc(this.state.settings.wife)],["both","二人"]];
-      qset='<div class="qset" onclick="event.stopPropagation()"><span class="qset-label">担当</span>'+
-        who.map(o=>'<button class="qset-chip'+(t.assignee===o[0]?' on':'')+'" onclick="App.setQuickAssignee(\''+t.id+'\',\''+o[0]+'\')">'+o[1]+'</button>').join('')+
-        '<span class="qset-more" onclick="App.openTask(\''+t.id+'\')">期日・詳細 ›</span></div>';
-    }
     return '<div class="li '+(t.status==="done"?"done":"")+'">'+
       '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?ic('check',14):'')+'</div>'+
       '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico"><span class="tcat-ic">'+ic(TASK_IC[t.cat]||'tag',15)+'</span>'+esc(t.title)+'</div>'+
-      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div>'+qset+'</div></div>';
+      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div></div></div>';
   },
   projTasks(pid){return this.state.tasks.filter(t=>t.projectId===pid);},
   subTasks(sid){return this.state.tasks.filter(t=>t.subId===sid);},
@@ -2162,10 +2156,6 @@ const App = {
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
     let tasks='<div class="section-title" style="margin-top:0">個別タスク</div>';
-    tasks+='<div class="quickadd">'+
-      '<input id="quick-task" placeholder="やることをメモ（あとで詳しく設定できます）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}">'+
-      '<button class="qa-btn" onclick="App.quickAddTask()" aria-label="追加">＋</button>'+
-      '</div>';
     tasks+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
     tasks+='<div class="task-list">';
     if(!list.length)tasks+='<div class="empty"><span class="e-ic">'+ic('check',30)+'</span>該当するタスクはありません</div>';
@@ -2416,13 +2406,9 @@ const App = {
     const title=el?el.value.trim():"";
     if(!title){this.toast("やることを入力してください");return;}
     if(!projectId && this.filters.tasks==="done")this.filters.tasks="open";
-    const nid=uid();
-    this.state.tasks.push({id:nid,status:"todo",title,cat:"other",assignee:"both",projectId:projectId||null,subId:null,due:null,priority:"medium",memo:"",loc:"",url:"",image:null});
-    this._lastAdded=nid;
+    this.state.tasks.push({id:uid(),status:"todo",title,cat:"other",assignee:"both",projectId:projectId||null,subId:null,due:null,priority:"medium",memo:"",loc:"",url:"",image:null});
     this.commit();
     const n=document.getElementById("quick-task");if(n)n.focus();
-  },
-  setQuickAssignee(id,who){const t=this.state.tasks.find(x=>x.id===id);if(t)t.assignee=who;this.commit();
   },
   setFilter(view,val){
     const fb=document.querySelector(".filters");const sl=fb?fb.scrollLeft:0;
@@ -2880,11 +2866,14 @@ const App = {
     this._formChecklist=it&&it.checklist?JSON.parse(JSON.stringify(it.checklist)):[];
     const presetSub=(typeof subId==="string"&&subId)?subId:(it?it.subId:null);
     const presetProj=presetSub?((this.state.subprojects.find(s=>s.id===presetSub)||{}).projectId):((typeof projId==="string"&&projId)?projId:(it?it.projectId:null));
+    const detailOpen=!!(it||presetDue||presetProj||presetSub);
     const h='<h3>'+(it?"タスクを編集":"タスクを追加")+'</h3>'+
       this.field("やること",'<input id="f-title" placeholder="例: 牛乳を買う / 保育園の書類を出す" value="'+esc(it?it.title:"")+'">')+
-      this.field("カテゴリ",'<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(\'task\',\'f-cat\')">'+this.opts("task",it?it.cat:"other",true)+'</select>')+
       this.field("担当",'<div class="seg" id="f-assignee">'+
         ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'both:二人'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.assignee:"both")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      '<div class="detail-toggle" id="task-detail-toggle" onclick="App.toggleTaskDetail()">'+(detailOpen?'詳細を隠す ▴':'＋ 期日・カテゴリ・メモなどを追加（任意）▾')+'</div>'+
+      '<div id="task-detail-fields"'+(detailOpen?'':' style="display:none"')+'>'+
+      this.field("カテゴリ",'<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(\'task\',\'f-cat\')">'+this.opts("task",it?it.cat:"other",true)+'</select>')+
       this.field("プロジェクト（任意）",'<select id="f-proj" onchange="App.taskProjChange()"><option value="">（個別タスク）</option>'+this.state.projects.map(p=>'<option value="'+p.id+'" '+(p.id===presetProj?"selected":"")+'>'+esc(p.name)+'</option>').join("")+'</select>')+
       '<div id="sub-wrap">'+this.field("グループ（中プロジェクト）",this.taskSubSelect(presetProj,presetSub))+'</div>'+
       '<div class="form-row">'+this.field("期限",'<input id="f-due" type="date" value="'+(it&&it.due?it.due:(presetDue||""))+'">')+
@@ -2895,6 +2884,7 @@ const App = {
       this.field("URL（任意）",'<input id="f-url" type="url" inputmode="url" placeholder="https://" value="'+esc(it&&it.url?it.url:"")+'">')+
       (it&&it.url?'<a class="tlink" href="'+esc(it.url)+'" target="_blank" rel="noopener" style="font-size:var(--text-sm);display:inline-block;margin:-10px 0 14px">リンクを開く ↗</a>':'')+
       this.field("画像・添付（任意）",'<div id="f-img-preview">'+this.imgPreview(it&&it.image)+'</div><input type="file" accept="image/*" onchange="App.pickImage(this)">')+
+      '</div>'+
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("やることを入力してください");return false;}
         if(val("f-cat")==="__add__"){this.toast("カテゴリを選択してください");return false;}
@@ -2921,6 +2911,7 @@ const App = {
   imgPreview(src){return src?('<div style="position:relative;display:inline-block;margin-bottom:10px"><img src="'+src+'" style="max-width:100%;max-height:180px;border-radius:var(--radius-md);display:block"><button type="button" class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;min-height:30px;padding:4px 10px" onclick="App.clearImage()">削除</button></div>'):'';},
   pickImage(input){const f=input.files&&input.files[0];if(!f)return;readImage(f,(d)=>{this._formImage=d;const p=document.getElementById("f-img-preview");if(p)p.innerHTML=this.imgPreview(d);});},
   clearImage(){this._formImage=null;const p=document.getElementById("f-img-preview");if(p)p.innerHTML="";},
+  toggleTaskDetail(){const f=document.getElementById("task-detail-fields"),t=document.getElementById("task-detail-toggle");if(!f)return;const open=f.style.display!=="none";f.style.display=open?"none":"";if(t)t.textContent=open?"＋ 期日・カテゴリ・メモなどを追加（任意）▾":"詳細を隠す ▴";},
   iconPickerHtml(){const cur=this._formIcon||"folder";return '<div class="icon-pick">'+PICK_ICONS.map(n=>'<button type="button" class="icon-pick-btn'+(n===cur?' on':'')+'" onclick="App.pickIcon(\''+n+'\')" aria-label="'+n+'">'+ic(n,22)+'</button>').join('')+'</div>';},
   pickIcon(n){this._formIcon=n;const el=document.getElementById("f-iconpick");if(el)el.innerHTML=this.iconPickerHtml();},
   _initFormIcon(it,def){this._formIcon=it&&it.icon?(_ICONS[it.icon]?it.icon:(EMOJI_ICON[it.icon]||def)):def;},
