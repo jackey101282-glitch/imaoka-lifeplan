@@ -186,12 +186,17 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .task-list{margin-top:2px}
 .task-list .li:last-child{border-bottom:none}
 .tcat-ic{color:var(--color-secondary-500);display:inline-flex;flex-shrink:0}
-.proj-list{margin-top:2px}
-.proj-row{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--color-border);cursor:pointer}
+.proj-card{padding:2px 16px;margin-top:2px}
+.proj-row{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid var(--color-border);cursor:pointer}
 .proj-row:last-child{border-bottom:none}
 .proj-ic{width:34px;height:34px;border-radius:10px;flex-shrink:0;color:var(--color-primary-600);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center}
 .proj-name{font-weight:var(--fw-b);font-size:var(--text-md);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px}
 .proj-chev{color:var(--color-text-disabled);font-size:20px;flex-shrink:0}
+.qset{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;background:var(--color-secondary-50);border:1px solid var(--color-secondary-200);border-radius:10px;padding:7px 9px}
+.qset-label{font-size:var(--text-xs);color:var(--color-text-secondary);font-weight:var(--fw-b)}
+.qset-chip{border:1px solid var(--color-border);background:var(--color-bg-surface);border-radius:var(--radius-full);padding:3px 12px;font-size:var(--text-sm);cursor:pointer;color:var(--color-text-secondary);font-weight:var(--fw-m)}
+.qset-chip.on{background:var(--color-primary-500);color:#fff;border-color:var(--color-primary-500)}
+.qset-more{margin-left:auto;font-size:var(--text-sm);color:var(--color-secondary-600);font-weight:var(--fw-m);cursor:pointer}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
@@ -2127,10 +2132,17 @@ const App = {
     const attChip=att?('<span class="chip chip-todo ttl-ico">'+att+'</span>'):'';
     const cl=t.checklist||[];const clDone=cl.filter(c=>c.done).length;
     const clChip=cl.length?('<span class="chip '+(clDone===cl.length?'chip-both':'chip-todo')+' ttl-ico">'+ic('check',12)+clDone+'/'+cl.length+'</span>'):'';
+    let qset='';
+    if(this._lastAdded===t.id&&t.status!=="done"){
+      const who=[["husband",esc(this.state.settings.husband)],["wife",esc(this.state.settings.wife)],["both","二人"]];
+      qset='<div class="qset" onclick="event.stopPropagation()"><span class="qset-label">担当</span>'+
+        who.map(o=>'<button class="qset-chip'+(t.assignee===o[0]?' on':'')+'" onclick="App.setQuickAssignee(\''+t.id+'\',\''+o[0]+'\')">'+o[1]+'</button>').join('')+
+        '<span class="qset-more" onclick="App.openTask(\''+t.id+'\')">期日・詳細 ›</span></div>';
+    }
     return '<div class="li '+(t.status==="done"?"done":"")+'">'+
       '<div class="check '+(t.status==="done"?"on":"")+'" onclick="event.stopPropagation();App.toggleTask(\''+t.id+'\')">'+(t.status==="done"?ic('check',14):'')+'</div>'+
       '<div class="main" onclick="App.openTask(\''+t.id+'\')" style="cursor:pointer"><div class="ttl ttl-ico"><span class="tcat-ic">'+ic(TASK_IC[t.cat]||'tag',15)+'</span>'+esc(t.title)+'</div>'+
-      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div></div></div>';
+      '<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">'+aChip+dueChip+clChip+attChip+'</div>'+qset+'</div></div>';
   },
   projTasks(pid){return this.state.tasks.filter(t=>t.projectId===pid);},
   subTasks(sid){return this.state.tasks.filter(t=>t.subId===sid);},
@@ -2149,9 +2161,9 @@ const App = {
     else if(f==="done")list=list.filter(t=>t.status==="done");
     list.sort((a,b)=>{if((a.status==="done")!==(b.status==="done"))return a.status==="done"?1:-1;return (a.due||"9999")<(b.due||"9999")?-1:1;});
     const fc=(k,l)=>'<button class="fchip '+(f===k?"on":"")+'" onclick="App.setFilter(\'tasks\',\''+k+'\')">'+l+'</button>';
-    let tasks='<div class="section-title" style="margin-top:0">個別タスク<span class="link" onclick="App.openTask()">＋ 詳しく追加</span></div>';
+    let tasks='<div class="section-title" style="margin-top:0">個別タスク</div>';
     tasks+='<div class="quickadd">'+
-      '<input id="quick-task" placeholder="サクッと追加（例: ドメイン更新の確認）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}">'+
+      '<input id="quick-task" placeholder="やることをメモ（あとで詳しく設定できます）" enterkeyhint="done" onkeydown="if(event.key===\'Enter\'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();App.quickAddTask();}">'+
       '<button class="qa-btn" onclick="App.quickAddTask()" aria-label="追加">＋</button>'+
       '</div>';
     tasks+='<div class="filters">'+fc("open","未完了")+fc("all","すべて")+fc("husband",esc(this.state.settings.husband)+"担当")+fc("wife",esc(this.state.settings.wife)+"担当")+fc("done","完了済み")+'</div>';
@@ -2165,7 +2177,7 @@ const App = {
     if(!projs.length){
       proj+='<div class="meta lo" style="margin:0 4px;line-height:1.6">結婚式準備・引っ越しなど、まとまった計画はプロジェクトに整理できます。</div>';
     }else{
-      proj+='<div class="proj-list">';
+      proj+='<div class="card proj-card">';
       projs.forEach(p=>{
         const ts=this.projTasks(p.id),done=ts.filter(t=>t.status==="done").length;
         const subCnt=this.state.subprojects.filter(s=>s.projectId===p.id).length;
@@ -2404,9 +2416,13 @@ const App = {
     const title=el?el.value.trim():"";
     if(!title){this.toast("やることを入力してください");return;}
     if(!projectId && this.filters.tasks==="done")this.filters.tasks="open";
-    this.state.tasks.push({id:uid(),status:"todo",title,cat:"other",assignee:"both",projectId:projectId||null,subId:null,due:null,priority:"medium",memo:"",loc:"",url:"",image:null});
+    const nid=uid();
+    this.state.tasks.push({id:nid,status:"todo",title,cat:"other",assignee:"both",projectId:projectId||null,subId:null,due:null,priority:"medium",memo:"",loc:"",url:"",image:null});
+    this._lastAdded=nid;
     this.commit();
     const n=document.getElementById("quick-task");if(n)n.focus();
+  },
+  setQuickAssignee(id,who){const t=this.state.tasks.find(x=>x.id===id);if(t)t.assignee=who;this.commit();
   },
   setFilter(view,val){
     const fb=document.querySelector(".filters");const sl=fb?fb.scrollLeft:0;
