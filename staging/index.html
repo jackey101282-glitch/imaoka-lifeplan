@@ -197,7 +197,12 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .qset-chip{border:1px solid var(--color-border);background:var(--color-bg-surface);border-radius:var(--radius-full);padding:3px 12px;font-size:var(--text-sm);cursor:pointer;color:var(--color-text-secondary);font-weight:var(--fw-m)}
 .qset-chip.on{background:var(--color-primary-500);color:#fff;border-color:var(--color-primary-500)}
 .qset-more{margin-left:auto;font-size:var(--text-sm);color:var(--color-secondary-600);font-weight:var(--fw-m);cursor:pointer}
-.detail-toggle{color:var(--color-secondary-600);font-weight:var(--fw-m);font-size:var(--text-sm);cursor:pointer;padding:4px 2px 14px;display:inline-block}
+.detail-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;box-sizing:border-box;border:1.5px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg-muted);padding:13px 14px;margin:2px 0 16px;cursor:pointer;color:var(--color-text-secondary);font-weight:var(--fw-b);font-size:var(--text-md)}
+.detail-toggle.open{background:var(--color-secondary-50);border-color:var(--color-secondary-200);color:var(--color-secondary-700)}
+.detail-toggle .dt-label{display:inline-flex;align-items:center;gap:9px;min-width:0}
+.detail-toggle .dt-opt{font-weight:var(--fw-r);color:var(--color-text-disabled);font-size:var(--text-sm);margin-left:4px}
+.detail-toggle .dt-chev{flex-shrink:0;color:var(--color-text-disabled);font-size:11px}
+.detail-toggle:active{transform:scale(.99)}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
@@ -2871,7 +2876,7 @@ const App = {
       this.field("やること",'<input id="f-title" placeholder="例: 牛乳を買う / 保育園の書類を出す" value="'+esc(it?it.title:"")+'">')+
       this.field("担当",'<div class="seg" id="f-assignee">'+
         ['husband:'+esc(this.state.settings.husband),'wife:'+esc(this.state.settings.wife),'both:二人'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+((it?it.assignee:"both")===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
-      '<div class="detail-toggle" id="task-detail-toggle" onclick="App.toggleTaskDetail()">'+(detailOpen?'詳細を隠す ▴':'＋ 期日・カテゴリ・メモなどを追加（任意）▾')+'</div>'+
+      '<div class="detail-toggle'+(detailOpen?' open':'')+'" id="task-detail-toggle" onclick="App.toggleTaskDetail()"><span class="dt-label">'+ic('clipboard',17)+'<span>期日・カテゴリ・メモなどを設定<span class="dt-opt">（任意）</span></span></span><span class="dt-chev">'+(detailOpen?'▲':'▼')+'</span></div>'+
       '<div id="task-detail-fields"'+(detailOpen?'':' style="display:none"')+'>'+
       this.field("カテゴリ",'<select id="f-cat" onchange="if(this.value===\'__add__\')App.addCat(\'task\',\'f-cat\')">'+this.opts("task",it?it.cat:"other",true)+'</select>')+
       this.field("プロジェクト（任意）",'<select id="f-proj" onchange="App.taskProjChange()"><option value="">（個別タスク）</option>'+this.state.projects.map(p=>'<option value="'+p.id+'" '+(p.id===presetProj?"selected":"")+'>'+esc(p.name)+'</option>').join("")+'</select>')+
@@ -2911,7 +2916,7 @@ const App = {
   imgPreview(src){return src?('<div style="position:relative;display:inline-block;margin-bottom:10px"><img src="'+src+'" style="max-width:100%;max-height:180px;border-radius:var(--radius-md);display:block"><button type="button" class="btn btn-danger btn-sm" style="position:absolute;top:6px;right:6px;min-height:30px;padding:4px 10px" onclick="App.clearImage()">削除</button></div>'):'';},
   pickImage(input){const f=input.files&&input.files[0];if(!f)return;readImage(f,(d)=>{this._formImage=d;const p=document.getElementById("f-img-preview");if(p)p.innerHTML=this.imgPreview(d);});},
   clearImage(){this._formImage=null;const p=document.getElementById("f-img-preview");if(p)p.innerHTML="";},
-  toggleTaskDetail(){const f=document.getElementById("task-detail-fields"),t=document.getElementById("task-detail-toggle");if(!f)return;const open=f.style.display!=="none";f.style.display=open?"none":"";if(t)t.textContent=open?"＋ 期日・カテゴリ・メモなどを追加（任意）▾":"詳細を隠す ▴";},
+  toggleTaskDetail(){const f=document.getElementById("task-detail-fields"),t=document.getElementById("task-detail-toggle");if(!f)return;const open=f.style.display!=="none";f.style.display=open?"none":"";if(t){t.classList.toggle("open",!open);const c=t.querySelector(".dt-chev");if(c)c.textContent=open?"▼":"▲";}},
   iconPickerHtml(){const cur=this._formIcon||"folder";return '<div class="icon-pick">'+PICK_ICONS.map(n=>'<button type="button" class="icon-pick-btn'+(n===cur?' on':'')+'" onclick="App.pickIcon(\''+n+'\')" aria-label="'+n+'">'+ic(n,22)+'</button>').join('')+'</div>';},
   pickIcon(n){this._formIcon=n;const el=document.getElementById("f-iconpick");if(el)el.innerHTML=this.iconPickerHtml();},
   _initFormIcon(it,def){this._formIcon=it&&it.icon?(_ICONS[it.icon]?it.icon:(EMOJI_ICON[it.icon]||def)):def;},
