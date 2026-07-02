@@ -1172,7 +1172,7 @@ const App = {
   render(){
     document.getElementById("cur-month").textContent=monthLabel(this.curMonth);
     document.getElementById("month-nav").classList.toggle("off",this.curMonth!==thisMonth());
-    const titles={dashboard:"ホーム",lifeplan:"ライフプラン",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定",income_list:"収入",expense_list:"支出",simulator:"将来シミュレーション"};
+    const titles={dashboard:"ホーム",lifeplan:"ライフプラン",tasks:"タスク",calendar:"カレンダー",share:"共有",settings:"設定",income_list:"収入",expense_list:"支出",simulator:"将来シミュレーション",cflab:"ラボ（新デザイン試作）"};
     let title=titles[this.tab]||"";
     if(this.tab==="share"){
       if(this.shareView==="notes")title="共有メモ";
@@ -2494,8 +2494,8 @@ const App = {
     this.commit();this.render();
   },
   cfApplyFromSync(){this.cfRebuild();this.toast("すり合わせの答えを反映しました");},
-  cfProject(cf){
-    cf=cf||this.cfDefaults();
+  cfProject(cf,extra){
+    cf=cf||this.cfDefaults();extra=extra||0;
     const years=30;
     const loanM=cf.buy.on?this.cfLoanMonthly(cf.buy.price-cf.buy.down,cf.buy.rate,cf.buy.years):0;
     const firstChild=cf.children.length?Math.min.apply(null,cf.children.map(c=>c.after)):null;
@@ -2513,7 +2513,7 @@ const App = {
       if(cf.buy.on&&y===cf.buy.after){evY+=cf.buy.down;evNames.push("住宅頭金");}
       expY+=evY;
       const net=incomeY-expY;
-      if(y>0)cash+=net;
+      if(y>0)cash+=net+(extra||0)*12;
       rows.push({y,income:incomeY,exp:expY,net,cash,wf,evNames,childY});
     }
     let minRow=rows[0];rows.forEach(r=>{if(r.cash<minRow.cash)minRow=r;});
@@ -2618,6 +2618,59 @@ const App = {
     return {monthly,bonus,years,rows};
   },
   setSim(k,v){this.state.sim[k]=(k==="years")?(+v):String(v).replace(/[^0-9.]/g,"");this.commit();},
+  cfNisaFV(monthly,years,ratePct){const i=(ratePct/100)/12,n=years*12;if(i<=0)return monthly*n;return Math.round(monthly*((Math.pow(1+i,n)-1)/i));},
+  cfLabFuture(y){this._cfLabY=+y;this.render();},
+  cfLabSlider(v){
+    const cfp=this.cfDefaults(),extra=(+v)||0,p2=this.cfProject(cfp,extra);
+    const e=document.getElementById("cflab-extra");if(e)e.textContent="＋"+cf(extra)+"円/月";
+    const a=document.getElementById("cflab-asset");if(a)a.textContent=yen(p2.rows[p2.rows.length-1].cash);
+    const vv=document.getElementById("cflab-valley");if(vv){if(p2.breach){vv.textContent=p2.breach.y+"年後に注意";vv.style.color="var(--color-warning)";}else{vv.textContent="ずっと安心";vv.style.color="var(--color-accent-600)";}}
+  },
+  view_cflab(){
+    const cf=this.cfDefaults(),p=this.cfProject(cf),goals=this.cfGoals(cf);
+    const nowMonthly=Math.round(p.rows[0].net/12),totalNow=goals.reduce((s,g)=>s+g.now,0);
+    const takeHome=(cf.hIncome||0)+(cf.wIncome||0),savePct=takeHome>0?Math.round(Math.max(0,nowMonthly)/takeHome*100):0;
+    const freeMonthly=Math.max(0,nowMonthly-totalNow),freeDay=Math.round(freeMonthly/30);
+    let h='<button class="back-btn" onclick="App.go(\'simulator\')">'+ic('back',16)+'将来シミュレーション</button>';
+    h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">アイデア全部乗せの実験画面です。ここは自由に触ってOK。良かったものを本番に取り込みます。</p>';
+    // 家計の天気
+    let wWord,wColor,wSub;
+    if(!p.breach){wWord="晴れ";wColor="var(--color-accent-600)";wSub="この計画なら、ずっと安心の見通しです。";}
+    else if(p.breach.y>=15){wWord="くもり";wColor="var(--color-warning)";wSub=p.breach.y+"年後ごろ、そろそろ備えを。";}
+    else{wWord="雨のち晴れ";wColor="var(--color-danger)";wSub=p.breach.y+"年後が山場。今から少し整えれば大丈夫。";}
+    h+='<div class="card" style="text-align:center;border:1.5px solid var(--color-primary-200)"><div class="meta">ふたりの家計の天気</div><div style="font-size:var(--text-3xl);font-weight:800;color:'+wColor+';margin:2px 0">'+wWord+'</div><div class="meta" style="line-height:1.6">'+wSub+'</div></div>';
+    // 今日使っていい額
+    h+='<div class="card" style="border:1.5px solid var(--color-primary-400)"><p class="meta" style="margin:0">未来の積立まで引いて、今日 自由に使えるのは</p><div class="big-num" style="color:var(--color-primary-600)">'+yen(freeMonthly)+'<span style="font-size:.4em;font-weight:600">/月</span></div><div class="meta">1日あたり 約 '+yen(freeDay)+'</div></div>';
+    // what-if スライダー
+    h+='<div class="section-title">もし毎月ちょっと多く貯めたら？</div><div class="card">'+
+      '<div class="row"><span class="meta">毎月の上乗せ</span><span class="num" id="cflab-extra" style="font-weight:800;color:var(--color-primary-600)">＋0円/月</span></div>'+
+      '<input type="range" min="0" max="50000" step="5000" value="0" style="width:100%;margin:10px 0;accent-color:var(--color-primary-500)" oninput="App.cfLabSlider(this.value)">'+
+      '<div class="row"><span class="meta">30年後の貯蓄</span><span class="num" id="cflab-asset" style="font-weight:700">'+yen(p.rows[p.rows.length-1].cash)+'</span></div>'+
+      '<div class="row" style="margin-top:4px"><span class="meta">現金の谷</span><span class="num" id="cflab-valley" style="font-weight:700;color:'+(p.breach?"var(--color-warning)":"var(--color-accent-600)")+'">'+(p.breach?p.breach.y+"年後に注意":"ずっと安心")+'</span></div>'+
+      '</div>';
+    // 目標ごと 今から月いくら（上位3）
+    if(goals.length){h+='<div class="section-title">今から積み立てるなら</div>';
+      goals.slice(0,3).forEach(g=>{const gic=g.edu?"graduation":(g.name.indexOf("住宅")>=0?"house":(g.name.indexOf("車")>=0?"car":"party"));h+='<div class="card" style="margin-bottom:8px;padding:12px 14px"><div class="row"><span class="ttl-ico" style="font-weight:700">'+ic(gic,15)+esc(g.name)+'</span><span class="num" style="font-weight:800;color:var(--color-primary-600)">月 '+yen(g.now)+'</span></div>'+(g.save>0?'<div class="meta" style="margin-top:2px">直前なら月 '+yen(g.last)+'＝<b style="color:var(--color-accent-600)">今からで '+yen(g.save)+' ラク</b></div>':'')+'</div>';});}
+    // 現金カーブ（タップ）
+    h+='<div class="section-title">現金の見通し（タップで各年）</div><div class="card">'+this.cfChartBlock(p,p.breach||(p.minRow.y>0?p.minRow:null))+'</div>';
+    // 未来の私たち
+    const fy=this._cfLabY||10,fr=p.rows[fy]||p.rows[10],fctx=this.cfYearContext(cf,fy);
+    h+='<div class="section-title">未来の私たち</div><div class="card"><div class="seg" style="margin-bottom:10px">'+[5,10,20,30].map(y=>'<button type="button" class="'+(fy===y?"on":"")+'" onclick="App.cfLabFuture('+y+')">'+y+'年後</button>').join("")+'</div>'+
+      '<div style="text-align:center"><div class="meta">'+fy+'年後の私たち</div><div class="big-num" style="font-size:clamp(28px,9vw,38px);color:'+(fr.cash<0?"var(--color-danger)":"var(--color-primary-600)")+'">'+(fr.cash<0?"貯蓄が不足":"貯蓄 "+yen(fr.cash))+'</div><div class="meta">'+(fctx||"ふたりの暮らし")+'</div></div></div>';
+    // NISA複利ワクワク
+    h+='<div class="section-title">つみたてNISAで増やすと（年3%・目安）</div><div class="card">';
+    [10000,30000,50000].forEach(m=>{const fv=this.cfNisaFV(m,20,3),gan=m*12*20,up=fv-gan;h+='<div class="li" style="padding:10px 0"><div class="main"><div class="ttl">月 '+yen(m)+' × 20年</div><div class="meta">元本 '+yen(gan)+' ＋ ふえた <b style="color:var(--color-accent-600)">'+yen(up)+'</b></div></div><span class="amt" style="color:var(--color-primary-600)">'+yen(fv)+'</span></div>';});
+    h+='<p class="muted" style="font-size:var(--text-xs);margin:6px 2px 0;line-height:1.6">※ 年3%で計算した目安。投資は元本保証ではありません（相場により増減）。</p></div>';
+    // 穏やかベンチマーク
+    h+='<div class="section-title">同年代とくらべて（参考）</div><div class="card"><div class="row"><span class="meta">共働き子育て世帯の貯蓄率の目安</span><span class="num" style="font-weight:700">約 20%</span></div><div class="row" style="margin-top:4px"><span class="meta">あなたたち（今のペース）</span><span class="num" style="font-weight:800;color:'+(savePct>=20?"var(--color-accent-600)":"var(--color-primary-600)")+'">約 '+savePct+'%</span></div><div class="meta" style="margin-top:6px;line-height:1.6">'+(savePct>=20?"目安を上回っています。いいペース。":"目安に近づけると、将来がぐっとラクになります。")+'</div></div>';
+    // 今日の一手
+    let step;
+    if(p.breach){const need=p.minRow.y>0?Math.ceil((p.reserve-p.minRow.cash)/(p.minRow.y*12)/1000)*1000:0;step="毎月あと "+yen(Math.max(1000,need))+" 積み立てると、"+p.breach.y+"年後の谷が消えます。上のスライダーで試せます。";}
+    else step="今のペースで大丈夫。今月は無理せず、ふたりで少し楽しむ予算に回してOK。";
+    h+='<div class="section-title">今日の一手</div><div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)"><div class="ttl-ico" style="color:var(--color-primary-700);font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic("sparkle",15)+'<span>'+step+'</span></div></div>';
+    h+='<p class="muted" style="font-size:var(--text-xs);margin:10px 4px 24px;line-height:1.6">これは実験画面（ラボ）です。良かった表示を「将来シミュレーション」本体に取り込みます。要らなければこの画面ごと外せます。</p>';
+    return h;
+  },
   view_simulator(){
     const cfp=this.cfDefaults(),p=this.cfProject(cfp),goals=this.cfGoals(cfp);
     const nowMonthly=Math.round(p.rows[0].net/12);
@@ -2625,6 +2678,7 @@ const App = {
     const okPace=nowMonthly>=totalNow;
     let h='<button class="back-btn" onclick="App.go(\'dashboard\')">'+ic('back',16)+'ホーム</button>';
     h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">やりたいことに向けて「<b>今から</b>毎月いくら貯めればいいか」。早く始めるほどラクになります。</p>';
+    h+='<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--color-primary-50);border-color:var(--color-primary-200)" onclick="App.go(\'cflab\')"><div class="ic" style="background:var(--color-primary-100);color:var(--color-primary-600);width:42px;height:42px">'+ic("sparkle",21)+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--color-primary-600)">新デザインを試す（ラボ）</div><div class="meta">アイデア全部乗せの実験版。ここは自由に触ってOK</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
     // 前提（折りたたみ・上部）
     h+=this.cfInputsHtml(cfp);
     const takeHome=(cfp.hIncome||0)+(cfp.wIncome||0);
