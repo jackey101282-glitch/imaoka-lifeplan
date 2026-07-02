@@ -389,6 +389,16 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 input::-webkit-calendar-picker-indicator{margin-left:0}
 .sheet-actions{display:flex;gap:10px;margin-top:8px}
 .delete-link{text-align:center;color:var(--color-danger);font-size:var(--text-base);padding:14px;cursor:pointer;font-weight:var(--fw-m)}
+/* シート上部の保存バー（一番下までスクロール不要） */
+.sheet-topbar{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 calc(-1 * var(--screen-px)) 10px;padding:2px var(--screen-px) 10px;background:var(--color-bg-surface);border-bottom:1px solid var(--color-border)}
+.stb-x{width:34px;height:34px;border-radius:var(--radius-full);border:none;background:var(--color-bg-muted);color:var(--color-text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.stb-save{border:none;background:var(--color-primary-500);color:#fff;font-weight:700;font-size:var(--text-base);padding:9px 24px;border-radius:var(--radius-full);cursor:pointer;font-family:inherit;box-shadow:var(--shadow-primary)}
+/* 予定のスワイプ削除（右→左でしゅっと） */
+.day-list{margin:2px 0 16px}
+.swipe-wrap{position:relative;overflow:hidden;border-bottom:1px solid var(--color-border)}
+.swipe-del{position:absolute;top:0;right:0;height:100%;width:84px;border:none;background:var(--color-danger);color:#fff;font-size:var(--text-sm);font-weight:700;cursor:pointer;font-family:inherit}
+.swipe-row{position:relative;background:var(--color-bg-surface);transform:translateX(0);will-change:transform;touch-action:pan-y}
+.swipe-row.li{border-bottom:none}
 /* settings */
 .set-group{background:var(--color-bg-surface);border-radius:var(--radius-lg);border:1px solid var(--color-border);overflow:hidden;margin-bottom:var(--space-4)}
 .set-head{font-size:var(--text-xs);letter-spacing:.04em;color:var(--color-text-secondary);font-weight:var(--fw-b);margin:var(--space-5) 4px var(--space-2)}
@@ -2787,10 +2797,10 @@ const App = {
     ym=ym||this.calMonth;
     const map={};
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
-    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,onclick:"App.openTask('"+t.id+"')"})}});
-    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
-    this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",exp:true,icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",onclick:"App.openExpense('"+e.id+"')"})}});
-    this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",onclick:"App.openItem('"+w.id+"')"})}});
+    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,id:t.id,coll:"tasks",onclick:"App.openTask('"+t.id+"')"})}});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=e.type==="income"?"💰":(e.type==="payment"?"💴":"📌");const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",id:e.id,coll:"events",fixed:!!e.fixed,onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
+    this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",exp:true,icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",id:e.id,coll:"expenses",onclick:"App.openExpense('"+e.id+"')"})}});
+    this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",id:w.id,coll:"items",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
     return map;
   },
@@ -2831,16 +2841,31 @@ const App = {
   pickThisMonth(){this.calMonth=thisMonth();this.closeSheet();this.render();},
   openDay(ds){
     const items=this.calItems(ds.slice(0,7))[ds]||[];
-    const solo=!!(this.state&&this.state.settings&&this.state.settings.spaceMode==="solo");
-    let h='<h3>'+ds.replace(/-/g,"/")+'</h3>';
-    h+='<button class="btn btn-primary btn-block" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ この日に予定を追加</button>';
-    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ この日にタスクを追加</button>';
-    if(!items.length)h+='<div class="empty" style="margin-top:16px">この日の予定はまだありません</div>';
-    else{h+='<div style="margin-top:16px"></div>';items.forEach(it=>{h+='<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'><span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'')+'</div>'});}
+    let h='<h3 style="margin:0 0 10px">'+ds.replace(/-/g,"/")+'</h3>';
+    // 予定を最上部に大きく（何が入っているかを一目で）
+    if(!items.length)h+='<div class="empty" style="margin:4px 0 18px">この日の予定はまだありません</div>';
+    else h+='<div class="day-list">'+items.map(it=>this.dayRowHtml(it,ds)).join("")+'</div>';
+    h+='<button class="btn btn-primary btn-block" onclick="App.closeSheet();App.openEvent(null,\''+ds+'\')">＋ 予定を追加</button>';
+    h+='<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.closeSheet();App.openTask(null,null,null,\''+ds+'\')">＋ タスクを追加</button>';
     const stId=(this.state.stamps||{})[ds];const stD=stId&&stampDef(stId);
     h+='<div class="li" onclick="App.closeSheet();App.openStampPicker(\''+ds+'\')" style="cursor:pointer;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"><span class="ic" style="color:'+(stD?stD.color:'var(--color-primary-600)')+'">'+(stD?ic(stD.id,19):ic('sparkle',19))+'</span><div class="main"><div class="ttl">'+(stD?'スタンプ：'+stD.label:'スタンプを貼る')+'</div></div><span style="color:var(--color-text-disabled);font-size:20px">›</span></div>';
-    this.showSheet(h);
+    this.showSheet(h,true);
   },
+  dayRowHtml(it,ds){
+    const inner='<span class="ic">'+renderCatIc(it.icon,19)+'</span><div class="main"><div class="ttl">'+esc(it.title)+'</div>'+(it.memo?'<div class="meta" style="white-space:pre-wrap;margin-top:2px">'+esc(it.memo)+'</div>':'')+'</div>'+(it.amount?'<span class="amt">'+yen(it.amount)+'</span>':'');
+    const deletable=it.coll&&it.id&&!it.recur;
+    if(deletable){
+      const open=(it.onclick||"").replace(/"/g,'&quot;');
+      return '<div class="swipe-wrap"><button class="swipe-del" onclick="App.calDel(\''+it.coll+'\',\''+it.id+'\',\''+ds+'\')">削除</button>'+
+        '<div class="li swipe-row" data-open="'+open+'" ontouchstart="App.swStart(event,this)" ontouchmove="App.swMove(event,this)" ontouchend="App.swEnd(event,this)" onclick="App.swTap(this)">'+inner+'</div></div>';
+    }
+    return '<div class="li" '+(it.onclick?('onclick="App.closeSheet();'+it.onclick+'" style="cursor:pointer"'):'')+'>'+inner+'</div>';
+  },
+  calDel(coll,id,ds){this.state[coll]=(this.state[coll]||[]).filter(x=>x.id!==id);this.commit();this.render();this.toast("削除しました");this.openDay(ds);},
+  swStart(e,el){const t=e.touches[0];el._sx=t.clientX;el._sy=t.clientY;el._drag=false;el._moved=false;el.style.transition="none";el._base=el._open?-84:0;},
+  swMove(e,el){if(el._sx==null)return;const t=e.touches[0];const dx=t.clientX-el._sx,dy=t.clientY-el._sy;if(!el._drag){if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){el._drag=true;}else if(Math.abs(dy)>8){el._sx=null;return;}else{return;}}el._moved=true;if(e.cancelable)e.preventDefault();let tx=el._base+dx;tx=Math.max(-84,Math.min(0,tx));el.style.transform="translateX("+tx+"px)";},
+  swEnd(e,el){el.style.transition="";if(!el._drag)return;const m=/translateX\((-?[\d.]+)px\)/.exec(el.style.transform||"");const tx=m?parseFloat(m[1]):0;if(tx<-42){el.style.transform="translateX(-84px)";el._open=true;}else{el.style.transform="translateX(0px)";el._open=false;}},
+  swTap(el){if(el._moved){el._moved=false;return;}if(el._open){el.style.transform="translateX(0px)";el._open=false;return;}const o=el.getAttribute("data-open");this.closeSheet();if(o){try{(0,eval)(o);}catch(err){}}},
   openStampPicker(ds){
     const cur=(this.state.stamps||{})[ds];
     let h='<h3>'+ds.replace(/-/g,"/")+' にスタンプ</h3><p class="muted" style="font-size:var(--text-sm);margin:0 2px 4px">予定にスタンプを貼ると、カレンダーがふたりらしくなります🌿</p>';
@@ -3076,14 +3101,19 @@ const App = {
     '<div class="pal-meta"><div><div class="pal-name">'+p.name+'</div><div class="pal-desc">'+p.desc+'</div></div>'+(on?'<span class="pal-check">'+ic("check",18)+'</span>':'')+'</div></button>';}).join("");},
 
   /* ============== Sheets / Forms ============== */
-  showSheet(html){
+  showSheet(html,tall){
     const sh=document.getElementById("sheet");
     const _o=document.getElementById("onb");if(_o&&this._onb&&this._onb.active){_o.className="onb-hidden";_o.innerHTML="";}
-    sh.innerHTML='<div class="grip"></div><button class="sheet-close" onclick="App.closeSheet()" aria-label="閉じる">✕</button>'+html;
+    // 保存が要るフォームは上部にも「保存」バーを出す（一番下までスクロールしなくてよい）
+    const head=this._pendingSave
+      ?'<div class="grip"></div><div class="sheet-topbar"><button class="stb-x" onclick="App.closeSheet()" aria-label="閉じる">✕</button><button class="stb-save" onclick="App._save()">保存</button></div>'
+      :'<div class="grip"></div><button class="sheet-close" onclick="App.closeSheet()" aria-label="閉じる">✕</button>';
+    sh.innerHTML=head+html;
+    this._pendingSave=false;
     // iOSのSafariは vh が「ツールバーを隠した時の高さ」基準で、機種/版によりシートが画面を覆い上のグリップが画面外に出る。
     // 実際に見えている高さ(visualViewport)を基準に制限し、必ず上に余白(=暗い所タップ/グリップで閉じれる)を残す。
     const vvh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight||640;
-    sh.style.maxHeight=Math.round(vvh*0.88)+"px";
+    sh.style.maxHeight=Math.round(vvh*(tall?0.94:0.88))+"px";
     document.getElementById("scrim").classList.add("show");
     document.body.classList.add("noscroll");
     requestAnimationFrame(()=>{sh.classList.add("show");sh.scrollTop=0;});
@@ -3484,7 +3514,7 @@ const App = {
   actions(onSave,onDelete){
     let h='<div class="sheet-actions"><button class="btn btn-ghost" style="flex:1" onclick="App.closeSheet()">キャンセル</button><button class="btn btn-primary" style="flex:2" onclick="App._save()">保存</button></div>';
     if(onDelete)h+='<div class="delete-link" onclick="App._delete()">削除する</div>';
-    this._onSave=onSave;this._onDelete=onDelete;
+    this._onSave=onSave;this._onDelete=onDelete;this._pendingSave=true;
     return h;
   },
   _save(){if(this._onSave()!==false){this.closeSheet();this.commit();const c=this._celebrate;this._celebrate=null;if(c){this.celebrate(c);}else{this.toast("保存しました");}}},
