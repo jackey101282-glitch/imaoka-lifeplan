@@ -104,6 +104,17 @@ main{padding:var(--space-4) var(--screen-px) 24px;max-width:560px;margin:0 auto;
   box-shadow:0 3px 14px rgba(74,52,30,.07),0 1px 3px rgba(74,52,30,.05);border:none;margin-bottom:var(--space-3);
 }
 .card-title{font-size:var(--text-base);font-weight:var(--fw-b);color:var(--color-text-secondary);margin:0 0 var(--space-3)}
+/* 数字の組版を精密に（垢抜け） */
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* 使えるお金＝ヒーロー（ラベル上・巨大数字・¥を小さく） */
+.usable-hero{text-align:center;margin:18px 0 2px}
+.usable-hero .uh-label{font-size:var(--text-xs);color:var(--color-text-secondary);letter-spacing:.06em;font-weight:var(--fw-b)}
+.usable-hero .uh-num{font-family:var(--font-family-number);font-size:clamp(40px,13.5vw,54px);font-weight:800;line-height:1.04;letter-spacing:-.02em;color:var(--color-text-primary);margin-top:4px;font-variant-numeric:tabular-nums}
+.usable-hero.neg .uh-num{color:var(--color-danger)}
+.usable-hero .uh-yen{font-size:.5em;font-weight:700;vertical-align:.14em;margin-right:2px;color:var(--color-text-secondary)}
+.uh-status{margin-top:12px;font-size:var(--text-sm);line-height:1.55;color:var(--color-text-secondary)}
+.uh-status.neg{color:var(--color-danger)}
+.dash-divider{height:1px;background:var(--color-border);margin:16px 0 14px}
 .section-title{font-size:var(--text-lg);font-weight:var(--fw-b);margin:var(--space-6) 0 var(--space-3);display:flex;justify-content:space-between;align-items:center}
 .link{color:var(--color-coral-600);font-weight:var(--fw-m);cursor:pointer}
 .section-title .link{font-size:var(--text-sm);color:var(--color-coral-600);font-weight:var(--fw-m);cursor:pointer}
@@ -1564,8 +1575,7 @@ const App = {
     }
     // 赤字/不足の警告のみ残す(「残り＝貯金できる分」カードは廃止:完璧入力前提の数字で誤解を招くため)
     let warn='';
-    if(m.balance<0)warn='<div class="warn-box">'+ic('alert',15)+'支出が収入を超えています（'+yen(-m.balance)+'の赤字）。支出を見直しましょう。</div>';
-    else if(m.afterPlanned<0)warn='<div class="warn-box">'+ic('alert',15)+'これから支払う予定を含めると '+yen(-m.afterPlanned)+' 足りません。お金を用意するか、予定を見直してください。</div>';
+    // 上部の赤バナーは廃止（雑に見える）。お金の状態は収支カードのヒーロー下に上品に表示する。
     const remainCard='';
     const shareLink=(m.totalIncome>0||m.totalExpense>0)?'<button class="btn btn-sec btn-block ttl-ico" style="justify-content:center;margin:2px 0 18px" onclick="App.openReport()">'+ic('eye',16)+' 今月のレポートを見る</button>':'';
 
@@ -1783,26 +1793,25 @@ const App = {
       const dn=(this.curMonth===_td.slice(0,7))?(+_td.slice(8)):Dn;
       const dayPct=Math.min(100,Math.round(dn/Dn*100));
       const tabBtn=(key,label)=>'<button onclick="App.setBudgetTab(\''+key+'\')" style="flex:1;border:none;border-radius:7px;padding:7px 4px;font-weight:800;font-size:var(--text-sm);cursor:pointer;background:'+((tab===key)?'#fff':'transparent')+';color:'+((tab===key)?'var(--color-secondary-600)':'var(--color-text-secondary)')+';box-shadow:'+((tab===key)?'0 1px 3px rgba(0,0,0,.08)':'none')+'">'+label+'</button>';
-      budgetCard='<div class="card" style="border-color:var(--color-secondary-300)">'+
-        '<div class="row"><p class="card-title ttl-ico" style="margin:0;color:var(--color-secondary-600)">'+ic('wallet',16)+'今月の収支</p><span class="link" onclick="App.go(\'lifeplan\')">ライフプラン ›</span></div>'+
-        '<div class="row" style="margin-top:9px;font-size:var(--text-sm)"><span class="meta">'+_bm+'月の経過</span><span class="meta num" style="font-size:var(--text-base)">'+dn+'<span style="color:var(--color-text-tertiary,#9a978f);font-weight:400"> / </span>'+Dn+'日</span></div>'+
-        '<div class="prog" style="margin-top:5px;height:6px"><span class="fill-sec" style="width:'+dayPct+'%"></span></div>'+
-        '<div style="display:flex;gap:6px;margin:11px 0 2px;background:var(--color-secondary-50);padding:4px;border-radius:10px">'+tabBtn('done','確定（今）')+tabBtn('coming','これから（月末見込み）')+'</div>'+
-        '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.toggleDash(\'incd\')"><span class="meta">収入</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num" style="color:var(--color-primary-500)">'+yen(incVal)+'</span>'+chev('incd')+'</span></div>'+
+      const heroStatus = neg
+        ? '<div class="uh-status neg">'+ic('alert',13)+' 固定費と積立で収入を超えています。積立か固定費を見直しましょう。</div>'
+        : (over
+            ? '<div class="uh-status neg">'+ic('alert',13)+' 今月の予算を '+yen(-left)+' オーバー。貯金や積立を取り崩す状態です。</div>'
+            : '<div class="uh-status">月末まであと '+Math.max(0,Dn-dn)+'日 ・ このペースなら残り <b style="color:'+leftColor+'">'+yen(left)+'</b></div>');
+      budgetCard='<div class="card">'+
+        '<div class="row"><p class="card-title ttl-ico" style="margin:0">'+ic('wallet',15)+'今月の収支</p><span class="link" onclick="App.go(\'lifeplan\')">ライフプラン ›</span></div>'+
+        '<div class="usable-hero'+(neg?' neg':'')+'"><div class="uh-label">今月 使えるお金</div><div class="uh-num"><span class="uh-yen">¥</span>'+String(yen(usable)).replace(/[¥￥]/,'')+'</div></div>'+
+        heroStatus+
+        (neg?'':'<div class="prog" style="margin-top:12px;height:4px"><span class="'+(over?'fill-danger':'fill-primary')+'" style="width:'+pct+'%"></span></div>')+
+        '<div class="dash-divider"></div>'+
+        '<div style="display:flex;gap:6px;margin:0 0 6px;background:var(--color-bg-muted);padding:4px;border-radius:10px">'+tabBtn('done','確定')+tabBtn('coming','これから')+'</div>'+
+        '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.toggleDash(\'incd\')"><span class="meta">収入</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num">'+yen(incVal)+'</span>'+chev('incd')+'</span></div>'+
         (this.dashOpen.incd?('<div style="padding:0 2px 6px">'+incHtml+'</div>'):'')+
-        '<div class="row" style="margin-top:6px;cursor:pointer" onclick="App.toggleDash(\'commd\')"><span class="meta">支出</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num">− '+yen(fixVal)+'</span>'+chev('commd')+'</span></div>'+
+        '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.toggleDash(\'commd\')"><span class="meta">支出</span><span style="display:flex;align-items:center;gap:6px"><span class="amt num">− '+yen(fixVal)+'</span>'+chev('commd')+'</span></div>'+
         (this.dashOpen.commd?('<div style="padding:0 2px 6px">'+commHtml+'</div>'):'')+
-        '<div style="border-top:1px dashed var(--color-secondary-200);margin:10px 0 0"></div>'+
-        '<div class="row" style="margin-top:9px"><span style="font-weight:700">残金（収入−支出）</span><span class="amt num" style="font-weight:700;color:'+(zankin<0?'var(--color-danger)':'inherit')+'">'+yen(zankin)+'</span></div>'+
-        '<div class="row" style="margin-top:7px;cursor:pointer" onclick="App.go(\'lifeplan\')"><span class="meta">積立（ゴール＋特別費）<br><span style="font-size:11px;color:var(--color-text-tertiary,#9a978f)">'+saveSub+'</span></span><span class="amt num">− '+yen(saveT)+'</span></div>'+
-        '<div style="border-top:1px dashed var(--color-secondary-200);margin:11px 0 0"></div>'+
-        '<div class="row" style="margin-top:11px"><span style="font-weight:700;color:var(--color-secondary-600)">今月 使えるお金</span><span class="mid-num" style="color:'+(neg?'var(--color-danger)':'var(--color-secondary-600)')+'">'+yen(usable)+'</span></div>'+
-        (neg
-          ? '<div style="margin-top:10px;font-size:var(--text-sm);line-height:1.6;color:var(--color-danger)">'+ic('alert',14)+' 固定費と積立で収入を超えています。積立額か固定費を見直しましょう。</div>'
-          : '<div class="prog" style="margin-top:10px;height:10px"><span class="'+(over?'fill-danger':'fill-primary')+'" style="width:'+pct+'%"></span></div>'+
-            '<div class="row" style="margin-top:8px;font-size:var(--text-sm)"><span class="meta">使った（変動費）'+yen(spent)+'</span><span style="font-weight:700;color:'+leftColor+'">残り '+yen(left)+'</span></div>'+
-            (over?'<div style="margin-top:8px;font-size:var(--text-sm);line-height:1.6;color:var(--color-danger)">'+ic('alert',14)+' 今月の予算を '+yen(-left)+' オーバー。ここから先は貯金や積立を取り崩すことになります。</div>'
-                 :(bg.hasPlan?'':'<div class="meta" style="margin-top:9px;line-height:1.5"><span class="link" onclick="App.go(\'lifeplan\')">ライフプランでゴールや特別費を設定</span>すると、毎月いくら積み立てて残りで暮らせるかが分かります。</div>')))+
+        '<div class="row" style="margin-top:8px;cursor:pointer" onclick="App.go(\'lifeplan\')"><span class="meta">積立（ゴール＋特別費）</span><span class="amt num">− '+yen(saveT)+'</span></div>'+
+        '<div class="row" style="margin-top:8px"><span class="meta" style="font-weight:700;color:var(--color-text-primary)">残金（収入−支出）</span><span class="amt num" style="font-weight:700;color:'+(zankin<0?'var(--color-danger)':'inherit')+'">'+yen(zankin)+'</span></div>'+
+        (bg.hasPlan?'':'<div class="meta" style="margin-top:10px;line-height:1.5"><span class="link" onclick="App.go(\'lifeplan\')">ライフプランでゴールや特別費を設定</span>すると、毎月いくら積み立てて残りで暮らせるかが分かります。</div>')+
         '</div>';
     }
     // 収入/支出の小タイル(bento用・タップで一覧へ)
@@ -1817,8 +1826,8 @@ const App = {
     const sysWarn=storeWarn+warn;            // 同期エラー等の警告は最上部に残す
     const remind=remindCard+approveCard;     // もうすぐ／承認待ちは資金サマリーの直後へ
     const heroHtml=budgetCard||expCard;
-    // ユーザー要望：最上部に「今月の収入」「今月の支出」、その下に「今月の予算(使えるお金)」。支出内訳は支出タップ先へ。
-    const bento='<div class="dash-bento">'+incTile+expTile+'<div class="b-wide">'+heroHtml+'</div></div>';
+    // 収入/支出タイルは撤去（収支カード内に含まれ重複＝垢抜けディレクション）。収支カードを単独の主役に。
+    const bento='<div class="dash-bento"><div class="b-wide">'+heroHtml+'</div></div>';
     // 「定期」「これからの予定」「予算ペース」は今月の収支カードに統合済み／直近のタスクはホーム非表示（要望）
     const cards=[]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
