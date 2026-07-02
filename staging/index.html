@@ -141,6 +141,9 @@ html[data-palette="rose"]{
 .ls-opt:active{border-color:var(--color-primary-500);box-shadow:0 0 0 2px var(--color-primary-100);background:var(--color-primary-50)}
 .ls-opt-ic{width:46px;height:46px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-600);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ls-opt-t{font-size:var(--text-sm);font-weight:600;color:var(--color-text-primary);line-height:1.35}
+.ls-qhead{text-align:center;margin:8px 0 16px}
+.ls-qic{display:inline-flex;width:56px;height:56px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-600);align-items:center;justify-content:center;margin-bottom:11px}
+.ls-qtitle{font-size:var(--text-lg);margin:0;line-height:1.4}
 html[data-theme="dark"]{
   /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
   --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
@@ -993,6 +996,8 @@ const LS_QS=[
   {c:"work",q:"家計の管理は、主に誰が？",opts:[{t:"二人で一緒に",v:"二人で一緒に",ic:"users"},{t:"主に自分が",v:"主に自分",ic:"wallet"},{t:"主に相手に任せたい",v:"主に相手",ic:"heart"},{t:"まだ決めていない",v:"まだ決めてない",flex:true,ic:"tag"}]},
   {c:"work",q:"収入減・転職・独立には？",ord:true,opts:[{t:"安定を重視したい",v:"安定重視",ic:"shield"},{t:"挑戦を応援したい",v:"挑戦を応援",ic:"rocket"},{t:"状況次第",v:"状況次第",flex:true,ic:"star"}]}
 ];
+// 各設問のテーマアイコン（問題文の上に表示＝選択肢が文章だけでも視覚的にイメージできる）。LS_QSと同順。
+const LS_QIC=["star","coins","house","house","coins","car","party","baby","calendar","graduation","book","book","utensils","utensils","plane","gamepad","wallet","card","shield","briefcase","users","trend"];
 
 /* ===== お金タイプ診断 データ（提案-お金版MBTI診断.md §6.6/§6.7 準拠） ===== */
 // 属性（採点なし・単タップ）
@@ -1537,7 +1542,7 @@ const App = {
       const opts='<div class="ls-optgrid">'+q.opts.map((o,idx)=>'<button class="ls-opt'+(o.ic?"":" noic")+'" onclick="App.lsPick('+idx+')">'+(o.ic?'<span class="ls-opt-ic">'+ic(o.ic,24)+'</span>':'')+'<span class="ls-opt-t">'+esc(o.t)+'</span></button>').join('')+'</div>';
       el.innerHTML='<div class="onb-card" style="text-align:left;max-height:calc(100vh - 40px);overflow:auto">'+
         '<div class="onb-step" style="margin-bottom:6px">'+(i+1)+' / '+LS_QS.length+'　'+esc(this.lsCatLabel(q.c))+who+'</div>'+
-        '<h2 style="font-size:var(--text-lg);margin:2px 0 14px">'+esc(q.q)+'</h2>'+opts+
+        '<div class="ls-qhead"><span class="ls-qic">'+ic(LS_QIC[i]||"star",28)+'</span><h2 class="ls-qtitle">'+esc(q.q)+'</h2></div>'+opts+
         (i>0?'<div class="onb-skip" onclick="App.lsBack()">← もどる</div>':'<div class="onb-skip" onclick="App.lsClose()">とじる</div>')+'</div>';
       return;
     }
