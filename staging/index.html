@@ -2536,6 +2536,35 @@ const App = {
       '<div style="text-align:right"><span class="link" onclick="App.cfToggleInputs()">閉じる</span></div>'+
     '</div>';
   },
+  cfDipCause(cf,y){
+    const c=[];
+    (cf.children||[]).forEach(ch=>{const age=y-ch.after;if(age>=15&&age<=22)c.push("子どもの進学");});
+    if(cf.buy.on&&y>=cf.buy.after)c.push("住宅ローン");
+    if(cf.wifeMode!=="keep"&&(cf.children||[]).length){const fc=Math.min.apply(null,cf.children.map(x=>x.after));if(y>=fc&&y<fc+cf.wifeYears)c.push(cf.wifeMode==="home"?"妻が専業主婦":"妻の時短");}
+    const u=Array.from(new Set(c)).slice(0,2);
+    return u.length?"（"+u.join("・")+"が重なる時期）":"";
+  },
+  cfChartSvg(p,mark){
+    const W=320,H=150,padT=14,padB=22,padL=6,padR=6,rows=p.rows,years=p.years;
+    const cs=rows.map(r=>r.cash);
+    let lo=Math.min(0,p.reserve,...cs),hi=Math.max(p.reserve,...cs);if(hi<=lo)hi=lo+1;
+    const px=(y)=>padL+(y/years)*(W-padL-padR);
+    const py=(v)=>padT+(1-(v-lo)/(hi-lo))*(H-padT-padB);
+    const pts=rows.map(r=>px(r.y).toFixed(1)+","+py(r.cash).toFixed(1)).join(" ");
+    const ry=py(p.reserve).toFixed(1);
+    const mr=mark||p.minRow,mx=px(mr.y).toFixed(1),my=py(mr.cash).toFixed(1),danger=mr.cash<p.reserve;
+    let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;margin-top:10px;overflow:visible">';
+    s+='<polygon points="'+px(0).toFixed(1)+','+py(lo).toFixed(1)+' '+pts+' '+px(years).toFixed(1)+','+py(lo).toFixed(1)+'" style="fill:var(--color-primary-500);opacity:.08"/>';
+    s+='<polyline points="'+pts+'" fill="none" style="stroke:var(--color-primary-500)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    s+='<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+ry+'" y2="'+ry+'" style="stroke:var(--color-warning)" stroke-width="1" stroke-dasharray="4 3"/>';
+    s+='<text x="'+padL+'" y="'+(ry-4)+'" font-size="9" style="fill:var(--color-warning)">守りたい額</text>';
+    if(lo<0){const zy=py(0).toFixed(1);s+='<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+zy+'" y2="'+zy+'" style="stroke:var(--color-danger);opacity:.45" stroke-width="1"/>';}
+    s+='<circle cx="'+mx+'" cy="'+my+'" r="4" style="fill:'+(danger?"var(--color-danger)":"var(--color-primary-600)")+'"/>';
+    s+='<text x="'+mx+'" y="'+(parseFloat(my)-8).toFixed(1)+'" text-anchor="middle" font-size="9.5" font-weight="700" style="fill:'+(danger?"var(--color-danger)":"var(--color-primary-700)")+'">'+(mr.y===0?"今":mr.y+"年後")+'</text>';
+    [0,10,20,30].forEach(y=>{s+='<text x="'+px(y).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" style="fill:var(--color-text-secondary)">'+(y===0?"今":y+"年")+'</text>';});
+    s+='</svg>';
+    return s;
+  },
   simProjection(){
     const sim=this.state.sim;
     const monthly=(sim.monthly!==""&&sim.monthly!=null)?(+String(sim.monthly).replace(/[^0-9.]/g,"")||0):Math.max(0,this.metrics(thisMonth()).balance);
@@ -2575,18 +2604,19 @@ const App = {
     } else {
       h+='<div class="card"><div class="empty" style="padding:14px"><span class="e-ic">'+ic("heart",28)+'</span>「すり合わせを反映」すると、結婚式・車・住宅など目標ごとに「今から月いくら」が出ます</div></div>';
     }
-    // 副：この計画で現金は持つか（30年）
-    const maxAbs=Math.max(1,...p.rows.map(r=>Math.abs(r.cash)));
-    h+='<div class="section-title">この計画で、現金は持つ？（30年）</div>';
+    // 副（守り）：いちばん苦しい時期＝谷を主役に＋折れ線（見出しの年とグラフの印を一致）
+    h+='<div class="section-title">いちばん苦しい時期は？</div>';
+    const firstNeg=p.rows.find(r=>r.cash<0)||null,monotonic=(p.minRow.y===0);
     if(p.breach){
-      h+='<div class="card card-warn"><div class="ttl-ico lo" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic('alert',15)+'<span><b>'+p.breach.y+'年後ごろ</b>、現金が守りたい額（'+yen(p.reserve)+'）を下回りそうです。上の積立や妻の働き方を見直すと解消できます。</span></div></div>';
+      const crit=firstNeg||p.breach,cause=this.cfDipCause(cfp,crit.y);
+      h+='<div class="card card-warn"><div class="meta">'+(firstNeg?"このままだと資金が足りなくなるのは":"現金がいちばん心細くなるのは")+'</div><div class="big-num" style="color:var(--color-danger);margin:2px 0 0">'+crit.y+'年後</div>'+
+        (cause?'<div class="meta" style="margin-bottom:6px">'+esc(cause)+'</div>':'<div style="height:6px"></div>')+
+        (firstNeg?'<div class="meta" style="line-height:1.7">この頃に貯蓄が底をつく見込みです。守りたい額 '+yen(p.reserve)+' も割ります。<b>上の「今から積み立て」</b>や、前提の<b>妻の働き方</b>を見直すと解消できます。</div>'
+                 :'<div class="row"><span class="meta">そのときの現金</span><span class="num" style="font-weight:700;color:var(--color-danger)">'+yen(crit.cash)+'</span></div><div class="meta" style="margin-top:4px;line-height:1.7">守りたい額 '+yen(p.reserve)+' を下回ります。<b>上の「今から積み立て」</b>や<b>妻の働き方</b>で守れます。</div>')+
+        this.cfChartSvg(p,crit)+'</div>';
     } else {
-      h+='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)"><div class="ttl-ico" style="color:var(--color-primary-700);font-size:var(--text-sm);line-height:1.6">'+ic('check',15)+'この条件なら、30年間 現金は守りたい額（'+yen(p.reserve)+'）を下回りません。</div></div>';
+      h+='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)"><div class="ttl-ico" style="color:var(--color-primary-700);font-size:var(--text-sm);line-height:1.6;align-items:flex-start">'+ic('check',15)+'<span>'+(monotonic?"この計画なら現金は下がる時期がなく、増えていく見通しです。安心して大丈夫。":"この計画なら30年ずっと安心。いちばん少ない <b>"+p.minRow.y+"年後</b> でも "+yen(p.minRow.cash)+"（守りたい "+yen(p.reserve)+" を上回ります）。")+'</span></div>'+this.cfChartSvg(p,monotonic?null:p.minRow)+'</div>';
     }
-    h+='<div class="card">';
-    p.rows.forEach(r=>{if(r.y%3!==0&&r.y!==p.minRow.y)return;const pct=Math.max(2,Math.abs(r.cash)/maxAbs*100);const under=r.cash<p.reserve;const tag=r.evNames.length?(" ・"+r.evNames.join("/")):(r.wf<1?" ・"+(r.wf===0?"専業主婦期":"時短期"):"");
-      h+='<div style="margin-bottom:12px"><div class="row" style="margin-bottom:4px"><span class="meta">'+(r.y===0?"今":r.y+"年後")+esc(tag)+'</span><span class="num" style="font-weight:700;color:'+(r.cash<0?"var(--color-danger)":under?"var(--color-warning)":"var(--color-text-primary)")+'">'+yen(r.cash)+'</span></div><div class="prog lg"><span class="'+(r.cash<0?"fill-danger":"fill-accent")+'" style="width:'+pct+'%"></span></div></div>';});
-    h+='</div>';
     // すり合わせ由来の前提（子ども・住まい）
     h+='<div class="section-title">ふたりの希望から<span class="link" onclick="App.cfApplyFromSync()">すり合わせを反映</span></div><div class="card">';
     if(!cfp.children.length&&!cfp.buy.on&&!cfp.events.length)h+='<div class="empty" style="padding:14px"><span class="e-ic">'+ic('heart',28)+'</span>「すり合わせを反映」で、子ども・住まい・結婚式などが前提に入ります</div>';
