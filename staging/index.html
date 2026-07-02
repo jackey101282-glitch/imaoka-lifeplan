@@ -1607,13 +1607,68 @@ const App = {
       s.rows.filter(r=>r.q.c===c.id).forEach(r=>{const bl=r.cmp==="match"?'<span class="ls-b m">同じ</span>':r.cmp==="near"?'<span class="ls-b n">近い</span>':'<span class="ls-b g">話そう</span>';
         h+='<div class="ls-row"><div class="ls-q"><div class="ls-qt">'+esc(r.q.q)+'</div><div class="ls-ans">'+esc(meN)+'：<b>'+esc(r.q.opts[r.me].v)+'</b>　／　'+esc(otN)+'：<b>'+esc(r.q.opts[r.other].v)+'</b></div></div>'+bl+'</div>';});
     });
-    h+='<div style="margin-top:18px"><button class="btn btn-primary btn-block" onclick="App.lsToLifeplan()">この希望をライフプランに活かす</button>'+
+    h+='<div style="margin-top:18px"><button class="btn btn-primary btn-block" onclick="App.lsShowPlan()">この希望、いくら必要か見てみる</button>'+
       '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.lsRetake()">自分の回答をやり直す</button>'+
       '<div class="onb-skip" onclick="App.lsClose()">とじる</div></div></div>';
     el.innerHTML=h;
   },
   lsToLifeplan(){this.lsClose();try{this.go("lifeplan");}catch(e){}this.toast("大きな出費は、ライフプランでゴールや特別費として設定できます");},
   lsRetake(){const me=this.lsRole(),d=this.lsData();if(d[me])d[me]={ans:{},done:false};this.commit();this._ls={active:true,phase:"intro"};this.lsRender();},
+  // すり合わせ回答 → 将来のライフイベント（時期・金額。相場データで概算＝目安）
+  lsSimEvents(){
+    const me=this.lsRole(),other=this.lsOther(me);
+    const A=(this.lsData()[me]||{}).ans||{},B=(this.lsData()[other]||{}).ans||{};
+    const g=(i)=>(A[i]!=null?A[i]:(B[i]!=null?B[i]:null));
+    const evs=[];
+    const wed=g(6);if(wed===0)evs.push({name:"結婚式",after:1,amount:3440000});else if(wed===1)evs.push({name:"結婚式",after:1,amount:1500000});
+    const car=g(5);if(car===0)evs.push({name:"車の購入",after:3,amount:3310000});else if(car===1)evs.push({name:"車の購入",after:3,amount:1960000});
+    if(g(3)===0){const b=g(4);const price=[20000000,35000000,45000000,55920000][(b!=null?b:1)]||35000000;evs.push({name:"住宅の頭金",after:7,amount:Math.round(price*0.17)});}
+    const cntMap={0:1,1:2,2:3,3:1},nkids=(g(7)!=null&&cntMap[g(7)]!=null)?cntMap[g(7)]:0;
+    const timing=[1,2.5,5,3],t0=(g(8)!=null?timing[g(8)]:3);
+    const eduBase=(()=>{const e=g(9),pri=g(10);if(e===0)return (pri===0?12000000:8500000);if(e===1)return 7000000;if(e===2)return 5000000;return 0;})();
+    for(let k=0;k<nkids;k++){const born=Math.max(1,Math.round(t0+k*2));evs.push({name:(nkids>1?("出産・育児 "+(k+1)+"人目"):"出産・育児"),after:born,amount:500000});if(eduBase>0)evs.push({name:(nkids>1?("教育費 "+(k+1)+"人目"):"教育費"),after:Math.min(30,born+15),amount:eduBase});}
+    return evs;
+  },
+  lsPlanCalc(){
+    const evs=this.lsSimEvents().slice().sort((a,b)=>a.after-b.after);
+    const total=evs.reduce((s,e)=>s+e.amount,0);
+    const horizon=Math.max(1,evs.reduce((m,e)=>Math.max(m,e.after),1));
+    const acct=(this.state.accounts||[]).reduce((s,a)=>s+(+a.balance||0),0);
+    const current=(+String((this.state.sim&&this.state.sim.current)||"").replace(/[^0-9.]/g,""))||acct||0;
+    const need=Math.max(0,total-current);
+    // ならして「この期間、毎月これくらい積み立てておけば」= 目安（近い出費に偏らせない）
+    const totalMonthly=Math.round(need/(horizon*12));
+    const capacity=Math.max(0,Math.round((this.metrics(thisMonth()).balance)||0));
+    return {evs,total,horizon,current,totalMonthly,capacity,gap:totalMonthly-capacity};
+  },
+  lsShowPlan(){
+    this._ls={active:true,phase:"plan"};
+    const p=this.lsPlanCalc(),el=this.lsEl();el.className="onb-modal";
+    if(!p.evs.length){el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",30)+'</div><h2>まだ試算できません</h2><p>マイホーム・子ども・結婚式など「大きなライフイベント」に答えると、必要な金額を試算できます。</p><button class="btn btn-primary btn-block" onclick="App.lsShowResult()">結果にもどる</button></div>';return;}
+    const enough=p.gap<=0;
+    let h='<div class="onb-card" style="text-align:left;max-height:92vh;overflow:auto">';
+    h+='<div class="ls-hero"><div class="meta" style="text-align:center">ふたりの希望をぜんぶ叶えるには</div><div class="ls-num" style="font-size:clamp(30px,9vw,40px)">毎月 '+yen(p.totalMonthly)+'</div><div class="ls-sm">積み立てで用意できます</div></div>';
+    h+=enough
+      ?'<p class="onb-sub" style="text-align:center;margin:8px 0 4px">今の貯蓄ペース（月 '+yen(p.capacity)+'）で<b>届いています</b>。いいペースです。</p>'
+      :'<p class="onb-sub" style="text-align:center;margin:8px 0 4px">今のペースは 月 '+yen(p.capacity)+'。<b>あと 月 '+yen(p.gap)+'</b> で届きます。今から少しずつ調整できます。</p>';
+    h+='<div class="ls-cathead"><span class="ttl-ico">'+ic("calendar",16)+'これからの大きな出費</span><span class="ls-catpct">合計 '+yen(p.total)+'</span></div>';
+    p.evs.forEach(e=>{h+='<div class="ls-row"><div class="ls-q"><div class="ls-qt">'+esc(e.name)+'</div><div class="ls-ans">'+e.after+'年後</div></div><span class="amt" style="white-space:nowrap">'+yen(e.amount)+'</span></div>';});
+    h+='<p class="muted" style="font-size:var(--text-xs);margin:12px 2px 0;line-height:1.6">※ 相場をもとにした目安です（利回り・物価変動は考慮しない簡易計算）。金額や時期は次の画面で自由に調整できます。半年に一度くらい見直すのがおすすめ。</p>';
+    h+='<div style="margin-top:16px"><button class="btn btn-primary btn-block" onclick="App.lsApplyToSim()">将来シミュレーションで詳しく見る</button>'+
+      '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.lsShowResult()">答え合わせにもどる</button>'+
+      '<div class="onb-skip" onclick="App.lsClose()">とじる</div></div></div>';
+    el.innerHTML=h;
+  },
+  lsApplyToSim(){
+    const evs=this.lsSimEvents();
+    this.state.sim=this.state.sim||{current:"",monthly:"",bonus:"",years:30,events:[]};
+    this.state.sim.events=evs.map(e=>({id:uid(),name:e.name,kind:"expense",after:e.after,amount:e.amount}));
+    const acct=(this.state.accounts||[]).reduce((s,a)=>s+(+a.balance||0),0);
+    if(acct>0&&!this.state.sim.current)this.state.sim.current=acct;
+    if(!this.state.sim.monthly)this.state.sim.monthly=Math.max(0,Math.round((this.metrics(thisMonth()).balance)||0));
+    this.state.sim.years=30;
+    this.commit();this.lsClose();try{this.go("simulator");}catch(e){}this.toast("ふたりの希望を将来シミュレーションに反映しました");
+  },
 
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";fab.classList.remove("wide");fab.innerHTML="＋";},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
