@@ -134,6 +134,13 @@ html[data-palette="rose"]{
 .ls-hero .ls-num{font-size:clamp(44px,14vw,60px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--color-primary-500);line-height:1}
 .ls-hero .ls-sm{font-size:var(--text-md);color:var(--color-text-secondary);font-weight:700}
 .ls-counts{display:flex;justify-content:center;gap:14px;margin:12px 0 4px;flex-wrap:wrap;font-size:var(--text-sm)}
+/* 回答＝2×2ブロック（ポケット）＋アイコン */
+.ls-optgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ls-opt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:104px;padding:16px 10px;border:1.5px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg-surface);cursor:pointer;font-family:inherit;text-align:center;transition:border-color .12s,box-shadow .12s,background .12s;-webkit-tap-highlight-color:transparent}
+.ls-opt.noic{min-height:72px}
+.ls-opt:active{border-color:var(--color-primary-500);box-shadow:0 0 0 2px var(--color-primary-100);background:var(--color-primary-50)}
+.ls-opt-ic{width:46px;height:46px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-600);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ls-opt-t{font-size:var(--text-sm);font-weight:600;color:var(--color-text-primary);line-height:1.35}
 html[data-theme="dark"]{
   /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
   --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
@@ -958,14 +965,14 @@ const LS_CATS=[
   {id:"work",label:"働き方・役割",ic:"briefcase"}
 ];
 const LS_QS=[
-  {c:"life",q:"人生で一番大事にしたいのは？",opts:[{t:"家族と過ごす時間",v:"家族との時間"},{t:"仕事・自己実現",v:"仕事・自己実現"},{t:"心とお金のゆとり",v:"ゆとり"},{t:"新しい経験・挑戦",v:"経験・挑戦"}]},
-  {c:"life",q:"お金は、何のためにあると思う？",opts:[{t:"安心のため",v:"安心のため"},{t:"経験のため",v:"経験のため"},{t:"自由のため",v:"自由のため"},{t:"家族のため",v:"家族のため"}]},
-  {c:"life",q:"理想の暮らし方に近いのは？",opts:[{t:"都会で便利に暮らす",v:"都会で便利に"},{t:"自然の近くでのんびり",v:"自然の近くで"},{t:"地元・実家の近くで",v:"地元の近くで"},{t:"身軽にどこでも",v:"身軽にどこでも"}]},
+  {c:"life",q:"人生で一番大事にしたいのは？",opts:[{t:"家族と過ごす時間",v:"家族との時間",ic:"users"},{t:"仕事・自己実現",v:"仕事・自己実現",ic:"briefcase"},{t:"心とお金のゆとり",v:"ゆとり",ic:"sofa"},{t:"新しい経験・挑戦",v:"経験・挑戦",ic:"rocket"}]},
+  {c:"life",q:"お金は、何のためにあると思う？",opts:[{t:"安心のため",v:"安心のため",ic:"shield"},{t:"経験のため",v:"経験のため",ic:"map"},{t:"自由のため",v:"自由のため",ic:"palm"},{t:"家族のため",v:"家族のため",ic:"heart"}]},
+  {c:"life",q:"理想の暮らし方に近いのは？",opts:[{t:"都会で便利に暮らす",v:"都会で便利に",ic:"building"},{t:"自然の近くでのんびり",v:"自然の近くで",ic:"palm"},{t:"地元・実家の近くで",v:"地元の近くで",ic:"house"},{t:"身軽にどこでも",v:"身軽にどこでも",ic:"plane"}]},
 
-  {c:"event",q:"マイホームは？",opts:[{t:"持ち家がほしい",v:"持ち家がほしい"},{t:"賃貸でいい",v:"賃貸でいい"},{t:"こだわらない",v:"こだわらない",flex:true}]},
+  {c:"event",q:"マイホームは？",opts:[{t:"持ち家がほしい",v:"持ち家がほしい",ic:"house"},{t:"賃貸でいい",v:"賃貸でいい",ic:"building"},{t:"こだわらない",v:"こだわらない",flex:true,ic:"tag"}]},
   {c:"event",q:"住まいにかける予算感は？",num:true,ord:true,opts:[{t:"〜2000万円台",v:"〜2000万台"},{t:"3000万円台",v:"3000万台"},{t:"4000万円台",v:"4000万台"},{t:"5000万円以上",v:"5000万〜"}]},
-  {c:"event",q:"車は？",ord:true,opts:[{t:"しっかり持ちたい",v:"しっかり持つ"},{t:"最低限あれば",v:"最低限"},{t:"カーシェア等でいい",v:"カーシェア等"},{t:"なくていい",v:"なくていい"}]},
-  {c:"event",q:"結婚式は？",num:true,opts:[{t:"盛大にやりたい",v:"盛大に"},{t:"身内・親しい人だけで",v:"身内だけで"},{t:"やらない（入籍のみ）",v:"やらない"},{t:"こだわらない",v:"こだわらない",flex:true}]},
+  {c:"event",q:"車は？",ord:true,opts:[{t:"しっかり持ちたい",v:"しっかり持つ",ic:"car"},{t:"最低限あれば",v:"最低限",ic:"car"},{t:"カーシェア等でいい",v:"カーシェア等",ic:"train"},{t:"なくていい",v:"なくていい",ic:"tag"}]},
+  {c:"event",q:"結婚式は？",num:true,opts:[{t:"盛大にやりたい",v:"盛大に",ic:"party"},{t:"身内・親しい人だけで",v:"身内だけで",ic:"users"},{t:"やらない（入籍のみ）",v:"やらない",ic:"tag"},{t:"こだわらない",v:"こだわらない",flex:true,ic:"star"}]},
   {c:"event",q:"子どもは、何人ほしい？",num:true,opts:[{t:"1人",v:"1人"},{t:"2人",v:"2人"},{t:"3人以上",v:"3人以上"},{t:"ほしいけどこだわらない",v:"こだわらない",flex:true},{t:"今は考えていない",v:"今は考えない"}]},
   {c:"event",q:"子どもを望む時期は？",num:true,ord:true,opts:[{t:"できるだけ早めに",v:"早めに"},{t:"2〜3年以内に",v:"2〜3年内"},{t:"もう少し先でいい",v:"もう少し先"},{t:"自然に任せる",v:"自然に任せる",flex:true}]},
 
@@ -979,12 +986,12 @@ const LS_QS=[
   {c:"level",q:"趣味・自分へのお金は？",num:true,ord:true,opts:[{t:"ほぼかけない",v:"ほぼかけない"},{t:"月数千円くらい",v:"月数千円"},{t:"月1〜2万円くらい",v:"月1〜2万円"},{t:"好きなことにはしっかり",v:"しっかりかける"}]},
 
   {c:"money",q:"毎月の貯蓄・積立は？",num:true,ord:true,opts:[{t:"多めに貯めたい",v:"多めに貯める"},{t:"無理のない範囲で",v:"無理ない範囲"},{t:"使いながら貯める",v:"使いつつ貯める"},{t:"今はあまり貯められなくていい",v:"今は貯めない"}]},
-  {c:"money",q:"お金の管理のしかたは？",ord:true,opts:[{t:"完全に共有・見える化したい",v:"完全に共有"},{t:"大枠は共有・細かくは各自",v:"大枠を共有"},{t:"お財布は別々がいい",v:"別々に管理"}]},
+  {c:"money",q:"お金の管理のしかたは？",ord:true,opts:[{t:"完全に共有・見える化したい",v:"完全に共有",ic:"users"},{t:"大枠は共有・細かくは各自",v:"大枠を共有",ic:"wallet"},{t:"お財布は別々がいい",v:"別々に管理",ic:"card"}]},
   {c:"money",q:"まさかの備え（生活防衛費）は？",num:true,ord:true,opts:[{t:"半年〜1年分は確保したい",v:"半年〜1年分"},{t:"数ヶ月分あれば安心",v:"数ヶ月分"},{t:"あまり意識していない",v:"意識してない"}]},
 
-  {c:"work",q:"出産・育児期の働き方は？",opts:[{t:"二人とも続けたい",v:"二人とも続ける"},{t:"どちらかは家庭優先も",v:"家庭優先も"},{t:"状況を見て柔軟に",v:"柔軟に",flex:true}]},
-  {c:"work",q:"家計の管理は、主に誰が？",opts:[{t:"二人で一緒に",v:"二人で一緒に"},{t:"主に自分が",v:"主に自分"},{t:"主に相手に任せたい",v:"主に相手"},{t:"まだ決めていない",v:"まだ決めてない",flex:true}]},
-  {c:"work",q:"収入減・転職・独立には？",ord:true,opts:[{t:"安定を重視したい",v:"安定重視"},{t:"挑戦を応援したい",v:"挑戦を応援"},{t:"状況次第",v:"状況次第",flex:true}]}
+  {c:"work",q:"出産・育児期の働き方は？",opts:[{t:"二人とも続けたい",v:"二人とも続ける",ic:"briefcase"},{t:"どちらかは家庭優先も",v:"家庭優先も",ic:"house"},{t:"状況を見て柔軟に",v:"柔軟に",flex:true,ic:"star"}]},
+  {c:"work",q:"家計の管理は、主に誰が？",opts:[{t:"二人で一緒に",v:"二人で一緒に",ic:"users"},{t:"主に自分が",v:"主に自分",ic:"wallet"},{t:"主に相手に任せたい",v:"主に相手",ic:"heart"},{t:"まだ決めていない",v:"まだ決めてない",flex:true,ic:"tag"}]},
+  {c:"work",q:"収入減・転職・独立には？",ord:true,opts:[{t:"安定を重視したい",v:"安定重視",ic:"shield"},{t:"挑戦を応援したい",v:"挑戦を応援",ic:"rocket"},{t:"状況次第",v:"状況次第",flex:true,ic:"star"}]}
 ];
 
 /* ===== お金タイプ診断 データ（提案-お金版MBTI診断.md §6.6/§6.7 準拠） ===== */
@@ -1527,8 +1534,8 @@ const App = {
     if(ph==="answer"){
       const i=this._ls.i,q=LS_QS[i];
       const who=this._ls.mode==="together"?('<span class="ls-b n" style="margin-left:6px">'+esc(this.lsName(this._ls.role))+'さんの番</span>'):"";
-      const opts=q.opts.map((o,idx)=>'<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:46px;display:flex;align-items:center" onclick="App.lsPick('+idx+')"><span style="font-weight:600">'+esc(o.t)+'</span></button>').join('');
-      el.innerHTML='<div class="onb-card" style="text-align:left">'+
+      const opts='<div class="ls-optgrid">'+q.opts.map((o,idx)=>'<button class="ls-opt'+(o.ic?"":" noic")+'" onclick="App.lsPick('+idx+')">'+(o.ic?'<span class="ls-opt-ic">'+ic(o.ic,24)+'</span>':'')+'<span class="ls-opt-t">'+esc(o.t)+'</span></button>').join('')+'</div>';
+      el.innerHTML='<div class="onb-card" style="text-align:left;max-height:calc(100vh - 40px);overflow:auto">'+
         '<div class="onb-step" style="margin-bottom:6px">'+(i+1)+' / '+LS_QS.length+'　'+esc(this.lsCatLabel(q.c))+who+'</div>'+
         '<h2 style="font-size:var(--text-lg);margin:2px 0 14px">'+esc(q.q)+'</h2>'+opts+
         (i>0?'<div class="onb-skip" onclick="App.lsBack()">← もどる</div>':'<div class="onb-skip" onclick="App.lsClose()">とじる</div>')+'</div>';
