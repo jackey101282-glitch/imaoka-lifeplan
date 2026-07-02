@@ -39,8 +39,84 @@
   --radius-sm:7px;--radius-md:14px;--radius-lg:20px;--radius-xl:26px;--radius-full:9999px;
   --shadow-xs:0 1px 2px rgba(0,0,0,.06);--shadow-sm:0 2px 8px rgba(0,0,0,.08);
   --shadow-md:0 4px 16px rgba(0,0,0,.10);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
-  --shadow-primary:0 4px 12px rgba(196,113,74,.28);
+  --shadow-primary:0 4px 12px rgba(17,122,134,.24);
 }
+/* ===== 選べる配色テーマ（端末別・localStorage imaoka_palette）=====
+   既定=ディープティール(:root)。data-palette 属性でその端末だけ上書き。secondary(構造色)は原則グラファイト共通、roseのみ差し替え。 */
+html[data-palette="mint"]{
+  --color-primary-50:#E9FAF7;--color-primary-100:#C8F1EB;--color-primary-200:#97E4DB;--color-primary-300:#5FD2C6;--color-primary-400:#34BEB0;--color-primary-500:#17A99B;--color-primary-600:#12897E;--color-primary-700:#0D6960;
+  --color-accent-400:#59B98C;--color-accent-500:#3E9E6E;--color-accent-600:#2E7D56;
+  --color-coral-50:#E9FAF7;--color-coral-100:#C8F1EB;--color-coral-300:#5FD2C6;--color-coral-500:#34BEB0;--color-coral-600:#12897E;--color-coral-700:#0D6960;
+  --color-bg-base:#F0F7F5;--color-bg-surface:#FFFFFF;--color-bg-muted:#E4F3EF;--color-border:#DBEDE8;--color-border-strong:#C2E0D9;
+  --color-text-primary:#1E2B28;--color-text-secondary:#66756F;--color-text-disabled:#A9B6B1;
+  --shadow-primary:0 4px 12px rgba(23,169,155,.24);
+}
+html[data-palette="slate"]{
+  --color-primary-50:#EEF3F7;--color-primary-100:#D6E1EB;--color-primary-200:#B2C6D8;--color-primary-300:#86A5BF;--color-primary-400:#5E85A3;--color-primary-500:#446C8B;--color-primary-600:#365670;--color-primary-700:#284053;
+  --color-accent-400:#59B98C;--color-accent-500:#3E9E6E;--color-accent-600:#2E7D56;
+  --color-coral-50:#EEF3F7;--color-coral-100:#D6E1EB;--color-coral-300:#86A5BF;--color-coral-500:#5E85A3;--color-coral-600:#365670;--color-coral-700:#284053;
+  --color-bg-base:#F2F5F8;--color-bg-surface:#FFFFFF;--color-bg-muted:#E8EEF3;--color-border:#E0E7EE;--color-border-strong:#C6D2DD;
+  --color-text-primary:#232C34;--color-text-secondary:#667180;--color-text-disabled:#A7B1BD;
+  --shadow-primary:0 4px 12px rgba(68,108,139,.24);
+}
+html[data-palette="forest"]{
+  --color-primary-50:#EAF5EF;--color-primary-100:#CFE8DA;--color-primary-200:#A6D3BB;--color-primary-300:#74B996;--color-primary-400:#479A72;--color-primary-500:#2F7D57;--color-primary-600:#256444;--color-primary-700:#1A4C33;
+  --color-accent-400:#6FB891;--color-accent-500:#57A379;--color-accent-600:#3F8560;
+  --color-coral-50:#EAF5EF;--color-coral-100:#CFE8DA;--color-coral-300:#74B996;--color-coral-500:#479A72;--color-coral-600:#256444;--color-coral-700:#1A4C33;
+  --color-bg-base:#F1F6F2;--color-bg-surface:#FFFFFF;--color-bg-muted:#E5F1E9;--color-border:#DEEAE1;--color-border-strong:#C4D8CB;
+  --color-text-primary:#1F2B24;--color-text-secondary:#66756B;--color-text-disabled:#A8B5AD;
+  --shadow-primary:0 4px 12px rgba(47,125,87,.24);
+}
+html[data-palette="ink"]{
+  --color-primary-50:#F0F2F4;--color-primary-100:#DDE1E6;--color-primary-200:#BFC5CE;--color-primary-300:#8E97A5;--color-primary-400:#5A6472;--color-primary-500:#333B47;--color-primary-600:#242B34;--color-primary-700:#171C22;
+  --color-accent-400:#59B98C;--color-accent-500:#3E9E6E;--color-accent-600:#2E7D56;
+  --color-coral-50:#F0F2F4;--color-coral-100:#DDE1E6;--color-coral-300:#8E97A5;--color-coral-500:#5A6472;--color-coral-600:#333B47;--color-coral-700:#242B34;
+  --color-bg-base:#F3F4F6;--color-bg-surface:#FFFFFF;--color-bg-muted:#EAECEF;--color-border:#E3E6EA;--color-border-strong:#CBD0D6;
+  --color-text-primary:#1B2129;--color-text-secondary:#6A7178;--color-text-disabled:#A9AFB6;
+  --shadow-primary:0 4px 12px rgba(51,59,71,.22);
+}
+html[data-palette="plum"]{
+  --color-primary-50:#F6EFF3;--color-primary-100:#EADCE5;--color-primary-200:#D7BDCC;--color-primary-300:#BB94AC;--color-primary-400:#9C6A8C;--color-primary-500:#7E4E74;--color-primary-600:#653C5D;--color-primary-700:#4C2C46;
+  --color-accent-400:#59B98C;--color-accent-500:#3E9E6E;--color-accent-600:#2E7D56;
+  --color-coral-50:#F6EFF3;--color-coral-100:#EADCE5;--color-coral-300:#BB94AC;--color-coral-500:#9C6A8C;--color-coral-600:#653C5D;--color-coral-700:#4C2C46;
+  --color-bg-base:#F5F2F5;--color-bg-surface:#FFFFFF;--color-bg-muted:#EEE6EC;--color-border:#E9DEE6;--color-border-strong:#D6C3D0;
+  --color-text-primary:#29222A;--color-text-secondary:#6E6570;--color-text-disabled:#B0A6AE;
+  --shadow-primary:0 4px 12px rgba(126,78,116,.24);
+}
+html[data-palette="gold"]{
+  --color-primary-50:#F8F2E4;--color-primary-100:#F0E4C9;--color-primary-200:#E4D0A2;--color-primary-300:#D3B577;--color-primary-400:#BE9A50;--color-primary-500:#A9853F;--color-primary-600:#886A31;--color-primary-700:#665024;
+  --color-accent-400:#7FA06A;--color-accent-500:#6A8B57;--color-accent-600:#527043;
+  --color-coral-50:#F8F2E4;--color-coral-100:#F0E4C9;--color-coral-300:#D3B577;--color-coral-500:#BE9A50;--color-coral-600:#886A31;--color-coral-700:#665024;
+  --color-bg-base:#F6F1E8;--color-bg-surface:#FFFDF8;--color-bg-muted:#EFE8D9;--color-border:#E8DFCB;--color-border-strong:#D8CBAD;
+  --color-text-primary:#2C2820;--color-text-secondary:#726A5A;--color-text-disabled:#B6AC96;
+  --color-warning:#B8862B;--color-danger:#C0574A;
+  --shadow-primary:0 4px 12px rgba(169,133,63,.26);
+}
+html[data-palette="rose"]{
+  --color-primary-50:#FFF1F4;--color-primary-100:#FCDEE4;--color-primary-200:#F8C0CB;--color-primary-300:#F296A8;--color-primary-400:#EC7488;--color-primary-500:#E4576F;--color-primary-600:#C7415A;--color-primary-700:#A32F45;
+  --color-secondary-50:#F1F3F8;--color-secondary-100:#E4E8F1;--color-secondary-200:#CED3E3;--color-secondary-300:#ADB4CF;--color-secondary-400:#8992BA;--color-secondary-500:#6E79A6;--color-secondary-600:#565F86;--color-secondary-700:#3F476A;
+  --color-accent-400:#5DBE9E;--color-accent-500:#45A98A;--color-accent-600:#327E67;
+  --color-coral-50:#FFF1F4;--color-coral-100:#FCDEE4;--color-coral-300:#F296A8;--color-coral-500:#EC7488;--color-coral-600:#C7415A;--color-coral-700:#A32F45;
+  --color-bg-base:#FFF7F5;--color-bg-surface:#FFFFFF;--color-bg-muted:#FCECEF;--color-border:#F4DEE3;--color-border-strong:#EEC8D0;
+  --color-text-primary:#3B2E33;--color-text-secondary:#8A7A80;--color-text-disabled:#C7B9BE;
+  --color-warning:#E0A23B;--color-danger:#D93D4D;
+  --shadow-primary:0 4px 12px rgba(228,87,111,.26);
+}
+/* 配色ピッカー(設定/オンボ共通) */
+.pal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pal-card{text-align:left;padding:0;border:1.5px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg-surface);cursor:pointer;overflow:hidden;font-family:inherit;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent}
+.pal-card.on{border-color:var(--color-primary-500);box-shadow:0 0 0 2px var(--color-primary-200)}
+.pal-prev{height:74px;padding:10px;position:relative}
+.pal-mini{background:#fff;border-radius:9px;height:100%;padding:9px;box-shadow:0 2px 6px rgba(0,0,0,.10);display:flex;flex-direction:column;gap:5px}
+.pal-mini .l1{height:9px;width:52%;border-radius:3px}
+.pal-mini .l2{height:6px;width:70%;border-radius:3px;background:#E3E5E8}
+.pal-mini .l3{height:6px;width:40%;border-radius:3px;background:#ECEEF0}
+.pal-chip{height:12px;width:34px;border-radius:6px;margin-top:2px}
+.pal-fab{position:absolute;right:14px;bottom:12px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.pal-meta{padding:9px 11px 11px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.pal-name{font-weight:700;font-size:var(--text-base);color:var(--color-text-primary)}
+.pal-desc{font-size:var(--text-xs);color:var(--color-text-secondary)}
+.pal-check{color:var(--color-primary-500);display:flex;align-items:center}
 html[data-theme="dark"]{
   /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
   --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
@@ -915,6 +991,7 @@ const App = {
     // 既存ユーザー移行(初回1回だけ): 端末に旧初期値"auto"が残っている場合はlightへ。以後ユーザーが選び直したautoは尊重
     try{if(!localStorage.getItem("imaoka_theme_mig")){if(localStorage.getItem("imaoka_theme")==="auto")localStorage.setItem("imaoka_theme","light");localStorage.setItem("imaoka_theme_mig","1");}}catch(e){}
     this.applyTheme();
+    this.applyPalette();
     const _lt=localStorage.getItem("imaoka_tab");
     this.go(["dashboard","lifeplan","tasks","calendar","share","settings"].includes(_lt)?_lt:"dashboard");
     this.notifyPending();
@@ -1053,6 +1130,7 @@ const App = {
   onbSteps(){
     return [
       {key:"intro"},
+      {key:"theme"},
       {key:"income",title:"まずは、お給料を登録",desc:"毎月入ってくるお金を入れましょう。",btn:"給料を登録する",act:()=>this.openRecurring(null,{title:"給料",type:"income"}),done:()=>(this.state.events||[]).some(e=>e.fixed&&e.type==="income")},
       {key:"fixed",manual:true,title:"毎月の固定費を入れよう",desc:"家賃・通信費・サブスク・ローン・カード引き落としなど。ジャンルから選べます。いくつでもOK。",btn:"固定費を選んで追加",act:()=>this.openRecurringPicker(true),count:()=>(this.state.events||[]).filter(e=>e.fixed&&e.type==="payment").length},
       {key:"special",manual:true,title:"1年の特別費（積立）",desc:"旅行・帰省・車検…年に数回どんと出るお金を、毎月いくら貯めるかに変えます。",btn:"特別費をつくる",act:()=>this.openSpecialSetup(),count:()=>(this.state.special||[]).length},
@@ -1074,6 +1152,16 @@ const App = {
         '<p class="onb-sub">いくつか入れてみましょう。数分で終わります。</p>'+
         '<button class="btn btn-primary btn-block" onclick="App.onbNext()">はじめる</button>'+
         '<div class="onb-skip" onclick="App.onbSkip()">スキップ</div></div>';
+      return;
+    }
+    if(st.key==="theme"){
+      el.className="onb-modal";
+      el.innerHTML='<div class="onb-card" style="max-height:calc(100vh - 48px);overflow-y:auto">'+'<div class="onb-ic">'+ic("sparkle",30)+'</div>'+
+        '<h2>まず、アプリの色を選びましょう</h2>'+
+        '<p class="onb-sub" style="margin-bottom:14px">好きな雰囲気でOK。あとから設定でいつでも変えられます。<br>おふたりで別々の色にもできます。</p>'+
+        '<div class="pal-grid" style="text-align:left">'+this.palCardsHtml()+'</div>'+
+        '<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="App.onbNextStep()">この色で進む</button>'+
+        '<div class="onb-skip" onclick="App.onbNextStep()">あとで選ぶ</div></div>';
       return;
     }
     if(st.key==="done"){
@@ -2721,10 +2809,9 @@ const App = {
       '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・もうすぐの支払いを通知(この端末だけの設定。iPhoneは「ホーム画面に追加」してそのアイコンから開くと有効)</div></div><label class="switch"><input type="checkbox" '+(this.notifyOn()?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
       '</div>';
 
-    h+='<p class="set-head">表示</p><div class="set-group">'+
-      '<div class="set-cell"><div><span class="lab">テーマ</span></div><select style="max-width:150px;min-height:40px" onchange="App.setTheme(this.value)">'+
-      ['auto:端末に合わせる','light:ライト','dark:ダーク'].map(o=>{const[v,l]=o.split(":");return '<option value="'+v+'" '+(this.getDeviceTheme()===v?"selected":"")+'>'+l+'</option>'}).join("")+
-      '</select></div></div>';
+    h+='<p class="set-head">配色（テーマ）</p><div class="set-group" style="padding:14px">'+
+      '<div class="desc" style="margin:0 0 12px">この端末で使う色を選べます。ふたりで別々の色にもできます（相手には同期されません）。</div>'+
+      '<div class="pal-grid">'+this.palCardsHtml()+'</div></div>';
 
     // アカウント・パートナー招待
     const stat=this._syncStatus;
@@ -2771,6 +2858,23 @@ const App = {
     if(t==="auto"){const dark=matchMedia("(prefers-color-scheme:dark)").matches;document.documentElement.setAttribute("data-theme",dark?"dark":"light");}
     else document.documentElement.setAttribute("data-theme",t);
   },
+  // 配色テーマ(端末別・localStorage)。相手には同期されない＝夫婦で別々の色にできる
+  PALETTES:[
+    {id:"teal",name:"ディープティール",desc:"上品・信頼",c:["#F2F4F3","#117A86","#3E9E6E","#1F2A2C"]},
+    {id:"mint",name:"ミント",desc:"清潔・さわやか",c:["#F0F7F5","#17A99B","#3E9E6E","#1E2B28"]},
+    {id:"slate",name:"スレート",desc:"落ち着き・知的",c:["#F2F5F8","#446C8B","#3E9E6E","#232C34"]},
+    {id:"forest",name:"フォレスト",desc:"自然・安心",c:["#F1F6F2","#2F7D57","#57A379","#1F2B24"]},
+    {id:"ink",name:"インク",desc:"モノトーン・シック",c:["#F3F4F6","#333B47","#3E9E6E","#1B2129"]},
+    {id:"plum",name:"プラム",desc:"上質・華やか",c:["#F5F2F5","#7E4E74","#3E9E6E","#29222A"]},
+    {id:"gold",name:"ゴールド",desc:"高級・あたたかい",c:["#F6F1E8","#A9853F","#6A8B57","#2C2820"]},
+    {id:"rose",name:"ローズ",desc:"やわらか・かわいい",c:["#FFF7F5","#E4576F","#45A98A","#3B2E33"]}
+  ],
+  getPalette(){try{return localStorage.getItem("imaoka_palette")||"teal";}catch(e){return "teal";}},
+  setPalette(v){try{localStorage.setItem("imaoka_palette",v);}catch(e){}this.applyPalette();this.render();if(this._onb&&this._onb.active)this.renderOnboard();},
+  applyPalette(){const p=this.getPalette();if(p&&p!=="teal")document.documentElement.setAttribute("data-palette",p);else document.documentElement.removeAttribute("data-palette");},
+  palCardsHtml(){return this.PALETTES.map(p=>{const on=this.getPalette()===p.id;return '<button class="pal-card'+(on?" on":"")+'" onclick="App.setPalette(\''+p.id+'\')">'+
+    '<div class="pal-prev" style="background:'+p.c[0]+'"><div class="pal-mini"><div class="l1" style="background:'+p.c[1]+'"></div><div class="l2"></div><div class="l3"></div><div class="pal-chip" style="background:'+p.c[2]+'"></div></div><div class="pal-fab" style="background:'+p.c[1]+'">＋</div></div>'+
+    '<div class="pal-meta"><div><div class="pal-name">'+p.name+'</div><div class="pal-desc">'+p.desc+'</div></div>'+(on?'<span class="pal-check">'+ic("check",18)+'</span>':'')+'</div></button>';}).join("");},
 
   /* ============== Sheets / Forms ============== */
   showSheet(html){
