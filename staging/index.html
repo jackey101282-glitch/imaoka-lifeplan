@@ -117,6 +117,23 @@ html[data-palette="rose"]{
 .pal-name{font-weight:700;font-size:var(--text-base);color:var(--color-text-primary)}
 .pal-desc{font-size:var(--text-xs);color:var(--color-text-secondary)}
 .pal-check{color:var(--color-primary-500);display:flex;align-items:center}
+/* ふたりの暮らし方すり合わせ 結果 */
+.ls-b{display:inline-block;font-size:var(--text-xs);font-weight:700;padding:2px 10px;border-radius:var(--radius-full);white-space:nowrap}
+.ls-b.m{background:#E8F5EE;color:var(--color-accent-600)}
+.ls-b.n{background:var(--color-primary-50);color:var(--color-primary-600)}
+.ls-b.g{background:#FBEFDA;color:#A9762A}
+.ls-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border)}
+.ls-row:last-child{border-bottom:none}
+.ls-row .ls-q{flex:1;min-width:0}
+.ls-row .ls-qt{font-size:var(--text-sm);font-weight:600;color:var(--color-text-primary)}
+.ls-row .ls-ans{font-size:var(--text-xs);color:var(--color-text-secondary);margin-top:3px;line-height:1.6}
+.ls-row .ls-ans b{color:var(--color-text-primary);font-weight:600}
+.ls-cathead{display:flex;align-items:center;justify-content:space-between;margin:18px 0 4px;font-weight:700;font-size:var(--text-base)}
+.ls-cathead .ls-catpct{font-size:var(--text-sm);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.ls-hero{text-align:center;padding:6px 0 2px}
+.ls-hero .ls-num{font-size:clamp(44px,14vw,60px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--color-primary-500);line-height:1}
+.ls-hero .ls-sm{font-size:var(--text-md);color:var(--color-text-secondary);font-weight:700}
+.ls-counts{display:flex;justify-content:center;gap:14px;margin:12px 0 4px;flex-wrap:wrap;font-size:var(--text-sm)}
 html[data-theme="dark"]{
   /* シックで落ち着いたニュートラル・チャコール。差し色(テラコッタ/セージ)が映える */
   --color-bg-base:#0F1013;--color-bg-surface:#191B1F;--color-bg-muted:#23262C;
@@ -930,6 +947,46 @@ function renderCatIc(s,size){if(!s)return ic("tag",size);if(_ICONS[s])return ic(
 /* フォルダ/プロジェクトのアイコン選択肢 */
 const PICK_ICONS=["folder","house","heart","star","sparkle","map","palm","plane","send","car","train","gift","bag","cart","utensils","book","graduation","gamepad","music","film","tv","paw","baby","users","briefcase","laptop","coins","wallet","card","shield","cross","pill","wrench","bolt","droplet","flame","scissors","shirt","sofa","building","rocket","trophy","target","calendar","clipboard","party","lifebuoy","tag"];
 
+/* ===== ふたりの暮らし方すり合わせ データ（設計書-ライフプラン診断すり合わせ.md 準拠） =====
+   別々に回答→両者そろったら答え合わせ。ord=順序尺度(隣接=近い)。flex=どちらでも系(相手と違っても"近い"扱い)。num=家計シミュ接続候補。 */
+const LS_CATS=[
+  {id:"life",label:"幸せの軸",ic:"heart"},
+  {id:"event",label:"大きなライフイベント",ic:"house"},
+  {id:"edu",label:"子ども・教育",ic:"graduation"},
+  {id:"level",label:"日常の暮らし",ic:"utensils"},
+  {id:"money",label:"お金の管理・備え",ic:"wallet"},
+  {id:"work",label:"働き方・役割",ic:"briefcase"}
+];
+const LS_QS=[
+  {c:"life",q:"人生で一番大事にしたいのは？",opts:[{t:"家族と過ごす時間",v:"家族との時間"},{t:"仕事・自己実現",v:"仕事・自己実現"},{t:"心とお金のゆとり",v:"ゆとり"},{t:"新しい経験・挑戦",v:"経験・挑戦"}]},
+  {c:"life",q:"お金は、何のためにあると思う？",opts:[{t:"安心のため",v:"安心のため"},{t:"経験のため",v:"経験のため"},{t:"自由のため",v:"自由のため"},{t:"家族のため",v:"家族のため"}]},
+  {c:"life",q:"理想の暮らし方に近いのは？",opts:[{t:"都会で便利に暮らす",v:"都会で便利に"},{t:"自然の近くでのんびり",v:"自然の近くで"},{t:"地元・実家の近くで",v:"地元の近くで"},{t:"身軽にどこでも",v:"身軽にどこでも"}]},
+
+  {c:"event",q:"マイホームは？",opts:[{t:"持ち家がほしい",v:"持ち家がほしい"},{t:"賃貸でいい",v:"賃貸でいい"},{t:"こだわらない",v:"こだわらない",flex:true}]},
+  {c:"event",q:"住まいにかける予算感は？",num:true,ord:true,opts:[{t:"〜2000万円台",v:"〜2000万台"},{t:"3000万円台",v:"3000万台"},{t:"4000万円台",v:"4000万台"},{t:"5000万円以上",v:"5000万〜"}]},
+  {c:"event",q:"車は？",ord:true,opts:[{t:"しっかり持ちたい",v:"しっかり持つ"},{t:"最低限あれば",v:"最低限"},{t:"カーシェア等でいい",v:"カーシェア等"},{t:"なくていい",v:"なくていい"}]},
+  {c:"event",q:"結婚式は？",num:true,opts:[{t:"盛大にやりたい",v:"盛大に"},{t:"身内・親しい人だけで",v:"身内だけで"},{t:"やらない（入籍のみ）",v:"やらない"},{t:"こだわらない",v:"こだわらない",flex:true}]},
+  {c:"event",q:"子どもは、何人ほしい？",num:true,opts:[{t:"1人",v:"1人"},{t:"2人",v:"2人"},{t:"3人以上",v:"3人以上"},{t:"ほしいけどこだわらない",v:"こだわらない",flex:true},{t:"今は考えていない",v:"今は考えない"}]},
+  {c:"event",q:"子どもを望む時期は？",num:true,ord:true,opts:[{t:"できるだけ早めに",v:"早めに"},{t:"2〜3年以内に",v:"2〜3年内"},{t:"もう少し先でいい",v:"もう少し先"},{t:"自然に任せる",v:"自然に任せる",flex:true}]},
+
+  {c:"edu",q:"教育費への考え方は？",num:true,opts:[{t:"大学まで出してあげたい",v:"大学まで"},{t:"本人が望めば大学まで",v:"望めば大学"},{t:"行きたい道を自由に",v:"自由に"},{t:"まだ分からない",v:"まだ分からない",flex:true}]},
+  {c:"edu",q:"公立か私立かは？",opts:[{t:"私立も検討したい",v:"私立も検討"},{t:"基本は公立でいい",v:"基本は公立"},{t:"本人次第",v:"本人次第",flex:true}]},
+  {c:"edu",q:"習い事・塾は？",ord:true,opts:[{t:"やりたいことはやらせたい",v:"やらせたい"},{t:"必要なものを厳選",v:"厳選する"},{t:"特に力を入れなくていい",v:"力を入れない"}]},
+
+  {c:"level",q:"外食の頻度は？",num:true,ord:true,opts:[{t:"月1回で十分",v:"月1回"},{t:"月2〜3回",v:"月2〜3回"},{t:"週1回は行きたい",v:"週1回"},{t:"週2回以上",v:"週2回以上"}]},
+  {c:"level",q:"外食するお店は？",ord:true,opts:[{t:"ファミレス・気軽な店で十分",v:"気軽な店"},{t:"たまにちょっと良い店",v:"たまに良い店"},{t:"特別な日は高級店も",v:"高級店も"}]},
+  {c:"level",q:"旅行は？",num:true,ord:true,opts:[{t:"年1回あれば十分",v:"年1回"},{t:"年2〜3回行きたい",v:"年2〜3回"},{t:"思い立ったら行きたい",v:"思い立ったら"},{t:"あまり興味がない",v:"あまり興味なし"}]},
+  {c:"level",q:"趣味・自分へのお金は？",num:true,ord:true,opts:[{t:"ほぼかけない",v:"ほぼかけない"},{t:"月数千円くらい",v:"月数千円"},{t:"月1〜2万円くらい",v:"月1〜2万円"},{t:"好きなことにはしっかり",v:"しっかりかける"}]},
+
+  {c:"money",q:"毎月の貯蓄・積立は？",num:true,ord:true,opts:[{t:"多めに貯めたい",v:"多めに貯める"},{t:"無理のない範囲で",v:"無理ない範囲"},{t:"使いながら貯める",v:"使いつつ貯める"},{t:"今はあまり貯められなくていい",v:"今は貯めない"}]},
+  {c:"money",q:"お金の管理のしかたは？",ord:true,opts:[{t:"完全に共有・見える化したい",v:"完全に共有"},{t:"大枠は共有・細かくは各自",v:"大枠を共有"},{t:"お財布は別々がいい",v:"別々に管理"}]},
+  {c:"money",q:"まさかの備え（生活防衛費）は？",num:true,ord:true,opts:[{t:"半年〜1年分は確保したい",v:"半年〜1年分"},{t:"数ヶ月分あれば安心",v:"数ヶ月分"},{t:"あまり意識していない",v:"意識してない"}]},
+
+  {c:"work",q:"出産・育児期の働き方は？",opts:[{t:"二人とも続けたい",v:"二人とも続ける"},{t:"どちらかは家庭優先も",v:"家庭優先も"},{t:"状況を見て柔軟に",v:"柔軟に",flex:true}]},
+  {c:"work",q:"家計の管理は、主に誰が？",opts:[{t:"二人で一緒に",v:"二人で一緒に"},{t:"主に自分が",v:"主に自分"},{t:"主に相手に任せたい",v:"主に相手"},{t:"まだ決めていない",v:"まだ決めてない",flex:true}]},
+  {c:"work",q:"収入減・転職・独立には？",ord:true,opts:[{t:"安定を重視したい",v:"安定重視"},{t:"挑戦を応援したい",v:"挑戦を応援"},{t:"状況次第",v:"状況次第",flex:true}]}
+];
+
 /* ===== お金タイプ診断 データ（提案-お金版MBTI診断.md §6.6/§6.7 準拠） ===== */
 // 属性（採点なし・単タップ）
 const DIAG_ATTRS=[
@@ -1406,6 +1463,135 @@ const App = {
     const dic=dimg?('<div style="width:52px;height:52px;border-radius:13px;overflow:hidden;flex-shrink:0;background:'+d.color+'1a"><img src="'+esc(dimg)+'" alt="'+esc(d.name)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML=\'\'"></div>'):('<div class="ic" style="width:52px;height:52px;background:'+d.color+'1a;color:'+d.color+'">'+ic("sparkle",24)+'</div>');
     return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;border-color:'+d.color+'55;margin-bottom:14px" onclick="App.showDiagResult(false)">'+dic+'<div style="flex:1;min-width:0"><div class="meta">あなたのお金タイプ</div><div style="font-weight:700;font-size:var(--text-md);color:'+d.color+'">'+esc(d.name)+'</div></div><span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
   },
+
+  /* ===== ふたりの暮らし方すり合わせ（別々回答→答え合わせ） ===== */
+  lsRole(){return this.deviceOwner||"husband";},
+  lsOther(r){return r==="husband"?"wife":"husband";},
+  lsName(r){const s=this.state.settings||{};return r==="husband"?(s.husband||"夫"):(s.wife||"妻");},
+  lsData(){if(!this.state.lifeSync)this.state.lifeSync={};return this.state.lifeSync;},
+  lsDone(r){const d=this.lsData()[r];return !!(d&&d.done);},
+  lsEl(){let el=document.getElementById("ls");if(!el){el=document.createElement("div");el.id="ls";document.body.appendChild(el);}return el;},
+  lsCatLabel(id){const c=LS_CATS.find(x=>x.id===id);return c?c.label:"";},
+  lsCardHtml(){
+    const me=this.lsRole(),other=this.lsOther(me),meD=this.lsDone(me),otD=this.lsDone(other),both=meD&&otD;
+    let sub;
+    if(both)sub="ふたりの答え合わせができました。もう一度見る";
+    else if(meD)sub=this.lsName(other)+"さんの回答を待っています";
+    else sub="家・子ども・教育…ふたりの希望を5分ですり合わせ";
+    const col=both?"var(--color-accent-600)":"var(--color-primary-600)";
+    return '<div class="card" style="cursor:pointer;display:flex;align-items:center;gap:14px;background:var(--color-primary-50);border-color:var(--color-primary-200);margin-bottom:14px" onclick="App.startLifeSync()">'+
+      '<div class="ic" style="background:var(--color-primary-100);color:var(--color-primary-600);width:44px;height:44px">'+ic("heart",22)+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:var(--text-md);color:'+col+'">ふたりの暮らし方すり合わせ</div><div class="meta">'+esc(sub)+'</div></div>'+
+      '<span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
+  },
+  startLifeSync(){
+    const me=this.lsRole(),other=this.lsOther(me);
+    if(this.lsDone(me)&&this.lsDone(other)){this.lsShowResult();return;}
+    this._ls={active:true,phase:"intro"};this.lsRender();
+  },
+  lsClose(){this._ls={active:false};const e=document.getElementById("ls");if(e)e.remove();this.render();},
+  lsChooseMode(){this._ls.phase="mode";this.lsRender();},
+  lsBegin(mode){this._ls.mode=mode;this._ls.role=this.lsRole();this._ls.ans={};this._ls.i=0;this._ls.phase="answer";this.lsRender();},
+  lsBack(){if(this._ls&&this._ls.phase==="answer"&&this._ls.i>0){this._ls.i--;this.lsRender();}},
+  lsPick(idx){this._ls.ans[this._ls.i]=idx;this._ls.i++;if(this._ls.i>=LS_QS.length){this.lsFinishRole();return;}this.lsRender();},
+  lsFinishRole(){
+    const role=this._ls.role,d=this.lsData();
+    d[role]={ans:this._ls.ans,done:true,at:Date.now()};this.commit();
+    const other=this.lsOther(role);
+    if(this._ls.mode==="together"&&!this.lsDone(other)){this._ls.phase="pass";this._ls.role=other;this.lsRender();return;}
+    if(this.lsDone(role)&&this.lsDone(other)){this._ls.phase="reveal";this.lsRender();return;}
+    this._ls.phase="waiting";this.lsRender();
+  },
+  lsPassGo(){this._ls.ans={};this._ls.i=0;this._ls.phase="answer";this.lsRender();},
+  lsDemoPartner(){const other=this.lsOther(this.lsRole());const me=(this.lsData()[this.lsRole()]||{}).ans||{};const a={};LS_QS.forEach((q,i)=>{const len=q.opts.length;const base=(me[i]!=null?me[i]:0);a[i]=(base+(i%3))%len;});this.lsData()[other]={ans:a,done:true,at:Date.now()};this.commit();this.lsShowResult();},
+  lsRender(){
+    if(!this._ls||!this._ls.active){const e=document.getElementById("ls");if(e)e.remove();return;}
+    const el=this.lsEl();el.className="onb-modal";const ph=this._ls.phase;
+    if(ph==="intro"){
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("heart",32)+'</div>'+
+        '<h2>ふたりの暮らし方、すり合わせ</h2>'+
+        '<p>家・車・結婚式・子ども・教育、毎日のお金の使い方——<b>「なんとなく合ってる」を、ちゃんと確かめる</b>ための時間です。</p>'+
+        '<p class="onb-sub">別々に答えて、あとで答え合わせ。どちらが正しいかではなく、<b>話すきっかけ</b>にするものです。約5分・'+LS_QS.length+'問。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.lsChooseMode()">はじめる</button>'+
+        '<div class="onb-skip" onclick="App.lsClose()">とじる</div></div>';
+      return;
+    }
+    if(ph==="mode"){
+      const otN=this.lsName(this.lsOther(this.lsRole()));
+      el.innerHTML='<div class="onb-card" style="text-align:left"><h2 style="text-align:center;font-size:var(--text-lg)">どちらで進めますか？</h2>'+
+        '<button class="btn btn-sec btn-block" style="text-align:left;margin:12px 0 8px;min-height:58px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;justify-content:center" onclick="App.lsBegin(\'solo\')"><span style="font-weight:700">まず自分だけ答える</span><span class="meta">あとで'+esc(otN)+'さんを誘えます（おすすめ）</span></button>'+
+        '<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:58px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;justify-content:center" onclick="App.lsBegin(\'together\')"><span style="font-weight:700">今ふたりで答える</span><span class="meta">スマホを渡し合って順番に回答</span></button>'+
+        '<div class="onb-skip" onclick="App.lsClose()">とじる</div></div>';
+      return;
+    }
+    if(ph==="answer"){
+      const i=this._ls.i,q=LS_QS[i];
+      const who=this._ls.mode==="together"?('<span class="ls-b n" style="margin-left:6px">'+esc(this.lsName(this._ls.role))+'さんの番</span>'):"";
+      const opts=q.opts.map((o,idx)=>'<button class="btn btn-sec btn-block" style="text-align:left;margin-bottom:8px;min-height:46px;display:flex;align-items:center" onclick="App.lsPick('+idx+')"><span style="font-weight:600">'+esc(o.t)+'</span></button>').join('');
+      el.innerHTML='<div class="onb-card" style="text-align:left">'+
+        '<div class="onb-step" style="margin-bottom:6px">'+(i+1)+' / '+LS_QS.length+'　'+esc(this.lsCatLabel(q.c))+who+'</div>'+
+        '<h2 style="font-size:var(--text-lg);margin:2px 0 14px">'+esc(q.q)+'</h2>'+opts+
+        (i>0?'<div class="onb-skip" onclick="App.lsBack()">← もどる</div>':'<div class="onb-skip" onclick="App.lsClose()">とじる</div>')+'</div>';
+      return;
+    }
+    if(ph==="pass"){
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("users",32)+'</div>'+
+        '<h2>'+esc(this.lsName(this._ls.role))+'さんに交代</h2>'+
+        '<p>ここからは <b>'+esc(this.lsName(this._ls.role))+'さん</b> が答えます。スマホを渡してください。<br>お互いの回答は、ふたりとも答え終わるまで見えません。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.lsPassGo()">'+esc(this.lsName(this._ls.role))+'さん、はじめる</button>'+
+        '<div class="onb-skip" onclick="App.lsClose()">また今度</div></div>';
+      return;
+    }
+    if(ph==="waiting"){
+      const other=this.lsOther(this.lsRole());
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("check",32)+'</div>'+
+        '<h2>回答おわりました</h2>'+
+        '<p>あなたの回答は保存しました。<b>'+esc(this.lsName(other))+'さん</b>も答えると、ふたりの答え合わせが見られます。</p>'+
+        '<p class="onb-sub">相手が同じ家計に参加していれば、答えるだけで自動でそろいます（設定→パートナー招待）。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.lsClose()">とじる</button>'+
+        '<div class="onb-skip" onclick="App.lsDemoPartner()">（デモ）'+esc(this.lsName(other))+'さんが答えたことにして結果を見る</div></div>';
+      return;
+    }
+    if(ph==="reveal"){
+      el.innerHTML='<div class="onb-card"><div class="onb-ic">'+ic("sparkle",32)+'</div>'+
+        '<h2>ふたりの回答がそろいました</h2>'+
+        '<p>どちらが正しいかではなく、これからを話すきっかけに。</p>'+
+        '<button class="btn btn-primary btn-block" onclick="App.lsShowResult()">答え合わせを見る</button></div>';
+      return;
+    }
+  },
+  lsCompare(a,b,q){if(a==null||b==null)return "na";if(a===b)return "match";const oa=q.opts[a],ob=q.opts[b];if((oa&&oa.flex)||(ob&&ob.flex))return "near";if(q.ord&&Math.abs(a-b)===1)return "near";return "gap";},
+  lsScore(){
+    const me=this.lsRole(),other=this.lsOther(me);
+    const A=(this.lsData()[me]||{}).ans||{},B=(this.lsData()[other]||{}).ans||{};
+    let match=0,near=0,gap=0;const byCat={},rows=[];
+    LS_CATS.forEach(c=>byCat[c.id]={match:0,near:0,gap:0,total:0});
+    LS_QS.forEach((q,i)=>{const cmp=this.lsCompare(A[i],B[i],q);if(cmp==="na")return;byCat[q.c].total++;if(cmp==="match"){match++;byCat[q.c].match++;}else if(cmp==="near"){near++;byCat[q.c].near++;}else{gap++;byCat[q.c].gap++;}rows.push({i:i,q:q,cmp:cmp,me:A[i],other:B[i]});});
+    const total=match+near+gap,pct=total?Math.round((match+near*0.5)/total*100):0;
+    LS_CATS.forEach(c=>{const b=byCat[c.id];b.pct=b.total?Math.round((b.match+b.near*0.5)/b.total*100):0;});
+    return {me,other,match,near,gap,total,pct,byCat,rows};
+  },
+  lsShowResult(){
+    this._ls={active:true,phase:"result"};
+    const s=this.lsScore(),el=this.lsEl();el.className="onb-modal";
+    if(!s.total){el.innerHTML='<div class="onb-card"><h2>まだ答え合わせできません</h2><p>ふたりの回答がそろうと結果が見られます。</p><button class="btn btn-primary btn-block" onclick="App.lsClose()">とじる</button></div>';return;}
+    const phrase=s.pct>=85?"息ぴったりな ふたり":s.pct>=65?"わりと近い、話せば早い ふたり":s.pct>=45?"補い合えそうな ふたり":"違いも多いけど、それでいい ふたり";
+    const meN=this.lsName(s.me),otN=this.lsName(s.other);
+    let h='<div class="onb-card" style="text-align:left;max-height:90vh;overflow:auto">';
+    h+='<div class="ls-hero"><div class="meta" style="text-align:center">ふたりの希望の近さ</div><div class="ls-num">'+s.pct+'<span style="font-size:.5em">%</span></div><div class="ls-sm">'+phrase+'</div></div>';
+    h+='<p class="onb-sub" style="text-align:center;margin:6px 0 2px">これは正解・不正解のテストではありません。<b>これから話すきっかけ</b>です。</p>';
+    h+='<div class="ls-counts"><span><b style="color:var(--color-accent-600)">'+s.match+'</b> 同じ</span><span><b style="color:var(--color-primary-600)">'+s.near+'</b> 近い</span><span><b style="color:#A9762A">'+s.gap+'</b> 話そう</span></div>';
+    LS_CATS.forEach(c=>{const b=s.byCat[c.id];if(!b.total)return;h+='<div class="ls-cathead"><span class="ttl-ico">'+ic(c.ic,16)+esc(c.label)+'</span><span class="ls-catpct">近さ '+b.pct+'%</span></div>';
+      s.rows.filter(r=>r.q.c===c.id).forEach(r=>{const bl=r.cmp==="match"?'<span class="ls-b m">同じ</span>':r.cmp==="near"?'<span class="ls-b n">近い</span>':'<span class="ls-b g">話そう</span>';
+        h+='<div class="ls-row"><div class="ls-q"><div class="ls-qt">'+esc(r.q.q)+'</div><div class="ls-ans">'+esc(meN)+'：<b>'+esc(r.q.opts[r.me].v)+'</b>　／　'+esc(otN)+'：<b>'+esc(r.q.opts[r.other].v)+'</b></div></div>'+bl+'</div>';});
+    });
+    h+='<div style="margin-top:18px"><button class="btn btn-primary btn-block" onclick="App.lsToLifeplan()">この希望をライフプランに活かす</button>'+
+      '<button class="btn btn-sec btn-block" style="margin-top:8px" onclick="App.lsRetake()">自分の回答をやり直す</button>'+
+      '<div class="onb-skip" onclick="App.lsClose()">とじる</div></div></div>';
+    el.innerHTML=h;
+  },
+  lsToLifeplan(){this.lsClose();try{this.go("lifeplan");}catch(e){}this.toast("大きな出費は、ライフプランでゴールや特別費として設定できます");},
+  lsRetake(){const me=this.lsRole(),d=this.lsData();if(d[me])d[me]={ans:{},done:false};this.commit();this._ls={active:true,phase:"intro"};this.lsRender();},
 
   updateFab(){const fab=document.getElementById("fab");const show=(this.tab==="dashboard"||this.tab==="lifeplan"||this.tab==="tasks"||this.tab==="calendar"||this.tab==="share");fab.style.display=show?"flex":"none";fab.classList.remove("wide");fab.innerHTML="＋";},
   thisMonthJump(){this.curMonth=thisMonth();this.render();},
@@ -1919,7 +2105,7 @@ const App = {
     // 「定期」「これからの予定」「予算ペース」は今月の収支カードに統合済み／直近のタスクはホーム非表示（要望）
     const cards=[]
       .filter(Boolean).map(b=>'<div class="dblk">'+b+'</div>').join('');
-    return sysWarn+bento+remind+shareLink+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
+    return sysWarn+bento+remind+shareLink+this.lsCardHtml()+this.diagCardHtml()+'<div class="dash-cols">'+cards+'</div>';
   },
   // ライフプラン＝目標・将来・残高(ストック)。view_dashboardの副作用で_lpCardsを構築。
   view_lifeplan(){
@@ -2834,6 +3020,7 @@ const App = {
       '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
       '<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>'+
       '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>'+
+      '<div class="set-cell" onclick="App.startLifeSync()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('heart',16)+'ふたりの暮らし方すり合わせ</span><span class="desc">'+LS_QS.length+'問</span></div>'+
       '<div class="set-cell" onclick="App.startDiagnosis()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'お金タイプ診断をする</span><span class="desc">11問</span></div>'+
       (this.isNative()?'<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>':'')+
       '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
