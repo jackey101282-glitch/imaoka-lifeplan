@@ -2577,8 +2577,30 @@ const App = {
     s+='<circle cx="'+mx+'" cy="'+my+'" r="4" style="fill:'+(danger?"var(--color-danger)":"var(--color-primary-600)")+'"/>';
     s+='<text x="'+mx+'" y="'+(parseFloat(my)-8).toFixed(1)+'" text-anchor="middle" font-size="9.5" font-weight="700" style="fill:'+(danger?"var(--color-danger)":"var(--color-primary-700)")+'">'+(mr.y===0?"今":mr.y+"年後")+'</text>';
     [0,10,20,30].forEach(y=>{s+='<text x="'+px(y).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" style="fill:var(--color-text-secondary)">'+(y===0?"今":y+"年")+'</text>';});
+    // 数年おきに小さな点（タップできる目印）
+    rows.forEach(r=>{if(r.y%3===0)s+='<circle cx="'+px(r.y).toFixed(1)+'" cy="'+py(r.cash).toFixed(1)+'" r="2" style="fill:var(--color-primary-500)"/>';});
+    // 選択中の年：ガイド線＋大きめの点
+    if(this._cfSel!=null&&rows[this._cfSel]){const rr=rows[this._cfSel],sx=px(rr.y).toFixed(1),sy=py(rr.cash).toFixed(1);s+='<line x1="'+sx+'" x2="'+sx+'" y1="'+padT+'" y2="'+(H-padB)+'" style="stroke:var(--color-text-secondary);opacity:.35" stroke-width="1"/><circle cx="'+sx+'" cy="'+sy+'" r="5.5" style="fill:var(--color-primary-600);stroke:#fff" stroke-width="2"/>';}
+    // 各年の縦帯＝タップ領域
+    const cw=(W-padL-padR)/years;
+    rows.forEach(r=>{s+='<rect x="'+(px(r.y)-cw/2).toFixed(1)+'" y="'+padT+'" width="'+cw.toFixed(1)+'" height="'+(H-padT-padB)+'" fill="transparent" style="cursor:pointer" onclick="App.cfPickYear('+r.y+')"></rect>';});
     s+='</svg>';
     return s;
+  },
+  cfPickYear(y){this._cfSel=(this._cfSel===y?null:y);this.render();},
+  cfYearContext(cf,y){
+    const parts=[];
+    (cf.children||[]).forEach((ch,i)=>{const age=y-ch.after;if(age>=0&&age<=22)parts.push((cf.children.length>1?"第"+(i+1)+"子 ":"子 ")+age+"歳");});
+    if(cf.buy.on&&y>=cf.buy.after)parts.push("住宅ローン中");
+    if(cf.wifeMode!=="keep"&&(cf.children||[]).length){const fc=Math.min.apply(null,cf.children.map(x=>x.after));if(y>=fc&&y<fc+cf.wifeYears)parts.push(cf.wifeMode==="home"?"妻 専業主婦":"妻 時短");}
+    return parts.join("・");
+  },
+  cfChartBlock(p,mark){
+    const sel=this._cfSel;let cap;
+    if(sel!=null&&p.rows[sel]){const r=p.rows[sel],ctx=this.cfYearContext(this.cfDefaults(),sel);
+      cap='<div class="row" style="margin-top:8px;padding:9px 12px;background:var(--color-bg-muted);border-radius:var(--radius-md)"><span class="meta">'+(sel===0?"今":sel+"年後")+(ctx?" ・"+esc(ctx):"")+' の貯蓄</span><span class="num" style="font-weight:800;color:'+(r.cash<0?"var(--color-danger)":"var(--color-text-primary)")+'">'+(r.cash<0?"不足":yen(r.cash))+'</span></div>';
+    }else cap='<div class="meta" style="text-align:center;margin-top:6px">グラフをタップすると、その年の貯蓄が見られます</div>';
+    return this.cfChartSvg(p,mark)+cap;
   },
   simProjection(){
     const sim=this.state.sim;
@@ -2631,14 +2653,14 @@ const App = {
         (cause?'<div class="meta" style="margin-bottom:6px">'+esc(cause)+'</div>':'<div style="height:6px"></div>')+
         (firstNeg?'<div class="meta" style="line-height:1.7">この頃に貯蓄が底をつく見込みです。守りたい額 '+yen(p.reserve)+' も割ります。<b>上の「今から積み立て」</b>や、前提の<b>妻の働き方</b>を見直すと解消できます。</div>'
                  :'<div class="row"><span class="meta">そのときの現金</span><span class="num" style="font-weight:700;color:var(--color-danger)">'+yen(crit.cash)+'</span></div><div class="meta" style="margin-top:4px;line-height:1.7">守りたい額 '+yen(p.reserve)+' を下回ります。<b>上の「今から積み立て」</b>や<b>妻の働き方</b>で守れます。</div>')+
-        this.cfChartSvg(p,crit)+'</div>';
+        this.cfChartBlock(p,crit)+'</div>';
     } else {
-      h+='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)"><div class="ttl-ico" style="color:var(--color-primary-700);font-size:var(--text-sm);line-height:1.6;align-items:flex-start">'+ic('check',15)+'<span>'+(monotonic?"この計画なら現金は下がる時期がなく、増えていく見通しです。安心して大丈夫。":"この計画なら30年ずっと安心。いちばん少ない <b>"+p.minRow.y+"年後</b> でも "+yen(p.minRow.cash)+"（守りたい "+yen(p.reserve)+" を上回ります）。")+'</span></div>'+this.cfChartSvg(p,monotonic?null:p.minRow)+'</div>';
+      h+='<div class="card" style="background:var(--color-primary-50);border-color:var(--color-primary-200)"><div class="ttl-ico" style="color:var(--color-primary-700);font-size:var(--text-sm);line-height:1.6;align-items:flex-start">'+ic('check',15)+'<span>'+(monotonic?"この計画なら現金は下がる時期がなく、増えていく見通しです。安心して大丈夫。":"この計画なら30年ずっと安心。いちばん少ない <b>"+p.minRow.y+"年後</b> でも "+yen(p.minRow.cash)+"（守りたい "+yen(p.reserve)+" を上回ります）。")+'</span></div>'+this.cfChartBlock(p,monotonic?null:p.minRow)+'</div>';
     }
     // すり合わせ由来の前提（子ども・住まい）
     h+='<div class="section-title">ふたりの希望から<span class="link" onclick="App.cfApplyFromSync()">すり合わせを反映</span></div><div class="card">';
     if(!cfp.children.length&&!cfp.buy.on&&!cfp.events.length)h+='<div class="empty" style="padding:14px"><span class="e-ic">'+ic('heart',28)+'</span>「すり合わせを反映」で、子ども・住まい・結婚式などが前提に入ります</div>';
-    cfp.children.forEach((c,i)=>{h+='<div class="li"><span class="ic">'+ic('graduation',19)+'</span><div class="main"><div class="ttl">子ども '+(i+1)+'人目（'+(c.priv?'私立中心':'公立中心')+'）</div><div class="meta">'+c.after+'年後に誕生・大学まで（毎月かかる費用に反映）</div></div></div>';});
+    cfp.children.forEach((c,i)=>{const born=(c.after<0)?("今 "+(-c.after)+"歳"):(c.after+"年後に誕生");h+='<div class="li"><span class="ic">'+ic('graduation',19)+'</span><div class="main"><div class="ttl">子ども '+(i+1)+'人目（'+(c.priv?'私立中心':'公立中心')+'）</div><div class="meta">'+born+'・大学まで（毎月かかる費用に反映）</div></div></div>';});
     if(cfp.buy.on)h+='<div class="li"><span class="ic">'+ic('house',19)+'</span><div class="main"><div class="ttl">住宅購入（'+cfp.buy.after+'年後）</div><div class="meta">'+yen(cfp.buy.price)+'・頭金'+yen(cfp.buy.down)+'／月返済 約'+yen(p.loanM)+'（+管理等'+yen(cfp.buy.upkeep)+'）</div></div></div>';
     cfp.events.forEach(e=>{h+='<div class="li"><span class="ic">'+ic('calendar',19)+'</span><div class="main"><div class="ttl">'+esc(e.name)+'</div><div class="meta">'+e.after+'年後</div></div><span class="amt">'+yen(e.amount)+'</span></div>';});
     h+='</div>';
