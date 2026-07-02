@@ -2860,14 +2860,14 @@ const App = {
   },
   // 配色テーマ(端末別・localStorage)。相手には同期されない＝夫婦で別々の色にできる
   PALETTES:[
-    {id:"teal",name:"ディープティール",desc:"上品・信頼",c:["#F2F4F3","#117A86","#3E9E6E","#1F2A2C"]},
-    {id:"mint",name:"ミント",desc:"清潔・さわやか",c:["#F0F7F5","#17A99B","#3E9E6E","#1E2B28"]},
-    {id:"slate",name:"スレート",desc:"落ち着き・知的",c:["#F2F5F8","#446C8B","#3E9E6E","#232C34"]},
-    {id:"forest",name:"フォレスト",desc:"自然・安心",c:["#F1F6F2","#2F7D57","#57A379","#1F2B24"]},
-    {id:"ink",name:"インク",desc:"モノトーン・シック",c:["#F3F4F6","#333B47","#3E9E6E","#1B2129"]},
-    {id:"plum",name:"プラム",desc:"上質・華やか",c:["#F5F2F5","#7E4E74","#3E9E6E","#29222A"]},
-    {id:"gold",name:"ゴールド",desc:"高級・あたたかい",c:["#F6F1E8","#A9853F","#6A8B57","#2C2820"]},
-    {id:"rose",name:"ローズ",desc:"やわらか・かわいい",c:["#FFF7F5","#E4576F","#45A98A","#3B2E33"]}
+    {id:"teal",name:"ディープティール",desc:"上品で信頼感のある定番",c:["#F2F4F3","#117A86","#3E9E6E","#1F2A2C"]},
+    {id:"mint",name:"ミント",desc:"清潔感のあるさわやか",c:["#F0F7F5","#17A99B","#3E9E6E","#1E2B28"]},
+    {id:"forest",name:"フォレスト",desc:"落ち着く森のグリーン",c:["#F1F6F2","#2F7D57","#57A379","#1F2B24"]},
+    {id:"slate",name:"スレート",desc:"知的で大人っぽい青灰",c:["#F2F5F8","#446C8B","#3E9E6E","#232C34"]},
+    {id:"ink",name:"インク",desc:"モノトーンのシック",c:["#F3F4F6","#333B47","#3E9E6E","#1B2129"]},
+    {id:"plum",name:"プラム",desc:"華やかで上質な果実色",c:["#F5F2F5","#7E4E74","#3E9E6E","#29222A"]},
+    {id:"rose",name:"ローズ",desc:"やわらかで愛らしい",c:["#FFF7F5","#E4576F","#45A98A","#3B2E33"]},
+    {id:"gold",name:"ゴールド",desc:"あたたかく高級感のある",c:["#F6F1E8","#A9853F","#6A8B57","#2C2820"]}
   ],
   getPalette(){try{return localStorage.getItem("imaoka_palette")||"teal";}catch(e){return "teal";}},
   setPalette(v){try{localStorage.setItem("imaoka_palette",v);}catch(e){}this.applyPalette();this.render();if(this._onb&&this._onb.active)this.renderOnboard();},
