@@ -2465,26 +2465,35 @@ const App = {
       wIncome:Math.round(m.wInc||0)||200000,
       living:Math.max(120000,Math.round((m.fixed||0)+(m.variable||0)))||200000,
       cash:cash||3000000,
-      wifeMode:"reduce",wifeYears:6,
+      wifeMode:"reduce",wifeYears:6,weddingDone:false,kidsMode:"future",youngest:0,
       children:[],buy:{on:false,after:7,price:35000000,down:6000000,rate:1.0,years:35,upkeep:25000},events:[]
     };
     return this.state.cfPlan;
   },
-  setCf(k,v){const cf=this.cfDefaults();if(k==="wifeMode")cf[k]=v;else cf[k]=(+String(v).replace(/[^0-9.]/g,""))||0;this.commit();this.render();},
-  cfApplyFromSync(){
+  setCf(k,v){const cf=this.cfDefaults();
+    if(k==="wifeMode"||k==="kidsMode")cf[k]=v;
+    else if(k==="weddingDone")cf[k]=(v===true||v==="1"||v==="true");
+    else cf[k]=(+String(v).replace(/[^0-9.]/g,""))||0;
+    if(k==="weddingDone"||k==="kidsMode"||k==="youngest")this.cfRebuild();else{this.commit();this.render();}
+  },
+  cfRebuild(){ // すり合わせ回答＋「すでに達成済み」フラグ から 子ども・住宅・イベントを組み立て
     const cf=this.cfDefaults();
     const me=this.lsRole(),other=this.lsOther(me);
     const A=(this.lsData()[me]||{}).ans||{},B=(this.lsData()[other]||{}).ans||{};
     const g=(i)=>(A[i]!=null?A[i]:(B[i]!=null?B[i]:null));
     const cntMap={0:1,1:2,2:3,3:1},n=(g(7)!=null&&cntMap[g(7)]!=null)?cntMap[g(7)]:0;
     const timing=[1,2.5,5,3],t0=(g(8)!=null?timing[g(8)]:3),priv=(g(10)===0);
-    cf.children=[];for(let k=0;k<n;k++)cf.children.push({after:Math.max(1,Math.round(t0+k*2)),priv:priv});
+    cf.children=[];
+    if(cf.kidsMode==="have"){for(let k=0;k<n;k++)cf.children.push({after:-(cf.youngest+k*2),priv:priv});} // 既にいる＝過去に誕生（毎月の費用が今かかる）
+    else{for(let k=0;k<n;k++)cf.children.push({after:Math.max(1,Math.round(t0+k*2)),priv:priv});}
     if(g(3)===0){const b=g(4);const price=[20000000,35000000,45000000,55920000][(b!=null?b:1)]||35000000;cf.buy={on:true,after:7,price:price,down:Math.round(price*0.17),rate:1.0,years:35,upkeep:25000};}
     else cf.buy.on=false;
-    cf.events=[];const wed=g(6);if(wed===0)cf.events.push({name:"結婚式",after:1,amount:3440000});else if(wed===1)cf.events.push({name:"結婚式",after:1,amount:1500000});
+    cf.events=[];
+    if(!cf.weddingDone){const wed=g(6);if(wed===0)cf.events.push({name:"結婚式",after:1,amount:3440000});else if(wed===1)cf.events.push({name:"結婚式",after:1,amount:1500000});}
     const car=g(5);if(car===0)cf.events.push({name:"車",after:3,amount:3310000});else if(car===1)cf.events.push({name:"車",after:3,amount:1960000});
-    this.commit();this.render();this.toast("すり合わせの答えを反映しました");
+    this.commit();this.render();
   },
+  cfApplyFromSync(){this.cfRebuild();this.toast("すり合わせの答えを反映しました");},
   cfProject(cf){
     cf=cf||this.cfDefaults();
     const years=30;
@@ -2515,8 +2524,10 @@ const App = {
     cf=cf||this.cfDefaults();const gs=[];
     (cf.events||[]).forEach(e=>gs.push({name:e.name,after:e.after,amount:e.amount}));
     if(cf.buy.on)gs.push({name:"住宅の頭金",after:cf.buy.after,amount:cf.buy.down});
+    // すでに子どもがいる家庭＝「これから毎月かかる教育費」に今から備える目標を出す
+    if(cf.kidsMode==="have"){(cf.children||[]).forEach((ch,i)=>{const age=Math.max(0,-ch.after);const eduTotal=ch.priv?12000000:8500000;const remFrac=Math.max(0,Math.min(1,(22-Math.max(3,age))/19));const amt=Math.round(eduTotal*remFrac/100000)*100000;const after=Math.max(1,18-age);if(amt>0)gs.push({name:"教育費の備え"+((cf.children.length>1)?("（"+(i+1)+"人目）"):""),after:after,amount:amt,edu:true});});}
     gs.sort((a,b)=>a.after-b.after);
-    return gs.map(g=>{const monthsNow=Math.max(1,Math.round(g.after*12));const now=Math.round(g.amount/monthsNow);const last=Math.round(g.amount/12);return {name:g.name,after:g.after,amount:g.amount,now:now,last:last,save:Math.max(0,last-now)};});
+    return gs.map(g=>{const monthsNow=Math.max(1,Math.round(g.after*12));const now=Math.round(g.amount/monthsNow);const last=Math.round(g.amount/12);return {name:g.name,after:g.after,amount:g.amount,now:now,last:last,save:Math.max(0,last-now),edu:!!g.edu};});
   },
   cfRecentLiving(){try{const m=this.metrics(thisMonth());const v=(m.fixed||0)+(m.variable||0);return v>0?Math.round(v):null;}catch(e){return null;}},
   cfToggleInputs(){this._cfOpen=!this._cfOpen;this.render();},
@@ -2533,6 +2544,10 @@ const App = {
       this.field("毎月の生活費",'<input class="amt" type="text" inputmode="numeric" value="'+cf(cfp.living)+'" oninput="App.commaize(this)" onchange="App.setCf(\'living\',this.value)">'+(recent?'<div class="meta" style="margin-top:4px">直近1ヶ月の支出は '+yen(recent)+'。<span class="link" onclick="App.cfPullLiving()">これを使う</span></div>':''))+
       this.field("今ある貯蓄",'<input class="amt" type="text" inputmode="numeric" value="'+cf(cfp.cash)+'" oninput="App.commaize(this)" onchange="App.setCf(\'cash\',this.value)">')+
       this.field("子どもが生まれたら、妻の働き方は",'<div class="seg" id="cf-wife">'+[["keep","続ける"],["reduce","時短"],["home","専業主婦"]].map(o=>'<button type="button" class="'+(cfp.wifeMode===o[0]?"on":"")+'" onclick="App.setCf(\'wifeMode\',\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div>')+
+      '<div class="fld"><span class="lbl">すでに済んでいることは？</span>'+
+      '<div class="seg" style="margin-bottom:8px">'+[["future","結婚式はこれから"],["done","結婚式は済んだ"]].map(o=>'<button type="button" class="'+((cfp.weddingDone?"done":"future")===o[0]?"on":"")+'" onclick="App.setCf(\'weddingDone\',\''+(o[0]==="done"?"1":"0")+'\')">'+o[1]+'</button>').join("")+'</div>'+
+      '<div class="seg">'+[["future","子どもはこれから"],["have","子どもはもういる"]].map(o=>'<button type="button" class="'+(cfp.kidsMode===o[0]?"on":"")+'" onclick="App.setCf(\'kidsMode\',\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div></div>'+
+      (cfp.kidsMode==="have"?this.field("いちばん下の子の年齢",'<select onchange="App.setCf(\'youngest\',this.value)">'+[0,1,2,3,5,7,10,13,16].map(a=>'<option value="'+a+'" '+(+cfp.youngest===a?"selected":"")+'>'+(a===0?"0歳（これから/生まれたて）":a+"歳")+'</option>').join("")+'</select>'):"")+
       '<div style="text-align:right"><span class="link" onclick="App.cfToggleInputs()">閉じる</span></div>'+
     '</div>';
   },
@@ -2590,14 +2605,17 @@ const App = {
     h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">やりたいことに向けて「<b>今から</b>毎月いくら貯めればいいか」。早く始めるほどラクになります。</p>';
     // 前提（折りたたみ・上部）
     h+=this.cfInputsHtml(cfp);
+    const takeHome=(cfp.hIncome||0)+(cfp.wIncome||0);
+    const savePct=takeHome>0?Math.round(Math.max(0,nowMonthly)/takeHome*100):0;
     if(goals.length){
-      // 主役：今から積み立てるべき合計
-      h+='<div class="card" style="border:1.5px solid var(--color-primary-400)"><p class="meta" style="margin:0">やりたいこと全部を、今から積み立てるなら</p><div class="big-num" style="color:var(--color-primary-600)">月 '+yen(totalNow)+'</div>'+
-        '<div class="row" style="margin-top:2px"><span class="meta">今の毎月の余力</span><span class="num" style="font-weight:700;color:'+(okPace?"var(--color-accent-600)":"var(--color-warning)")+'">'+yen(nowMonthly)+(okPace?"（届いています）":"（あと "+yen(totalNow-nowMonthly)+"）")+'</span></div></div>';
+      // 主役：本来必要な積立 vs 今のペース（手取りの何%）
+      h+='<div class="card" style="border:1.5px solid var(--color-primary-400)"><p class="meta" style="margin:0">目標に向けて、本来 今から積み立てたい額</p><div class="big-num" style="color:var(--color-primary-600);margin:0">月 '+yen(totalNow)+'</div>'+
+        '<div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border)"><span class="meta" style="line-height:1.5">今のペースで<br>貯められるのは<br>（手取りの約'+savePct+'%）</span><span class="num" style="font-weight:700;color:'+(okPace?"var(--color-accent-600)":"var(--color-warning)")+'">月 '+yen(Math.max(0,nowMonthly))+'</span></div>'+
+        '<div class="meta" style="margin-top:8px;line-height:1.7">'+(okPace?"いいペースです。今の貯め方で目標に届きます。":"目標に届くには <b style=\"color:var(--color-warning)\">あと月 "+yen(totalNow-nowMonthly)+"</b>。なんとなく貯めるより、<b>目的別に今から</b>積み立てるのが近道です。")+'</div></div>';
       // 目標ごと：今から vs 直前
       h+='<div class="section-title">目標ごとに、今から月いくら？</div>';
-      goals.forEach(g=>{const gic=g.name.indexOf("住宅")>=0?"house":(g.name.indexOf("車")>=0?"car":"party");
-        h+='<div class="card" style="margin-bottom:10px"><div class="row"><span class="ttl-ico" style="font-weight:700">'+ic(gic,16)+esc(g.name)+'</span><span class="meta">'+g.after+'年後・'+yen(g.amount)+'</span></div>'+
+      goals.forEach(g=>{const gic=g.edu?"graduation":(g.name.indexOf("住宅")>=0?"house":(g.name.indexOf("車")>=0?"car":"party"));
+        h+='<div class="card" style="margin-bottom:10px"><div class="row"><span class="ttl-ico" style="font-weight:700">'+ic(gic,16)+esc(g.name)+'</span><span class="meta">'+(g.edu?"〜"+g.after+"年で準備":g.after+"年後")+'・'+yen(g.amount)+'</span></div>'+
           '<div class="row" style="align-items:baseline;margin-top:6px"><span class="meta">今から積み立て</span><span class="num" style="font-size:var(--text-2xl);font-weight:800;color:var(--color-primary-600)">月 '+yen(g.now)+'</span></div>'+
           (g.save>0?'<div class="meta" style="margin-top:4px;line-height:1.6">直前の1年で慌てて貯めると 月 '+yen(g.last)+'。<b style="color:var(--color-accent-600)">今から始めれば 月 '+yen(g.save)+' もラクになります。</b></div>':'<div class="meta" style="margin-top:4px">もうすぐなので、今からしっかり。</div>')+
         '</div>';});
