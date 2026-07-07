@@ -1173,6 +1173,7 @@ const App = {
     this.notifyPending();
     this.sheetDrag();
     this.initCloud();
+    this.rcInit();
     window.addEventListener("beforeunload",()=>this.save());
     // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)
     document.addEventListener("visibilitychange",()=>{if(!document.hidden)this.pullLatest();});
@@ -1225,10 +1226,10 @@ const App = {
       const ensure=(name,icon)=>{let f=s.folders.find(x=>x.name===name);if(!f){f={id:uid(),name,icon};s.folders.push(f);}return f;};
       (s.wishes||[]).forEach(w=>{
         const c=findCat("wish",w.cat);const f=ensure(c.label||"やりたいこと",c.icon||"🌟");
-        s.items.push({id:uid(),folderId:f.id,title:w.title,url:"",memo:w.memo||"",loginId:"",password:"",target:w.target||0,current:w.current||0,date:w.date||"",done:w.status==="done"});
+        s.items.push({id:uid(),folderId:f.id,title:w.title,url:"",memo:w.memo||"",target:w.target||0,current:w.current||0,date:w.date||"",done:w.status==="done"});
       });
       if((s.links||[]).length){const f=ensure("よく使うサイト","🔗");
-        s.links.forEach(l=>s.items.push({id:uid(),folderId:f.id,title:l.name||l.url||"サイト",url:l.url||"",memo:l.memo||"",loginId:l.loginId||"",password:l.password||"",target:0,current:0,date:"",done:false}));
+        s.links.forEach(l=>s.items.push({id:uid(),folderId:f.id,title:l.name||l.url||"サイト",url:l.url||"",memo:l.memo||"",target:0,current:0,date:"",done:false}));
       }
       s.wishes=[];s.links=[];s._foldersMigrated=true;
     }
@@ -1382,8 +1383,9 @@ const App = {
   onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
   onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
   onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();if(this._pendingPaywall){const a=this._pendingPaywall;this._pendingPaywall=null;this.showPaywall(a);return;}try{this.go("dashboard");}catch(e){}},
-  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
-  pwTrial(){this.toast("（デモ）Apple課金の30日間トライアルに進みます");this.pwClose();},
+  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
+  async pwTrial(){if(this.isNative()&&this.rcPlugin()){await this.rcPurchase();this.pwClose();return;}this.toast("（デモ）Apple課金の30日間トライアルに進みます");this.pwClose();},
+  async pwRestore(){const P=this.rcPlugin();if(!(this.isNative()&&P)){this.toast("復元できる購入が見つかりませんでした");return;}try{const res=await P.restorePurchases();const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("購入を復元しました");this.render();}else this.toast("復元できる購入が見つかりませんでした");}catch(e){this.toast("復元できませんでした");}},
   pwClose(){const e=document.getElementById("fnl");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
   funnelQs(){
@@ -1407,7 +1409,7 @@ const App = {
   fnlPick(v){const qs=this.funnelQs(),q=qs[this._fnl.i];if(q)this._fnl.ans[q.key]=v;this._fnl.i++;this.renderFunnel();},
   fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
   fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
-  fnlTrial(){this.toast("（デモ）ここでApple課金の30日間トライアルに進みます");this.fnlToSetup();},
+  async fnlTrial(){if(this.isNative()&&this.rcPlugin()){await this.rcPurchase();this.fnlToSetup();return;}this.toast("（デモ）ここでApple課金の30日間トライアルに進みます");this.fnlToSetup();},
   fnlToSetup(){const fs=this._fnl&&this._fnl.fromSignup,ans=(this._fnl&&this._fnl.ans)||{};this.fnlClose();if(fs)this._pendingPaywall=ans;this.startOnboarding(true);},
   fnlRunDiag(){var e=document.getElementById("fnl");if(e)e.remove();this.startDiagnosis();this._diagOnb=true;},
   fnlAfterDiag(){var d=this.state.diagnosis;if(d&&d.attrs&&this._fnl){this._fnl.ans.age=d.attrs.age;this._fnl.ans.work=d.attrs.work;this._fnl.ans.family=d.attrs.family;}this._diagOnb=false;var e=document.getElementById("diag");if(e)e.remove();this._diag={active:false};if(this._fnl&&this._fnl.active){this._fnl.i++;this.renderFunnel();}},
@@ -1449,12 +1451,17 @@ const App = {
       '<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+
       '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.fnlTrial()">無料で始める</button>'+
-      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
       '<div class="onb-skip" onclick="App.fnlToSetup()">あとで（まず使ってみる）</div></div>';
   },
   /* ============== お金タイプ診断 ============== */
   isNative(){try{return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==="function"&&window.Capacitor.isNativePlatform());}catch(e){return false;}},
-  isPremium(){ if(!this.isNative())return true; /* web版は当面 有料機能を無料開放（実課金はApp Store版のみ） */ try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;} },
+  isPremium(){ if(!this.isNative())return true; /* web版は当面 有料機能を無料開放（実課金はApp Store版のみ） */ if(this._rcPremium)return true; try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;} },
+  // ===== RevenueCat 実課金（ネイティブ＋プラグイン時のみ。無ければ従来動作にフォールバック） 設定値は決定ログ参照 =====
+  rcPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null;}catch(e){return null;}},
+  async rcInit(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{await P.configure({apiKey:"appl_shuyZDjdTcYebsCwFKQkvwxWmxc"});await this.rcRefresh();}catch(e){}},
+  async rcRefresh(){const P=this.rcPlugin();if(!P)return;try{const r=await P.getCustomerInfo();const ci=(r&&r.customerInfo)||r;const act=ci&&ci.entitlements&&ci.entitlements.active;this._rcPremium=!!(act&&act["premium"]);this.render();}catch(e){}},
+  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
   setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.render();},
   diagEl(){let el=document.getElementById("diag");if(!el){el=document.createElement("div");el.id="diag";document.body.appendChild(el);}return el;},
   diagList(){return DIAG_ATTRS.concat(DIAG_QS);},
@@ -1569,7 +1576,7 @@ const App = {
       ["ふたりの相性レポート","将来シミュレーション（住まい・子ども・必要額）","広告なし"].map(function(f){return '<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>';}).join('')+
       '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:8px">30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.diagTrial()">無料で始める</button>'+
-      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br>購入を復元 ・ 利用規約 ・ プライバシー</p>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
       '<div class="onb-skip" onclick="App.showDiagResult(false)">あとで</div></div>';
   },
   diagTrial(){try{localStorage.setItem("imaoka_premium","1");}catch(e){}this.toast("（デモ）30日トライアルを開始しました");this.diagCompat();},
@@ -3354,19 +3361,11 @@ const App = {
       h+='<div class="prog lg" style="margin-top:12px"><span class="fill-accent" style="width:'+pct+'%"></span></div>'+
         '<div class="row" style="margin-top:6px"><span class="meta num">'+yen(l.current||0)+' / '+yen(l.target)+'</span><span class="meta ttl-ico">'+(l.date?ic('calendar',13)+esc(l.date):Math.round(pct)+'%')+'</span></div>';
     }else if(l.date){h+='<div class="meta ttl-ico" style="margin-top:8px">'+ic('calendar',13)+esc(l.date)+'</div>';}
-    if(l.loginId||l.password){
-      h+='<div style="margin-top:12px;background:var(--color-bg-muted);border-radius:var(--radius-md);padding:10px 12px">';
-      if(l.loginId){h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">ID</div><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.loginId)+'</div></div><button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 12px;white-space:nowrap" onclick="App.copyItem(\''+l.id+'\',\'loginId\')">コピー</button></div>';}
-      if(l.password){if(l.loginId)h+='<div class="divider" style="margin:8px 0"></div>';h+='<div class="row" style="margin:0"><div style="min-width:0;flex:1"><div class="meta">パスワード</div><div id="pw-'+l.id+'" data-shown="0" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-family-number)">••••••••</div></div><button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 10px;white-space:nowrap" onclick="App.revealItemPw(\''+l.id+'\',this)">表示</button><button class="btn btn-ghost btn-sm" style="min-height:34px;padding:5px 10px;margin-left:6px;white-space:nowrap" onclick="App.copyItem(\''+l.id+'\',\'password\')">コピー</button></div>';}
-      h+='</div>';
-    }
     if(l.memo)h+='<div class="meta" style="margin-top:10px;white-space:pre-wrap">'+esc(l.memo)+'</div>';
     if(!l.done&&l.target>0)h+='<div style="text-align:right;margin-top:10px"><button class="btn btn-sec btn-sm ttl-ico" style="min-height:36px;padding:6px 14px;justify-content:center" onclick="event.stopPropagation();App.buyItem(\''+l.id+'\')">'+ic('wallet',14)+'買った→支出に記録</button></div>';
     h+='</div>';
     return h;
   },
-  revealItemPw(id,btn){const l=this.state.items.find(x=>x.id===id);if(!l)return;const el=document.getElementById("pw-"+id);if(!el)return;if(el.dataset.shown==="1"){el.textContent="••••••••";el.dataset.shown="0";btn.textContent="表示";}else{el.textContent=l.password;el.dataset.shown="1";btn.textContent="隠す";}},
-  copyItem(id,field){const l=this.state.items.find(x=>x.id===id);if(l)this.copy(l[field]||"");},
   copy(text){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>this.toast("コピーしました")).catch(()=>this.toast("コピーできませんでした"));}else{this.toast("コピーできませんでした");}},
   openFolderForm(id){
     const it=id?this.state.folders.find(x=>x.id===id):null;
@@ -3397,17 +3396,13 @@ const App = {
       '<p class="set-head" style="margin:4px 2px 8px">🎯 目標・予算（任意）</p>'+
       '<div class="form-row">'+this.field("目標金額",'<input id="f-target" class="amt" type="text" inputmode="numeric" placeholder="未定" value="'+cf(it&&it.target)+'" oninput="App.commaize(this)">')+this.field("現在の貯金",'<input id="f-current" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.current)+'" oninput="App.commaize(this)">')+'</div>'+
       this.field("希望時期",'<input id="f-date" type="month" value="'+(it&&it.date?it.date:"")+'">')+
-      '<p class="set-head" style="margin:4px 2px 8px">🔑 ログイン情報（任意）</p>'+
-      this.field("ログインID",'<input id="f-lid" autocomplete="off" autocapitalize="off" placeholder="メール・ユーザー名など" value="'+esc(it&&it.loginId?it.loginId:"")+'">')+
-      this.field("パスワード",'<input id="f-pw" type="text" autocomplete="off" autocapitalize="off" value="'+esc(it&&it.password?it.password:"")+'">')+
-      '<div style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="f-done" '+(it&&it.done?"checked":"")+' style="width:auto;min-height:auto"> 達成・完了にする</label></div>'+
-      '<p class="muted" style="font-size:var(--text-xs);margin:-2px 2px 14px;line-height:1.6">🔒 ログイン情報は端末・共有先（クラウド）に保存されます。ネット銀行など特に重要なものは避けることをおすすめします。</p>'+
+      '<div style="margin:8px 0 14px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="f-done" '+(it&&it.done?"checked":"")+' style="width:auto;min-height:auto"> 達成・完了にする</label></div>'+
       this.actions(()=>{
         const title=val("f-title");let url=val("f-url");
         if(!title&&!url){this.toast("名前かURLを入力してください");return false;}
         if(url&&!/^https?:\/\//i.test(url))url="https://"+url;
-        const data={folderId:val("f-folder"),title,url,memo:val("f-memo"),target:numv("f-target"),current:numv("f-current"),date:val("f-date")||"",loginId:val("f-lid"),password:val("f-pw"),done:document.getElementById("f-done").checked};
-        if(it)Object.assign(it,data);else this.state.items.push({id:uid(),...data});
+        const data={folderId:val("f-folder"),title,url,memo:val("f-memo"),target:numv("f-target"),current:numv("f-current"),date:val("f-date")||"",done:document.getElementById("f-done").checked};
+        if(it){Object.assign(it,data);delete it.loginId;delete it.password;}else this.state.items.push({id:uid(),...data});
         return true;
       },it?()=>this.del("items",id):null);
     this.showSheet(h);
