@@ -888,6 +888,8 @@ let HIDE_AMT=false; // 友だちに見せる時など、金額を一時的に隠
 const yen=n=>HIDE_AMT?"¥•••":"¥"+Math.round(n||0).toLocaleString("ja-JP");
 const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const thisMonth=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
+/* 通知プリファレンス既定（端末別・"うるさくない"寄り）。パートナー連動はサーバー(Block C)、C系/リマインドは端末ローカル通知 */
+const NOTIF_DEFAULTS={partner_approval:1,partner_task:1,partner_event:1,partner_wish:0,remind_event:1,remind_task:1,remind_input:1,remind_overspend:1,digest_daily:1,nudge_zeroday:1,match_plan:1,quietFrom:22,quietTo:8};
 function monthLabel(m){const[y,mo]=m.split("-");return (y+"年"+Number(mo)+"月")}
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 /* 装飾用ラインアイコン(Terreタブと同トーン)。currentColorで色は親に追従 */
@@ -1174,18 +1176,22 @@ const App = {
     this.sheetDrag();
     this.initCloud();
     this.rcInit();
+    this.initLocalNotif();
     window.addEventListener("beforeunload",()=>this.save());
-    // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)
-    document.addEventListener("visibilitychange",()=>{if(!document.hidden)this.pullLatest();});
+    // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)＋通知を貼り直し
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden){this.pullLatest();this.notifResched();}});
     window.addEventListener("online",()=>this.pullLatest());
   },
   setDevice(v){this.deviceOwner=v;localStorage.setItem("imaoka_device",v);this.render();},
   // 金額の目隠し(友だちに見せる時など。この端末だけ・相手には影響しない)
   toggleHideAmt(){this.hideAmt=!this.hideAmt;HIDE_AMT=this.hideAmt;localStorage.setItem("imaoka_hide_amt",this.hideAmt?"1":"0");this.render();this.toast(this.hideAmt?"金額を隠しました":"金額を表示しました");},
-  // 通知は端末ごと(localStorage)。相手には同期されない
-  notifyOn(){return localStorage.getItem("imaoka_notify")==="1"&&("Notification"in window)&&Notification.permission==="granted";},
-  toggleNotify(on){
-    if(!on){localStorage.setItem("imaoka_notify","0");this.render();return;}
+  // 通知は端末ごと(localStorage)。相手には同期されない。ネイティブ(Capacitor)はローカル通知、それ以外はWeb Notification
+  localNotifPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications)||null;}catch(e){return null;}},
+  notifyOn(){ if(this.localNotifPlugin())return localStorage.getItem("imaoka_notify")==="1"; return localStorage.getItem("imaoka_notify")==="1"&&("Notification"in window)&&Notification.permission==="granted"; },
+  async toggleNotify(on){
+    if(!on){localStorage.setItem("imaoka_notify","0");const P=this.localNotifPlugin();if(P&&this._schedIds&&this._schedIds.length){try{await P.cancel({notifications:this._schedIds.map(i=>({id:i}))});}catch(e){}this._schedIds=[];}this.render();return;}
+    const P=this.localNotifPlugin();
+    if(P){try{const r=await P.requestPermissions();const ok=r&&(r.display==="granted"||r.receive==="granted");localStorage.setItem("imaoka_notify",ok?"1":"0");if(ok){await this.scheduleLocalNotifs();}else{this.toast("設定アプリから通知を許可してください");}this.render();}catch(e){this.toast("通知をオンにできませんでした");this.render();}return;}
     if(!("Notification"in window)){
       const ios=/iP(hone|ad|od)/.test(navigator.userAgent);
       const standalone=window.navigator.standalone===true||matchMedia("(display-mode:standalone)").matches;
@@ -1194,9 +1200,46 @@ const App = {
     }
     Notification.requestPermission().then(p=>{const ok=(p==="granted");localStorage.setItem("imaoka_notify",ok?"1":"0");this.render();if(!ok)this.toast("通知が許可されませんでした");}).catch(()=>{this.toast("通知をオンにできませんでした");this.render();});
   },
-  notify(title,body){if(this.notifyOn()){try{new Notification(title,{body});}catch(e){}}},
+  notify(title,body){if(this.notifyOn()){ if(this.localNotifPlugin()){this.localFire(title,body);return;} try{new Notification(title,{body});}catch(e){} }},
+  localFire(title,body){const P=this.localNotifPlugin();if(!P)return;try{P.schedule({notifications:[{id:Math.floor(9000+Math.random()*1000),title,body,schedule:{at:new Date(Date.now()+1500)}}]});}catch(e){}},
   pendingApprovals(){return this.state.expenses.filter(e=>e.approve==="pending");},
   notifyPending(){const mine=this.pendingApprovals().filter(e=>this.deviceOwner&&e.reqBy&&e.reqBy!==this.deviceOwner);if(mine.length)this.notify("承認待ちの支出",mine.length+"件の確認をお願いします");},
+  // ===== 通知の種類・おやすみ時間（端末別localStorage）=====
+  notifPrefs(){try{const raw=localStorage.getItem("imaoka_notif_prefs");const p=raw?JSON.parse(raw):{};return Object.assign({},NOTIF_DEFAULTS,p);}catch(e){return Object.assign({},NOTIF_DEFAULTS);}},
+  setNotifPref(k,v){try{const p=this.notifPrefs();p[k]=v?1:0;localStorage.setItem("imaoka_notif_prefs",JSON.stringify(p));}catch(e){}this.scheduleLocalNotifs();this.render();},
+  setQuietHour(which,v){try{const p=this.notifPrefs();p[which]=Math.max(0,Math.min(23,parseInt(v,10)||0));localStorage.setItem("imaoka_notif_prefs",JSON.stringify(p));}catch(e){}this.scheduleLocalNotifs();},
+  inQuiet(h,p){const f=p.quietFrom,t=p.quietTo;if(f===t)return false;return f<t?(h>=f&&h<t):(h>=f||h<t);},
+  notifResched(){try{clearTimeout(this._nrT);}catch(e){}this._nrT=setTimeout(()=>{this.scheduleLocalNotifs();},1500);},
+  // C-1: 今日の支出ダイジェスト本文（無ければnull）
+  todayExpenseDigest(){const t=todayStr();const todays=this.state.expenses.filter(e=>e.date===t&&e.type!=="fixed");let sum=0;const byCat={};todays.forEach(e=>{const c=findCat("variable",e.catId);byCat[c.label]=(byCat[c.label]||0)+(+e.amount||0);sum+=(+e.amount||0);});if(sum<=0)return null;const parts=Object.keys(byCat).map(k=>k+yen(byCat[k]));const bg=this.budgetReport(thisMonth());return "今日の支出："+parts.join("・")+"（計"+yen(sum)+"）。今月 使えるお金 残り"+yen(bg.livingLeft);},
+  // C-2: 今日まだ支出記録が無いか
+  isZeroDayToday(){const t=todayStr();return !this.state.expenses.some(e=>e.date===t);},
+  // C-3: 昨日の金額つき予定（実績照合の対象）
+  planMatchYesterday(){const y=addDaysStr(todayStr(),-1);const out=[];(this.state.events||[]).forEach(e=>{if(e.type==="income"||e.fixed)return;if(String(e.date)!==y)return;const amt=this.eventAmountForMonth(e,y.slice(0,7));if(amt>0)out.push({id:e.id,title:e.title,amount:amt});});return out;},
+  // ローカル通知のスケジューリング（ネイティブのみ実発火。Webはプラグイン無で何もしない）
+  async scheduleLocalNotifs(){
+    const P=this.localNotifPlugin();
+    if(!P||!this.notifyOn())return;
+    const p=this.notifPrefs();const t=todayStr();const now=Date.now();
+    const notifs=[];let id=1000;
+    const push=(dateStr,hour,min,title,body,extra)=>{let h=hour;if(this.inQuiet(h,p))h=p.quietTo;const a=dateStr.split("-").map(Number);const at=new Date(a[0],a[1]-1,a[2],h,min||0,0);if(at.getTime()<=now)return;notifs.push({id:id++,title,body,schedule:{at},extra:extra||{}});};
+    const rem=this.remindersWithin(7);
+    rem.forEach(o=>{
+      if(o.kind==="task"){if(p.remind_task)push(addDaysStr(o.date,-1),20,0,"タスクの期限","「"+o.title+"」は明日まで");}
+      else if(o.kind==="input"){if(p.remind_input)push(o.date,10,0,"金額の入力",o.title);}
+      else{if(p.remind_event)push(o.date,9,0,"今日の予定","「"+o.title+"」"+(o.amount?"（"+yen(o.amount)+"）":""));}
+    });
+    if(p.digest_daily){const body=this.todayExpenseDigest();if(body)push(t,20,30,"今日の支出まとめ",body,{go:"expense_list"});}
+    if(p.nudge_zeroday&&this.isZeroDayToday())push(t,21,0,"今日の記録","今日はまだ支出の記録がありません。使わなかった？入れ忘れてない？",{go:"dashboard"});
+    if(p.match_plan)this.planMatchYesterday().forEach(o=>push(t,9,30,"予定の実際は？","「"+o.title+"」は予定"+yen(o.amount)+"でした。実際いくらでしたか？",{go:"expense_list"}));
+    if(p.remind_overspend){const bg=this.budgetReport(thisMonth());if(bg.livingBudget>0&&bg.livingLeft>0&&(bg.livingSpent/bg.livingBudget)>=0.8){const d=(new Date().getHours()>=12)?addDaysStr(t,1):t;push(d,12,0,"使えるお金","今月の予算の80%を使いました。残り"+yen(bg.livingLeft),{go:"dashboard"});}}
+    try{
+      if(this._schedIds&&this._schedIds.length){try{await P.cancel({notifications:this._schedIds.map(i=>({id:i}))});}catch(e){}}
+      if(notifs.length)await P.schedule({notifications:notifs});
+      this._schedIds=notifs.map(n=>n.id);
+    }catch(e){}
+  },
+  initLocalNotif(){const P=this.localNotifPlugin();if(!P)return;try{P.addListener("localNotificationActionPerformed",(ev)=>{const x=ev&&ev.notification&&ev.notification.extra;if(x&&x.go){try{this.go(x.go);}catch(e){}}});}catch(e){}this.scheduleLocalNotifs();},
   approveExpense(id){const e=this.state.expenses.find(x=>x.id===id);if(e){e.approve="approved";this.commit();this.toast("承認しました");}},
   seeDetail(e){return !e.private||!this.deviceOwner||e.owner===this.deviceOwner;},
 
@@ -1239,7 +1282,7 @@ const App = {
     if(!skipCloud && this._client && this.householdId) this.queueCloudPush();
   },
   // called after any data mutation
-  commit(){ this.save(); this.render(); },
+  commit(){ this.save(); this.render(); this.notifResched(); },
 
   /* ---- navigation ---- */
   go(tab){
@@ -1456,6 +1499,8 @@ const App = {
   },
   /* ============== お金タイプ診断 ============== */
   isNative(){try{return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==="function"&&window.Capacitor.isNativePlatform());}catch(e){return false;}},
+  // デモ(staging)専用の導線判定。本番(ルート配信)・ネイティブでは false ＝テスト導線を隠す
+  isDemo(){try{return /\/staging\//.test(location.pathname);}catch(e){return false;}},
   isPremium(){ if(!this.isNative())return true; /* web版は当面 有料機能を無料開放（実課金はApp Store版のみ） */ if(this._rcPremium)return true; try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;} },
   // ===== RevenueCat 実課金（ネイティブ＋プラグイン時のみ。無ければ従来動作にフォールバック） 設定値は決定ログ参照 =====
   rcPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null;}catch(e){return null;}},
@@ -1579,7 +1624,7 @@ const App = {
       '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
       '<div class="onb-skip" onclick="App.showDiagResult(false)">あとで</div></div>';
   },
-  diagTrial(){try{localStorage.setItem("imaoka_premium","1");}catch(e){}this.toast("（デモ）30日トライアルを開始しました");this.diagCompat();},
+  async diagTrial(){if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();if(ok)this.diagCompat();return;}try{localStorage.setItem("imaoka_premium","1");}catch(e){}this.diagCompat();},
   diagCardHtml(){
     const d=this.state.diagnosis;
     if(!d){
@@ -1675,7 +1720,7 @@ const App = {
         '<p>あなたの回答は保存しました。<b>'+esc(this.lsName(other))+'さん</b>も答えると、ふたりの答え合わせが見られます。</p>'+
         '<p class="onb-sub">相手が同じ家計に参加していれば、答えるだけで自動でそろいます（設定→パートナー招待）。</p>'+
         '<button class="btn btn-primary btn-block" onclick="App.lsClose()">とじる</button>'+
-        '<div class="onb-skip" onclick="App.lsDemoPartner()">（デモ）'+esc(this.lsName(other))+'さんが答えたことにして結果を見る</div></div>';
+        (this.isDemo()?'<div class="onb-skip" onclick="App.lsDemoPartner()">（デモ）'+esc(this.lsName(other))+'さんが答えたことにして結果を見る</div>':'')+'</div>';
       return;
     }
     if(ph==="reveal"){
@@ -3449,8 +3494,29 @@ const App = {
       '<div class="set-cell" style="display:block"><span class="lab">この端末を使うのは?</span><div class="desc">お小遣いの非公開・承認・通知に使われます(この端末だけの設定)</div><div class="seg" style="margin-top:8px">'+
       [["husband",esc(s.husband)],["wife",esc(s.wife)]].map(o=>'<button type="button" class="'+(this.deviceOwner===o[0]?"on":"")+'" onclick="App.setDevice(\''+o[0]+'\')">'+o[1]+'</button>').join("")+'</div></div>'+
       '<div class="set-cell"><div><span class="lab">大きな支出の承認</span><div class="desc">この金額以上は相手の承認待ちに(0でオフ)</div></div><input class="amt" style="max-width:120px;min-height:40px" type="text" inputmode="numeric" value="'+cf(s.approveThreshold)+'" oninput="App.commaize(this)" onchange="App.setApproveThreshold(this.value)"></div>'+
-      '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・もうすぐの支払いを通知(この端末だけの設定。iPhoneは「ホーム画面に追加」してそのアイコンから開くと有効)</div></div><label class="switch"><input type="checkbox" '+(this.notifyOn()?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
+      '<div class="set-cell"><div><span class="lab">通知を受け取る</span><div class="desc">承認待ち・予定・支出まとめなどをお知らせ(この端末だけの設定。iPhoneはアプリ版で有効)</div></div><label class="switch"><input type="checkbox" '+(this.notifyOn()?"checked":"")+' onchange="App.toggleNotify(this.checked)"><span class="sl"></span></label></div>'+
       '</div>';
+    if(this.notifyOn()){
+      const np=this.notifPrefs();
+      const ntog=(k,lab,desc)=>'<div class="set-cell"><div><span class="lab">'+lab+'</span><div class="desc">'+desc+'</div></div><label class="switch"><input type="checkbox" '+(np[k]?"checked":"")+' onchange="App.setNotifPref(\''+k+'\',this.checked)"><span class="sl"></span></label></div>';
+      h+='<p class="set-head">通知の種類</p><div class="set-group">'+
+        ntog('digest_daily','今日の支出まとめ','夜に、その日の支出と使えるお金の残りを1通で')+
+        ntog('nudge_zeroday','記録忘れの声かけ','その日の支出が未記録なら、そっとお知らせ')+
+        ntog('match_plan','予定の実際いくら？','金額つき予定の翌朝に、実際の金額を記録')+
+        ntog('remind_event','予定のリマインド','予定の当日の朝に')+
+        ntog('remind_task','タスクの期限','期限の前日に')+
+        ntog('remind_input','変動費の入力','カード締め日などに金額入力を促す')+
+        ntog('remind_overspend','使いすぎアラート','使えるお金の80%を使った時')+
+        ntog('partner_approval','相手の承認リクエスト','相手が大きな支出の承認を求めた時')+
+        ntog('partner_task','相手のタスク依頼・完了','相手がタスクを頼んだ/終えた時')+
+        ntog('partner_event','相手の予定追加','相手が予定を追加した時')+
+        ntog('partner_wish','相手のやりたい・欲しい','相手が追加した時（既定オフ）')+
+        '</div>';
+      let hopt='';for(let i=0;i<24;i++)hopt+='<option value="'+i+'">'+pad2(i)+':00</option>';
+      const hsel=(k)=>'<select class="qh-sel" style="min-height:38px" onchange="App.setQuietHour(\''+k+'\',this.value)">'+hopt.replace('value="'+np[k]+'"','value="'+np[k]+'" selected')+'</select>';
+      h+='<p class="set-head">おやすみ時間</p><div class="set-group">'+
+        '<div class="set-cell"><div><span class="lab">この時間は通知しない</span><div class="desc">深夜など、通知を控える時間帯</div></div><div style="display:flex;align-items:center;gap:6px">'+hsel('quietFrom')+'<span class="desc">〜</span>'+hsel('quietTo')+'</div></div></div>';
+    }
 
     h+='<p class="set-head">配色（テーマ）</p><div class="set-group" style="padding:14px">'+
       '<div class="desc" style="margin:0 0 12px">この端末で使う色を選べます。ふたりで別々の色にもできます（相手には同期されません）。</div>'+
@@ -3475,11 +3541,11 @@ const App = {
 
     h+='<p class="set-head">使い方</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.startOnboarding(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'はじめてガイドをもう一度見る</span><span class="desc">3ステップ</span></div>'+
-      '<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>'+
-      '<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>'+
+      (this.isDemo()?'<div class="set-cell" onclick="App.previewSignup()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('rocket',16)+'新規登録の流れを最初から見る</span><span class="desc">登録不要・テスト</span></div>':'')+
+      (this.isDemo()?'<div class="set-cell" onclick="App.startFunnel(true)" style="cursor:pointer"><span class="lab ttl-ico">'+ic('star',16)+'アンケートだけ試す</span><span class="desc">8問</span></div>':'')+
       '<div class="set-cell" onclick="App.startLifeSync()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('heart',16)+'ふたりの暮らし方すり合わせ</span><span class="desc">'+LS_QS.length+'問</span></div>'+
       '<div class="set-cell" onclick="App.startDiagnosis()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'お金タイプ診断をする</span><span class="desc">11問</span></div>'+
-      (this.isNative()?'<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>':'')+
+      (this.isDemo()?'<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>':'')+
       '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
       '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
