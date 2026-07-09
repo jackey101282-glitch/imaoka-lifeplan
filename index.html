@@ -442,6 +442,14 @@ input::-webkit-calendar-picker-indicator{margin-left:0}
 .cev-wish{background:color-mix(in srgb,#9C6ADE 16%,transparent);color:#7a45c0}
 .cev-more{font-size:9px;line-height:1.3;color:var(--color-text-secondary);padding:1px 3px 0;font-weight:var(--fw-b)}
 .cev-exp{position:absolute;right:4px;bottom:3px;color:var(--color-primary-500);opacity:.9;display:flex;align-items:center;line-height:1;pointer-events:none}
+/* 予定/タスクの担当色（個人だけ色付き＝一人か二人かひと目で分かる。ふたり=無色） */
+.cev-ic.cev-h{background:var(--color-secondary-200);border-radius:7px;box-shadow:inset 0 0 0 1.5px var(--color-secondary-400)}
+.cev-ic.cev-w{background:var(--color-primary-200);border-radius:7px;box-shadow:inset 0 0 0 1.5px var(--color-primary-400)}
+.cal-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:9px 0 2px;font-size:var(--text-xs);color:var(--color-text-secondary)}
+.cal-legend i.lgd{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:4px;vertical-align:-1px}
+.cal-legend .lgd-h{background:var(--color-secondary-400)}
+.cal-legend .lgd-w{background:var(--color-primary-400)}
+.cal-legend .lgd-b{background:var(--color-bg-surface);border:1px solid var(--color-border)}
 .cev-exp svg{width:13px;height:13px}
 /* 予定＝カラーイラストのステッカー表示（文字でなくイラスト。詳細は日タップ） */
 .cal-evs.cal-ic{flex-direction:row;flex-wrap:wrap;gap:2px;align-content:flex-start}
@@ -3255,6 +3263,7 @@ const App = {
       '<strong class="num" onclick="App.openCalPicker()" style="font-size:var(--text-lg);cursor:pointer;padding:6px 16px;border-radius:var(--radius-full);background:var(--color-primary-50);color:var(--color-primary-700)">'+monthLabel(this.calMonth)+' ▾</strong>'+
       '<span class="cal-nav-btn" onclick="App.shiftCal(1)" aria-label="次の月" style="transform:scaleX(-1)">'+ic('back',18)+'</span>'+
       (isCurMonth?'':'<span class="cal-today-jump" onclick="App.pickThisMonth()">今日</span>')+'</div>';
+    h+='<div class="cal-legend"><span><i class="lgd lgd-h"></i>'+esc(this.state.settings.husband)+'</span><span><i class="lgd lgd-w"></i>'+esc(this.state.settings.wife)+'</span><span><i class="lgd lgd-b"></i>ふたり</span></div>';
     h+='<div class="cal-grid">'+["日","月","火","水","木","金","土"].map((d,i)=>'<div class="cal-dow '+(i===0?'sun':i===6?'sat':'')+'">'+d+'</div>').join("");
     let cells=[];
     for(let i=startDow-1;i>=0;i--)cells.push({d:prevDays-i,muted:true});
@@ -3272,7 +3281,7 @@ const App = {
       const stId=this.state.stamps&&this.state.stamps[ds];const stD=stId&&stampDef(stId);
       const stHtml=stD?'<span class="cstamp" style="color:'+stD.color+'">'+ic(stD.id,15)+'</span>':'';
       let evs='';const MAXIC=4;
-      evItems.slice(0,MAXIC).forEach(it=>{evs+='<span class="cev-ic">'+renderCatIc(it.icon,22)+'</span>';});
+      evItems.slice(0,MAXIC).forEach(it=>{const wc=it.who==="husband"?" cev-h":it.who==="wife"?" cev-w":"";evs+='<span class="cev-ic'+wc+'">'+renderCatIc(it.icon,22)+'</span>';});
       if(evItems.length>MAXIC)evs+='<span class="cev-more">+'+(evItems.length-MAXIC)+'</span>';
       const expHtml=hasExp?'<span class="cev-exp" title="支出あり">'+ic('coins',13)+'</span>':'';
       h+='<div class="cal-cell '+(today?'today':'')+' '+(dow===0?'sun':dow===6?'sat':'')+'" onclick="App.openDay(\''+ds+'\')"><div class="cal-cell-top"><span class="cnum">'+c.d+'</span>'+stHtml+'</div><div class="cal-evs cal-ic">'+evs+'</div>'+expHtml+'</div>';
@@ -3304,8 +3313,8 @@ const App = {
     ym=ym||this.calMonth;
     const map={};
     const add=(date,obj)=>{if(!date)return;(map[date]=map[date]||[]).push(obj)};
-    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",icon:c.icon,title:t.title,id:t.id,coll:"tasks",onclick:"App.openTask('"+t.id+"')"})}});
-    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=(e.catId&&evCatIcon(e.catId))||(e.type==="income"?"coins":(e.type==="payment"?"wallet":"calendar"));const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",id:e.id,coll:"events",fixed:!!e.fixed,onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
+    this.state.tasks.forEach(t=>{if(t.due&&t.status!=="done"){const c=findCat("task",t.cat);add(t.due,{t:"task",who:t.assignee||"both",icon:c.icon,title:t.title,id:t.id,coll:"tasks",onclick:"App.openTask('"+t.id+"')"})}});
+    this.state.events.forEach(e=>{const tm=e.start?(e.start+(e.end?"〜"+e.end:"")+" "):"";const recur=!!(e.recurrence&&e.recurrence!=="none");const t=e.type==="income"?"income":(e.type==="payment"?"pay":"event");const icon=(e.catId&&evCatIcon(e.catId))||(e.type==="income"?"coins":(e.type==="payment"?"wallet":"calendar"));const cAmt=this.eventAmountForMonth(e,ym);const vTag=(e.variable&&!(e.byMonth&&e.byMonth[ym]!=null))?" (金額未定)":"";this.eventDatesInMonth(e,ym).forEach(ds=>add(ds,{t,who:e.who||"both",icon,title:tm+e.title+vTag,recur,amount:cAmt,memo:e.memo||"",start:e.start||"",id:e.id,coll:"events",fixed:!!e.fixed,onclick:e.fixed?"App.openRecurring('"+e.id+"')":"App.openEvent('"+e.id+"')"}))});
     this.state.expenses.forEach(e=>{if(e.date){const c=findCat(e.type==="fixed"?"fixed":"variable",e.catId);add(e.date,{t:"pay",exp:true,icon:c.icon,title:(e.label||c.label)+(e.sub?"・"+e.sub:""),amount:e.amount,start:"",id:e.id,coll:"expenses",onclick:"App.openExpense('"+e.id+"')"})}});
     this.state.items.forEach(w=>{if(w.date&&w.date.length===7&&!w.done&&w.target>0){const f=this.state.folders.find(x=>x.id===w.folderId);add(w.date+"-01",{t:"wish",icon:f?f.icon:"✨",title:"目標: "+w.title,start:"",id:w.id,coll:"items",onclick:"App.openItem('"+w.id+"')"})}});
     Object.keys(map).forEach(d=>map[d].sort((a,b)=>(a.start||"")<(b.start||"")?-1:1));
@@ -3942,6 +3951,8 @@ const App = {
       this.field("カテゴリ（カレンダーに表示されます）",'<div class="evcat-grid" id="evcat-grid">'+this.evCatGrid()+'</div>')+
       this.field("種別",'<div class="seg" id="f-etype">'+
         ['event:予定','payment:支払い','income:入金'].map(o=>{const[v,l]=o.split(":");return '<button type="button" data-v="'+v+'" class="'+(defType===v?"on":"")+'" onclick="App.seg(this)">'+l+'</button>'}).join("")+'</div>')+
+      this.field("誰の予定？",'<div class="seg" id="f-who">'+
+        [['husband',esc(this.state.settings.husband)],['wife',esc(this.state.settings.wife)],['both','ふたり']].map(o=>'<button type="button" data-v="'+o[0]+'" class="'+((it&&it.who?it.who:'both')===o[0]?"on":"")+'" onclick="App.seg(this)">'+o[1]+'</button>').join("")+'</div>')+
       this.field("金額（任意）",'<input id="f-amount" class="amt" type="text" inputmode="numeric" placeholder="0" value="'+cf(it&&it.amount)+'" oninput="App.commaize(this)">')+
       this.field("日付",'<input id="f-date" type="date" value="'+(it?it.date:(presetDate||todayStr()))+'">')+
       '<div class="form-row">'+this.field("開始時刻（任意）",'<input id="f-start" type="time" value="'+(it&&it.start?it.start:"")+'">')+
@@ -3952,7 +3963,7 @@ const App = {
       (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">📅 Googleカレンダーに追加（1回分）</a>':'')+
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
-        const data={title,catId:this._evCat||null,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),memo:val("f-memo"),amount:numv("f-amount")||null};
+        const data={title,who:seg("f-who")||"both",catId:this._evCat||null,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),memo:val("f-memo"),amount:numv("f-amount")||null};
         if(it)Object.assign(it,data);else this.state.events.push({id:uid(),...data});
         return true;
       },it?()=>this.del("events",id):null);
