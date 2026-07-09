@@ -1523,10 +1523,16 @@ const App = {
   async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
   // ===== AdMob 広告（無料プランのみ・ネイティブ＋プラグイン時のみ実表示。web/プラグイン無はno-op） 設定値は決定ログ参照 =====
   admobPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob)||null;}catch(e){return null;}},
-  async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;try{await A.initialize({});try{await A.requestTrackingAuthorization();}catch(e){}this._admobReady=true;await this.admobRefresh();}catch(e){}},
+  async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;try{
+    // バナーが実際にロード/表示された時だけナビを持ち上げる（未表示なら通常レイアウト＝下メニューが浮かない）
+    try{A.addListener("bannerAdSizeChanged",(s)=>{const hh=(s&&(s.height||(s.size&&s.size.height)))||0;if(hh>0)document.documentElement.style.setProperty("--ad-h",(hh+6)+"px");document.body.classList.add("has-ad");});}catch(e){}
+    try{A.addListener("bannerAdLoaded",()=>{document.body.classList.add("has-ad");});}catch(e){}
+    try{A.addListener("bannerAdFailedToLoad",()=>{document.body.classList.remove("has-ad");});}catch(e){}
+    await A.initialize({});try{await A.requestTrackingAuthorization();}catch(e){}this._admobReady=true;await this.admobRefresh();
+  }catch(e){}},
   async admobRefresh(){const A=this.admobPlugin();if(!(this.isNative()&&A&&this._admobReady))return;try{
     if(this.isPremium()){try{await A.hideBanner();}catch(e){}try{await A.removeBanner();}catch(e){}document.body.classList.remove("has-ad");}
-    else{await A.showBanner({adId:"ca-app-pub-1548738229412472/9331515942",adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:0});document.body.classList.add("has-ad");}
+    else{await A.showBanner({adId:"ca-app-pub-1548738229412472/9331515942",adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:0});/* has-ad はロードイベントで付与 */}
   }catch(e){}},
   setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.admobRefresh();this.render();},
   diagEl(){let el=document.getElementById("diag");if(!el){el=document.createElement("div");el.id="diag";document.body.appendChild(el);}return el;},
