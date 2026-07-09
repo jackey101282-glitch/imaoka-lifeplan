@@ -1292,6 +1292,7 @@ const App = {
 
   /* ---- navigation ---- */
   go(tab){
+    if((tab==="simulator"||tab==="cflab")&&!this.isPremium()){this.showPaywall({target:"simulator"});return;}
     this.tab=tab;
     if(["dashboard","lifeplan","tasks","calendar","share","settings"].includes(tab)){try{localStorage.setItem("imaoka_tab",tab);}catch(e){}}
     if(tab==="share"){this.shareView="home";this.curFolderId=null;}
@@ -1432,8 +1433,17 @@ const App = {
   onbDo(){const st=this.onbSteps()[this._onb.step];if(st&&st.act)st.act();},
   onbSkip(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();},
   onbFinish(){this._onb={active:false,step:0};try{localStorage.setItem("imaoka_onboard","1");}catch(e){}const e=document.getElementById("onb");if(e)e.remove();if(this._pendingPaywall){const a=this._pendingPaywall;this._pendingPaywall=null;this.showPaywall(a);return;}try{this.go("dashboard");}catch(e){}},
-  showPaywall(ans){ans=ans||{};const W={future:"老後の不安を、毎月の数字で安心に。",leak:"あなたの“使いすぎ”を、2週間で見えるように。",communication:"お金の話を、数字でやわらかく。",emergency:"急な出費に、前もって備える。",dream:"旅行や夢のためのお金を、ちゃんと用意する。"};const head=W[ans.worry]||"あなたの家計を、ふたりで見える化。";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+'<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
-  async pwTrial(){if(this.isNative()&&this.rcPlugin()){await this.rcPurchase();this.pwClose();return;}this.toast("（デモ）Apple課金の30日間トライアルに進みます");this.pwClose();},
+  // プレミアム特典リスト（実際に有料ロックされる機能のみを、実体を分解して魅力的に見せる）
+  pwFeaturesHtml(){
+    const row=(f)=>'<div style="display:flex;align-items:flex-start;gap:8px;font-size:var(--text-sm);margin-bottom:5px;color:var(--color-text-primary);line-height:1.5"><span style="color:var(--color-accent-600);flex-shrink:0;margin-top:1px">'+ic("check",16)+'</span><span>'+f+'</span></div>';
+    const grp=(t,items)=>'<div style="margin-bottom:10px"><div style="font-size:var(--text-xs);font-weight:800;color:var(--color-primary-600);letter-spacing:.04em;margin-bottom:6px">'+t+'</div>'+items.map(row).join('')+'</div>';
+    return grp('ふたりで深掘り',['<b>ふたりの相性診断レポート</b>（お金の相性・すれ違い・コツ）','<b>暮らし方すり合わせ</b>（22問で価値観をそろえる）'])
+      +grp('将来のお金がぜんぶ見える',['<b>30年後まで</b>見通す将来シミュレーション','<b>今日 自由に使える額</b>が毎日わかる','<b>「もし」の試算</b>（働き方・貯蓄をその場で）','<b>積立投資</b>でいくら増えるか（複利）','<b>妻の働き方くらべ</b>で将来を比較','<b>家計の天気予報</b>でひと目チェック'])
+      +grp('もっと快適に',['<b>広告なし</b>で集中できる']);
+  },
+  showPaywall(ans){ans=ans||{};this._pwTarget=ans.target||null;const heads={simulator:"将来のお金、ぜんぶ見える。",lifesync:"ふたりの価値観を、そろえる。"};const head=heads[ans.target]||"Mietta プレミアム";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg);margin-bottom:2px">'+esc(head)+'</h2>'+'<p class="onb-sub" style="margin-bottom:12px">プレミアムで、ふたりの毎日をもっと深く・自由に。</p>'+this.pwFeaturesHtml()+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:6px">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
+  _pwRemove(){const e=document.getElementById("fnl");if(e)e.remove();},
+  async pwTrial(){const t=this._pwTarget;this._pwTarget=null;if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();this._pwRemove();this.go(ok&&t?t:"dashboard");return;}this.toast("（デモ）Apple課金の30日間トライアルに進みます");this._pwRemove();this.go(t||"dashboard");},
   async pwRestore(){const P=this.rcPlugin();if(!(this.isNative()&&P)){this.toast("復元できる購入が見つかりませんでした");return;}try{const res=await P.restorePurchases();const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("購入を復元しました");this.render();}else this.toast("復元できる購入が見つかりませんでした");}catch(e){this.toast("復元できませんでした");}},
   pwClose(){const e=document.getElementById("fnl");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
@@ -1631,7 +1641,7 @@ const App = {
     el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("heart",30)+'</div>'+
       '<h2 style="font-size:var(--text-lg)">ふたりの相性レポート</h2>'+
       '<p class="onb-sub" style="margin-bottom:12px">お互いのお金タイプから、相性・すれ違いやすい点・うまくいくコツが分かります。</p>'+
-      ["ふたりの相性レポート","将来シミュレーション（住まい・子ども・必要額）","広告なし"].map(function(f){return '<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>';}).join('')+
+      this.pwFeaturesHtml()+
       '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:8px">30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.diagTrial()">無料で始める</button>'+
       '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
@@ -1669,6 +1679,7 @@ const App = {
       '<span style="color:var(--color-text-disabled);font-size:22px">›</span></div>';
   },
   startLifeSync(){
+    if(!this.isPremium()){this.showPaywall({target:"lifesync"});return;}
     const me=this.lsRole(),other=this.lsOther(me);
     if(this.lsDone(me)&&this.lsDone(other)){this.lsShowResult();return;}
     this._ls={active:true,phase:"intro"};this.lsRender();
