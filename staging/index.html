@@ -1449,7 +1449,7 @@ const App = {
       +grp('将来のお金がぜんぶ見える',['<b>30年後まで</b>見通す将来シミュレーション','<b>今日 自由に使える額</b>が毎日わかる','<b>「もし」の試算</b>（働き方・貯蓄をその場で）','<b>積立投資</b>でいくら増えるか（複利）','<b>妻の働き方くらべ</b>で将来を比較','<b>家計の天気予報</b>でひと目チェック'])
       +grp('もっと快適に',['<b>広告なし</b>で集中できる']);
   },
-  showPaywall(ans){ans=ans||{};this._pwTarget=ans.target||null;const heads={simulator:"将来のお金、ぜんぶ見える。",lifesync:"ふたりの価値観を、そろえる。"};const head=heads[ans.target]||"Mietta プレミアム";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg);margin-bottom:2px">'+esc(head)+'</h2>'+'<p class="onb-sub" style="margin-bottom:12px">プレミアムで、ふたりの毎日をもっと深く・自由に。</p>'+this.pwFeaturesHtml()+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:6px">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
+  showPaywall(ans){ans=ans||{};this._pwTarget=ans.target||null;const heads={simulator:"将来のお金、ぜんぶ見える。",lifesync:"ふたりの価値観を、そろえる。"};const head=heads[ans.target]||"Mietta プレミアム";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg);margin-bottom:2px">'+esc(head)+'</h2>'+'<p class="onb-sub" style="margin-bottom:12px">プレミアムで、ふたりの毎日をもっと深く・自由に。</p>'+this.pwFeaturesHtml()+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:6px">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="https://mietta.jp/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="https://mietta.jp/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
   _pwRemove(){const e=document.getElementById("fnl");if(e)e.remove();},
   async pwTrial(){const t=this._pwTarget;this._pwTarget=null;if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();this._pwRemove();this.go(ok&&t?t:"dashboard");return;}this.toast("（デモ）Apple課金の30日間トライアルに進みます");this._pwRemove();this.go(t||"dashboard");},
   async pwRestore(){const P=this.rcPlugin();if(!(this.isNative()&&P)){this.toast("復元できる購入が見つかりませんでした");return;}try{const res=await P.restorePurchases();const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("購入を復元しました");this.render();}else this.toast("復元できる購入が見つかりませんでした");}catch(e){this.toast("復元できませんでした");}},
@@ -1476,7 +1476,7 @@ const App = {
   fnlPick(v){const qs=this.funnelQs(),q=qs[this._fnl.i];if(q)this._fnl.ans[q.key]=v;this._fnl.i++;this.renderFunnel();},
   fnlBack(){if(this._fnl&&this._fnl.i>0){this._fnl.i--;this.renderFunnel();}},
   fnlClose(){this._fnl={active:false};try{localStorage.setItem("imaoka_funnel","1");}catch(e){}const e=document.getElementById("fnl");if(e)e.remove();},
-  async fnlTrial(){if(this.isNative()&&this.rcPlugin()){await this.rcPurchase();this.fnlToSetup();return;}this.toast("（デモ）ここでApple課金の30日間トライアルに進みます");this.fnlToSetup();},
+  async fnlTrial(){if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();if(ok)this.fnlToSetup();return;}this.toast("（デモ）ここでApple課金の30日間トライアルに進みます");this.fnlToSetup();},
   fnlToSetup(){const fs=this._fnl&&this._fnl.fromSignup,ans=(this._fnl&&this._fnl.ans)||{};this.fnlClose();if(fs)this._pendingPaywall=ans;this.startOnboarding(true);},
   fnlRunDiag(){var e=document.getElementById("fnl");if(e)e.remove();this.startDiagnosis();this._diagOnb=true;},
   fnlAfterDiag(){var d=this.state.diagnosis;if(d&&d.attrs&&this._fnl){this._fnl.ans.age=d.attrs.age;this._fnl.ans.work=d.attrs.work;this._fnl.ans.family=d.attrs.family;}this._diagOnb=false;var e=document.getElementById("diag");if(e)e.remove();this._diag={active:false};if(this._fnl&&this._fnl.active){this._fnl.i++;this.renderFunnel();}},
@@ -1516,9 +1516,9 @@ const App = {
     el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+
       '<h2 style="font-size:var(--text-lg)">'+esc(head)+'</h2>'+
       '<div style="margin:6px 0 12px">'+['ライフプランを全部立てられる','1年の特別費にちゃんと備える','ふたりで家計を共有'].map(f=>'<div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);margin-bottom:6px;color:var(--color-text-secondary)">'+ic("check",16)+esc(f)+'</div>').join('')+'</div>'+
-      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">30日間 無料 → そのあと ¥980/月</div>'+
+      '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base)">Mietta プレミアム：30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.fnlTrial()">無料で始める</button>'+
-      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="https://mietta.jp/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="https://mietta.jp/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
       '<div class="onb-skip" onclick="App.fnlToSetup()">あとで（まず使ってみる）</div></div>';
   },
   /* ============== お金タイプ診断 ============== */
@@ -1658,7 +1658,7 @@ const App = {
       this.pwFeaturesHtml()+
       '<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:8px">30日間 無料 → そのあと ¥980/月</div>'+
       '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.diagTrial()">無料で始める</button>'+
-      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
+      '<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="https://mietta.jp/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="https://mietta.jp/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+
       '<div class="onb-skip" onclick="App.showDiagResult(false)">あとで</div></div>';
   },
   async diagTrial(){if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();if(ok)this.diagCompat();return;}try{localStorage.setItem("imaoka_premium","1");}catch(e){}this.diagCompat();},
@@ -3587,8 +3587,9 @@ const App = {
       '<div class="set-cell" onclick="App.startLifeSync()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('heart',16)+'ふたりの暮らし方すり合わせ</span><span class="desc">'+LS_QS.length+'問</span></div>'+
       '<div class="set-cell" onclick="App.startDiagnosis()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('sparkle',16)+'お金タイプ診断をする</span><span class="desc">11問</span></div>'+
       (this.isDemo()?'<div class="set-cell" onclick="App.setPremiumDemo('+(this.isPremium()?'false':'true')+')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lock',16)+'（デモ）有料プラン '+(this.isPremium()?'ON':'OFF')+'</span><span class="desc">切替</span></div>':'')+
-      '<div class="set-cell" onclick="window.open(\'/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
-      '<div class="set-cell" onclick="window.open(\'/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div></div>';
+      '<div class="set-cell" onclick="window.open(\'https://mietta.jp/privacy/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('shield',16)+'プライバシーポリシー</span><span class="desc">'+ic('back',14)+'</span></div>'+
+      '<div class="set-cell" onclick="window.open(\'https://mietta.jp/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div>'+
+      '<div class="set-cell" onclick="window.open(\'https://mietta.jp/terms/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('book',16)+'利用規約</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
       '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
       '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
@@ -4252,7 +4253,7 @@ const App = {
   /* ---- 認証オーバーレイ ---- */
   showAuth(){let el=document.getElementById("authwrap");if(!el){el=document.createElement("div");el.id="authwrap";el.className="authwrap";document.body.appendChild(el);}el.style.display="flex";el.innerHTML=this.authHtml();},
   hideAuth(){const el=document.getElementById("authwrap");if(el)el.style.display="none";},
-  inviteUrl(code){return location.origin+location.pathname+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
+  inviteUrl(code){const base=this.isNative()?"https://mietta.jp/":location.origin+location.pathname;return base+"?invite="+encodeURIComponent(code||this._inviteCode||"");},
   finishInvite(){try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){} this._pendingInvite="";this.hideAuth();this.go("dashboard");const mode=(this.state&&this.state.settings&&this.state.settings.spaceMode)||"couple";this.startFunnel(true,mode);},
   async shareInvite(){const url=this.inviteUrl();const text="Miettaでふたりのスペースを作りました。このリンクから参加してね！\n"+url;try{if(navigator.share){await navigator.share({title:"Mietta 招待",text});}else{this.copy(url);}}catch(e){}},
   authHtml(){
