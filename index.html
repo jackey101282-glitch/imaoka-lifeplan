@@ -2805,8 +2805,9 @@ const App = {
     const nowMonthly=Math.round(p.rows[0].net/12),totalNow=goals.reduce((s,g)=>s+g.now,0);
     const takeHome=(cf.hIncome||0)+(cf.wIncome||0),savePct=takeHome>0?Math.round(Math.max(0,nowMonthly)/takeHome*100):0;
     const freeMonthly=Math.max(0,nowMonthly-totalNow),freeDay=Math.round(freeMonthly/30);
-    let h='<button class="back-btn" onclick="App.go(\'simulator\')">'+ic('back',16)+'将来シミュレーション</button>';
-    h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">アイデア全部乗せの実験画面です。ここは自由に触ってOK。良かったものを本番に取り込みます。</p>';
+    let h='<button class="back-btn" onclick="App.go(\'dashboard\')">'+ic('back',16)+'ホーム</button>';
+    h+='<p class="muted" style="font-size:var(--text-sm);margin:0 4px 12px">やりたいことに向けて「<b>今から</b>毎月いくら貯めればいいか」。早く始めるほどラクになります。</p>';
+    h+=this.cfInputsHtml(cf);
     // 家計の天気（キャラ＋一言＋天気マーク）
     let wWord,wColor,wSub,wKind;
     if(!p.breach){wWord="はれ";wKind="sun";wColor="var(--color-accent-600)";wSub="この調子なら、ずっと安心だよ。";}
@@ -2862,10 +2863,11 @@ const App = {
     // 家族旅行あと何回（遊び心）
     const annualFree=Math.max(0,freeMonthly)*12,trips=Math.floor(annualFree/200000);
     h+='<div class="section-title">今の余力で、家族旅行は？</div><div class="card"><div class="ttl-ico" style="font-size:var(--text-sm);line-height:1.7;align-items:flex-start">'+ic("plane",16)+'<span>'+(trips>0?"1回20万円の家族旅行なら、暮らしを崩さず <b>年 "+trips+"回</b> ペースで行けそう。":"今は積立を優先したいところ。落ち着いたら、家族旅行の予算もここに出します。")+'</span></div></div>';
-    h+='<p class="muted" style="font-size:var(--text-xs);margin:10px 4px 24px;line-height:1.6">これは実験画面（ラボ）です。良かった表示を「将来シミュレーション」本体に取り込みます。要らなければこの画面ごと外せます。</p>';
+    h+='<div style="height:24px"></div>';
     return h;
   },
   view_simulator(){
+    return this.view_cflab();  // 将来シミュ＝新デザイン（旧ラボを本番昇格）。以下は旧実装（未使用・参照用に温存）
     const cfp=this.cfDefaults(),p=this.cfProject(cfp),goals=this.cfGoals(cfp);
     const nowMonthly=Math.round(p.rows[0].net/12);
     const totalNow=goals.reduce((s,g)=>s+g.now,0);
