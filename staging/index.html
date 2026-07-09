@@ -331,6 +331,11 @@ html[data-theme="dark"] .card-warn .lo{color:var(--color-warning)}
 .detail-toggle:active{transform:scale(.99)}
 /* bottom nav */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--color-bg-surface);border-top:1px solid var(--color-border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+/* AdMobバナー表示時（無料プランのみ）はナビ/FABをバナー分持ち上げる。--ad-h は実機で微調整可 */
+:root{--ad-h:0px}
+body.has-ad{--ad-h:56px}
+body.has-ad .tabbar{bottom:var(--ad-h)}
+body.has-ad .fab{bottom:calc(74px + env(safe-area-inset-bottom) + var(--ad-h))}
 .tab{flex:1;border:none;background:none;padding:8px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--color-text-disabled);position:relative}
 .tab .ti{font-size:22px;line-height:1}
 .tab .tl{font-size:var(--text-xs);font-weight:var(--fw-m)}
@@ -1177,6 +1182,7 @@ const App = {
     this.initCloud();
     this.rcInit();
     this.initLocalNotif();
+    this.admobInit();
     window.addEventListener("beforeunload",()=>this.save());
     // アプリに戻ってきた/再表示されたら最新を取得(iOSは背景でリアルタイム接続が切れるため)＋通知を貼り直し
     document.addEventListener("visibilitychange",()=>{if(!document.hidden){this.pullLatest();this.notifResched();}});
@@ -1505,9 +1511,16 @@ const App = {
   // ===== RevenueCat 実課金（ネイティブ＋プラグイン時のみ。無ければ従来動作にフォールバック） 設定値は決定ログ参照 =====
   rcPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null;}catch(e){return null;}},
   async rcInit(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{await P.configure({apiKey:"appl_shuyZDjdTcYebsCwFKQkvwxWmxc"});await this.rcRefresh();}catch(e){}},
-  async rcRefresh(){const P=this.rcPlugin();if(!P)return;try{const r=await P.getCustomerInfo();const ci=(r&&r.customerInfo)||r;const act=ci&&ci.entitlements&&ci.entitlements.active;this._rcPremium=!!(act&&act["premium"]);this.render();}catch(e){}},
-  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
-  setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.render();},
+  async rcRefresh(){const P=this.rcPlugin();if(!P)return;try{const r=await P.getCustomerInfo();const ci=(r&&r.customerInfo)||r;const act=ci&&ci.entitlements&&ci.entitlements.active;this._rcPremium=!!(act&&act["premium"]);this.render();this.admobRefresh();}catch(e){}},
+  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
+  // ===== AdMob 広告（無料プランのみ・ネイティブ＋プラグイン時のみ実表示。web/プラグイン無はno-op） 設定値は決定ログ参照 =====
+  admobPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob)||null;}catch(e){return null;}},
+  async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;try{await A.initialize({});try{await A.requestTrackingAuthorization();}catch(e){}this._admobReady=true;await this.admobRefresh();}catch(e){}},
+  async admobRefresh(){const A=this.admobPlugin();if(!(this.isNative()&&A&&this._admobReady))return;try{
+    if(this.isPremium()){try{await A.hideBanner();}catch(e){}try{await A.removeBanner();}catch(e){}document.body.classList.remove("has-ad");}
+    else{await A.showBanner({adId:"ca-app-pub-1548738229412472/9331515942",adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:0});document.body.classList.add("has-ad");}
+  }catch(e){}},
+  setPremiumDemo(on){try{on?localStorage.setItem("imaoka_premium","1"):localStorage.removeItem("imaoka_premium");}catch(e){}this.toast(on?"（デモ）有料を有効化しました":"（デモ）有料を解除しました");this.admobRefresh();this.render();},
   diagEl(){let el=document.getElementById("diag");if(!el){el=document.createElement("div");el.id="diag";document.body.appendChild(el);}return el;},
   diagList(){return DIAG_ATTRS.concat(DIAG_QS);},
   startDiagnosis(forPartner){this._diagOnb=false;this._diag={active:true,i:0,ans:{},forPartner:!!forPartner};this.renderDiag();},
