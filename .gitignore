@@ -6,6 +6,11 @@ Thumbs.db
 *.log
 *.tmp
 
+# Codex外部レビューの出力(未追跡のまま残すと次のレビューの差分を汚染するため追跡しない)
+.codex-review-latest.md
+.codex-review-findings.md
+.codex-autoreview
+
 # ローカルのバックアップ書き出し(個人データが含まれるためコミットしない)
 imaoka-lifeplan-backup*.json
 
@@ -20,3 +25,12 @@ icon-master.png
 # IPA診断の元PDF/抽出テキスト(大きいので追跡しない)
 ipa-business.pdf
 ipa-text.txt
+
+# 計算ロジックの開発用テスト(本番に公開しない・うっかりコミット防止)
+test.js
+test.html
+native/node_modules/
+native/ios/App/Pods/
+native/ios/App/build/
+native/.DS_Store
+*.p8

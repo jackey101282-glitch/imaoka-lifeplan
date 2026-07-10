@@ -1452,7 +1452,7 @@ const App = {
   showPaywall(ans){ans=ans||{};this._pwTarget=ans.target||null;const heads={simulator:"将来のお金、ぜんぶ見える。",lifesync:"ふたりの価値観を、そろえる。"};const head=heads[ans.target]||"Mietta プレミアム";const el=this.fnlEl();el.className="onb-modal";el.innerHTML='<div class="onb-card" style="text-align:left"><div class="onb-ic" style="justify-content:flex-start">'+ic("star",30)+'</div>'+'<h2 style="font-size:var(--text-lg);margin-bottom:2px">'+esc(head)+'</h2>'+'<p class="onb-sub" style="margin-bottom:12px">プレミアムで、ふたりの毎日をもっと深く・自由に。</p>'+this.pwFeaturesHtml()+'<div class="onb-budget" style="justify-content:center;font-size:var(--text-base);margin-top:6px">30日間 無料 → そのあと ¥980/月</div>'+'<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="App.pwTrial()">無料で始める</button>'+'<p class="onb-sub" style="text-align:center;margin-top:10px">30日後に¥980/月・自動更新。いつでも解約できます。<br><span onclick="App.pwRestore()" style="text-decoration:underline;cursor:pointer">購入を復元</span> ・ <a href="https://mietta.jp/terms/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">利用規約</a> ・ <a href="https://mietta.jp/privacy/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">プライバシー</a></p>'+'<div class="onb-skip" onclick="App.pwClose()">あとで（まず使ってみる）</div></div>';},
   _pwRemove(){const e=document.getElementById("fnl");if(e)e.remove();},
   async pwTrial(){const t=this._pwTarget;this._pwTarget=null;if(this.isNative()&&this.rcPlugin()){const ok=await this.rcPurchase();this._pwRemove();this.go(ok&&t?t:"dashboard");return;}this.toast("（デモ）Apple課金の30日間トライアルに進みます");this._pwRemove();this.go(t||"dashboard");},
-  async pwRestore(){const P=this.rcPlugin();if(!(this.isNative()&&P)){this.toast("復元できる購入が見つかりませんでした");return;}try{const res=await P.restorePurchases();const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("購入を復元しました");this.render();}else this.toast("復元できる購入が見つかりませんでした");}catch(e){this.toast("復元できませんでした");}},
+  async pwRestore(){const P=this.rcPlugin();if(!(this.isNative()&&P)){this.toast("復元できる購入が見つかりませんでした");return;}try{if(this._rcIdJob)await this._rcIdJob;const res=await P.restorePurchases();const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("購入を復元しました");this.render();}else this.toast("復元できる購入が見つかりませんでした");}catch(e){this.toast("復元できませんでした");}},
   pwClose(){const e=document.getElementById("fnl");if(e)e.remove();try{this.go("dashboard");}catch(e){}},
   // ===== 新オンボ：アンケート→パーソナライズ→トライアル課金（設計書-オンボーディングファネル.md） =====
   funnelQs(){
@@ -1528,9 +1528,13 @@ const App = {
   isPremium(){ if(!this.isNative())return true; /* web版は当面 有料機能を無料開放（実課金はApp Store版のみ） */ if(this._rcPremium)return true; try{return localStorage.getItem("imaoka_premium")==="1";}catch(e){return false;} },
   // ===== RevenueCat 実課金（ネイティブ＋プラグイン時のみ。無ければ従来動作にフォールバック） 設定値は決定ログ参照 =====
   rcPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Purchases)||null;}catch(e){return null;}},
-  async rcInit(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{await P.configure({apiKey:"appl_shuyZDjdTcYebsCwFKQkvwxWmxc"});await this.rcRefresh();}catch(e){}},
+  async rcInit(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{this._rcReady=P.configure({apiKey:"appl_shuyZDjdTcYebsCwFKQkvwxWmxc"});await this._rcReady;await this.rcRefresh();if(this.householdId)await this.rcLogIn(this.householdId);}catch(e){}},
+  rcLogIn(hid){const p=this._rcLogInDo(hid);this._rcIdJob=p;return p;},
+  async _rcLogInDo(hid){const P=this.rcPlugin();if(!(this.isNative()&&P&&hid))return;try{if(this._rcReady)await this._rcReady;await P.logIn({appUserID:String(hid)});await this.rcRefresh();}catch(e){}},
+  rcLogOut(){const p=this._rcLogOutDo();this._rcIdJob=p;return p;},
+  async _rcLogOutDo(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{if(this._rcReady)await this._rcReady;await P.logOut();this._rcPremium=false;this.render();this.admobRefresh();}catch(e){}},
   async rcRefresh(){const P=this.rcPlugin();if(!P)return;try{const r=await P.getCustomerInfo();const ci=(r&&r.customerInfo)||r;const act=ci&&ci.entitlements&&ci.entitlements.active;this._rcPremium=!!(act&&act["premium"]);this.render();this.admobRefresh();}catch(e){}},
-  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
+  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{if(this._rcIdJob)await this._rcIdJob;const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
   // ===== AdMob 広告（無料プランのみ・ネイティブ＋プラグイン時のみ実表示。web/プラグイン無はno-op） 設定値は決定ログ参照 =====
   admobPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob)||null;}catch(e){return null;}},
   async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;try{
@@ -3591,8 +3595,8 @@ const App = {
       '<div class="set-cell" onclick="window.open(\'https://mietta.jp/support/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('lifebuoy',16)+'お問い合わせ・サポート</span><span class="desc">'+ic('back',14)+'</span></div>'+
       '<div class="set-cell" onclick="window.open(\'https://mietta.jp/terms/\',\'_blank\')" style="cursor:pointer"><span class="lab ttl-ico">'+ic('book',16)+'利用規約</span><span class="desc">'+ic('back',14)+'</span></div></div>';
     h+='<p class="set-head">データ</p><div class="set-group">'+
-      '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab">📤 バックアップを書き出す</span><span class="desc">JSON</span></div>'+
-      '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab">📥 バックアップを読み込む</span></div>'+
+      '<div class="set-cell" onclick="App.exportData()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('share',16)+'バックアップを書き出す</span><span class="desc">JSON</span></div>'+
+      '<div class="set-cell" onclick="document.getElementById(\'importer\').click()" style="cursor:pointer"><span class="lab ttl-ico">'+ic('clipboard',16)+'バックアップを読み込む</span></div>'+
       '<div class="set-cell" onclick="App.resetData()" style="cursor:pointer"><span class="lab ttl-ico" style="color:var(--color-danger)">'+ic('trash',16)+'すべてのデータを消す</span></div></div>'+
       '<input type="file" id="importer" accept="application/json" style="display:none" onchange="App.importData(this.files[0])">';
 
@@ -3963,7 +3967,7 @@ const App = {
       this.field("繰り返し",'<select id="f-rec">'+[['none','繰り返さない'],['weekly','毎週（同じ曜日）'],['monthly_date','毎月（同じ日）'],['monthly_nth','毎月（第◯◯曜）'],['yearly','毎年（同じ日付）']].map(o=>'<option value="'+o[0]+'" '+((it&&it.recurrence?it.recurrence:"none")===o[0]?"selected":"")+'>'+o[1]+'</option>').join("")+'</select>')+
       this.field("場所（任意）",'<input id="f-loc" placeholder="例: 〇〇小学校 体育館" value="'+esc(it&&it.loc?it.loc:"")+'">')+
       this.field("メモ（任意）",'<textarea id="f-memo" placeholder="持ち物・詳細・URLなど">'+esc(it&&it.memo?it.memo:"")+'</textarea>')+
-      (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">📅 Googleカレンダーに追加（1回分）</a>':'')+
+      (it?'<a class="btn btn-sec btn-block btn-sm" style="text-decoration:none;margin-bottom:12px" href="'+this.gcalUrl(it)+'" target="_blank" rel="noopener">'+ic('calendar',16)+' Googleカレンダーに追加（1回分）</a>':'')+
       this.actions(()=>{
         const title=val("f-title");if(!title){this.toast("タイトルを入力してください");return false;}
         const data={title,who:seg("f-who")||"both",catId:this._evCat||null,type:seg("f-etype"),date:val("f-date"),start:val("f-start")||null,end:val("f-end")||null,recurrence:val("f-rec"),loc:val("f-loc"),memo:val("f-memo"),amount:numv("f-amount")||null};
@@ -4172,7 +4176,7 @@ const App = {
       this._user=r.data.user;await this.afterAuth();
     }catch(e){console.error(e);this.setAuthErr("通信エラーが発生しました。もう一度お試しください");}
   },
-  async doLogout(){try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");localStorage.removeItem("imaoka_owner_staging");}catch(e){} this.showAuth();},
+  async doLogout(){await this.rcLogOut();try{await this._client.auth.signOut();}catch(e){} if(this._channel){this._client.removeChannel(this._channel);this._channel=null;} this._user=null;this.householdId=null;this._syncStatus="off";this._authView="login";this.state=seedState();try{localStorage.removeItem("imaoka_lifeplan_staging");localStorage.removeItem("imaoka_owner_staging");}catch(e){} this.showAuth();},
   confirmDeleteAccount(){
     this.showSheet('<h3 style="color:var(--color-danger)">アカウントを削除しますか？</h3>'+
       '<div class="meta" style="margin-bottom:14px;line-height:1.8">この操作は取り消せません。次がすべて削除されます。<br>・あなたのアカウント（ログイン情報）<br>・このスペースに保存された家計・予定・タスク・ライフプランのデータ<br>　（同じスペースに他のメンバーがいない場合）<br><br>パートナーが残っている場合は、あなたの参加情報のみ削除されます。</div>'+
@@ -4187,7 +4191,7 @@ const App = {
       try{await this._client.auth.signOut();}catch(e){}
       if(this._channel){try{this._client.removeChannel(this._channel);}catch(e){}this._channel=null;}
       try{["imaoka_lifeplan_staging","imaoka_owner_staging","imaoka_onboard","imaoka_funnel"].forEach(k=>localStorage.removeItem(k));}catch(e){}
-      this._user=null;this.householdId=null;this._syncStatus="off";this.state=seedState();this._authView="login";this.showAuth();this.toast("アカウントを削除しました");
+      await this.rcLogOut();this._user=null;this.householdId=null;this._syncStatus="off";this.state=seedState();this._authView="login";this.showAuth();this.toast("アカウントを削除しました");
     }catch(e){console.error(e);this.toast("削除に失敗しました。時間をおいて再度お試しください");}
   },
   switchAuth(v){this._authView=v;this._authError="";this.showAuth();},
@@ -4195,7 +4199,7 @@ const App = {
     try{
       const{data:mem,error}=await this._client.from("members").select("household_id").limit(1);
       if(error)throw error;
-      if(mem&&mem.length){this.householdId=mem[0].household_id;if(localStorage.getItem("imaoka_owner_staging")!==this.householdId){this.state=seedState();}await this.loadCloud();this.hideAuth();}
+      if(mem&&mem.length){this.householdId=mem[0].household_id;await this.rcLogIn(this.householdId);if(localStorage.getItem("imaoka_owner_staging")!==this.householdId){this.state=seedState();}await this.loadCloud();this.hideAuth();}
       else if(this._pendingInvite){this.state=seedState();const ok=await this.joinHousehold(this._pendingInvite);if(!ok){this._authView="household";this.showAuth();}}
       else{this.state=seedState();this.render();this._authView="mode";this.showAuth();}
     }catch(e){console.error(e);this.toast("読み込みに失敗しました");}
@@ -4203,8 +4207,8 @@ const App = {
   previewSignup(){this._onbTest=true;try{["imaoka_onboard","imaoka_funnel"].forEach(k=>localStorage.removeItem(k));}catch(e){}this._authView="mode";this.showAuth();this.toast("テスト：登録は作成されません");},
   async createHousehold(mode){
     if(this._onbTest){this._onbTest=false;if(this.state&&this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.hideAuth();this.go("dashboard");this.startFunnel(true,mode);return;}
-    try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
-  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
+    try{const{data,error}=await this._client.rpc("create_household");if(error)throw error;this.householdId=data;await this.rcLogIn(this.householdId);this.state=seedState();if(this.state.settings)this.state.settings.spaceMode=(mode==="solo"?"solo":"couple");this.normalize();await this.loadCloud();this._pendingInvite="";if(mode==="solo"){this.finishInvite();}else{this._authView="invite";this.showAuth();}}catch(e){console.error(e);this.toast("作成に失敗しました");}},
+  async joinHousehold(code){code=(code||"").trim();if(!code){this.toast("招待コードを入力してください");return false;}try{const{data,error}=await this._client.rpc("join_household",{p_code:code});if(error)throw error;this.householdId=data;await this.rcLogIn(this.householdId);await this.loadCloud();this._pendingInvite="";try{history.replaceState(null,"",location.origin+location.pathname);}catch(e){}this.hideAuth();this.toast("参加しました!");return true;}catch(e){console.error(e);this.toast("招待コードが正しくありません");return false;}},
   async regenInviteCode(){if(!this._client||!this.householdId){this.toast("再発行できません");return;}if(!confirm("招待コードを再発行しますか?\n今のコードは無効になり、すでに伝えた相手はそのコードでは参加できなくなります。"))return;try{const{data,error}=await this._client.rpc("regenerate_invite_code");if(error)throw error;this._inviteCode=data||"";this.render();this.toast("招待コードを再発行しました");}catch(e){console.error(e);this.toast("再発行に失敗しました");}},
   async loadCloud(){
     try{
