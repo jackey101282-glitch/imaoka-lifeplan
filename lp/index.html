@@ -294,6 +294,9 @@
   .dock .dsub{color:var(--coral-d);font-weight:800;font-size:13.5px;text-decoration:none;white-space:nowrap;border-bottom:1.5px solid rgba(193,114,79,.4);padding-bottom:1px}
   body{padding-bottom:80px}
   @media(max-width:560px){.dock{gap:12px;padding:10px 14px}.dock .dmsg{display:none}.dock .dbtn{flex:1;text-align:center;padding:14px 18px}}
+/* 改行の暴れ対策: 見出しは行バランス・本文は句読点で気持ちよく折る */
+h1,h2,h3{text-wrap:balance}
+.sec-head p,.sub,.lead{text-wrap:pretty}
 </style>
 </head>
 <body>
@@ -313,7 +316,7 @@
       <a href="#waitlist" class="btn lg">先行登録する（無料）</a>
       <span class="note">登録した方に、公開初日に<br>いちばん早くお知らせします。</span>
     </div>
-    <div class="trust"><span><i class="ic">✓</i>毎日つけなくていい</span><span><i class="ic">✓</i>2人でリアルタイム共有</span><span><i class="ic">✓</i>作った夫婦が毎日使用</span></div>
+    <div class="trust"><span><i class="ic">✓</i>基本機能はぜんぶ無料</span><span><i class="ic">✓</i>毎日つけなくていい</span><span><i class="ic">✓</i>2人でリアルタイム共有</span><span><i class="ic">✓</i>作った夫婦が毎日使用</span></div>
   </div>
   <div class="hero-phones">
     <div class="phone pL"><div class="notch"></div><div class="screen"><img class="shot" src="assets/shots/goals.png" alt="ライフプラン画面（ふたりのゴール）"></div></div>
@@ -335,7 +338,7 @@
 
 <!-- PROBLEM: real talk, 3col, visual -->
 <section style="background:#fff"><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">こんなこと、思いませんか？</span><h2 style="margin-top:14px">「ほんとは、こうしたい」を叶えたい。</h2></div>
+  <div class="sec-head"><span class="eyebrow">こんなお悩みはありませんか？</span><h2 style="margin-top:14px">「ほんとは、こうしたい」を叶えたい。</h2></div>
   <div class="pain">
     <div class="p"><span class="em" data-ic="wallet" data-sz="24" style="color:var(--coral)"></span><h3>「使う前に、あといくら使えるか知りたい」</h3><span>月末になってから、気づきたくない。</span></div>
     <div class="p"><span class="em" data-ic="calendar" data-sz="24" style="color:var(--coral)"></span><h3>「予定に合わせて、お金を準備しておきたい」</h3><span>旅行も帰省も、来るのは分かってるから。</span></div>
@@ -348,7 +351,7 @@
 
 <!-- CONTRAST: 記録する家計簿 → 先に見える家計 -->
 <section><div class="wrap">
-  <div class="sec-head"><span class="eyebrow">発想が、逆。</span><h2 style="margin-top:14px">「記録する家計簿」から、「先に見える家計」へ。</h2><p>続かない原因は、たぶん“まじめさ”じゃありません。仕組みです。</p></div>
+  <div class="sec-head"><span class="eyebrow">発想が、逆。</span><h2 style="margin-top:14px">「記録する家計簿」から、「先に見える家計」へ。</h2><p>続かない原因は、たぶん“まじめさ”じゃありません。<br><span style="font-weight:700;font-size:1.15em">仕組みです。</span><br>Miettaは“毎日記録する”のではなく“予定を先に入れる”だけ。だから、つけ忘れても回ります。</p></div>
   <div class="fit">
     <div class="col no"><h3>ふつうの家計簿</h3><ul><li>使った“あと”に、毎日記録する</li><li>レシートが溜まって、入力が面倒に</li><li>少し間が空くと、続けづらい</li><li>気づいたときには、今月ピンチ</li></ul></div>
     <div class="col yes"><h3>Mietta</h3><ul><li>予定を“先に”入れておくだけ</li><li>スケジュール感覚。毎日の入力いらず</li><li>間が空いても、ちゃんと回る</li><li>使う前に「あといくら使える」が見える</li></ul><div class="punch">予定を入れる → ひと月のお金が、先に見える。</div></div>
