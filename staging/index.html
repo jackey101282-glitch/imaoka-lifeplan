@@ -1534,15 +1534,18 @@ const App = {
   rcLogOut(){const p=this._rcLogOutDo();this._rcIdJob=p;return p;},
   async _rcLogOutDo(){const P=this.rcPlugin();if(!(this.isNative()&&P))return;try{if(this._rcReady)await this._rcReady;await P.logOut();this._rcPremium=false;this.render();this.admobRefresh();}catch(e){}},
   async rcRefresh(){const P=this.rcPlugin();if(!P)return;try{const r=await P.getCustomerInfo();const ci=(r&&r.customerInfo)||r;const act=ci&&ci.entitlements&&ci.entitlements.active;this._rcPremium=!!(act&&act["premium"]);this.render();this.admobRefresh();}catch(e){}},
-  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{if(this._rcIdJob)await this._rcIdJob;const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
+  async rcPurchase(){const P=this.rcPlugin();if(!(this.isNative()&&P))return false;try{if(this._rcIdJob)await this._rcIdJob;const o=await P.getOfferings();const off=(o&&o.current)||(o&&o.offerings&&o.offerings.current);const pkg=off&&off.availablePackages&&off.availablePackages[0];if(!pkg){try{console.error("[rcPurchase] offeringに商品なし offerings=",JSON.stringify(o));}catch(_e){}this.toast("商品を取得できませんでした");return false;}const res=await P.purchasePackage({aPackage:pkg});const ci=(res&&res.customerInfo)||res;const act=ci&&ci.entitlements&&ci.entitlements.active;if(act&&act["premium"]){this._rcPremium=true;this.toast("プレミアムを開始しました");this.admobRefresh();return true;}return false;}catch(e){try{console.error("[rcPurchase] error=",e&&(e.message||e.code||e),e);}catch(_e){}if(!(e&&(e.userCancelled||e.code==="1"||e.code===1)))this.toast("購入を完了できませんでした");return false;}},
   // ===== AdMob 広告（無料プランのみ・ネイティブ＋プラグイン時のみ実表示。web/プラグイン無はno-op） 設定値は決定ログ参照 =====
   admobPlugin(){try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob)||null;}catch(e){return null;}},
-  async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;try{
+  async admobInit(){const A=this.admobPlugin();if(!(this.isNative()&&A))return;
+    // ★ATT(トラッキング許可)はAdMob初期化より先に・確実に要求する（初期化失敗やアプリ状態に依存させない。Apple Guideline 2.1対応）
+    try{const st=await A.trackingAuthorizationStatus();if(!st||st.status==="notDetermined"){await A.requestTrackingAuthorization();}}catch(e){try{await A.requestTrackingAuthorization();}catch(_e){}}
+    try{
     // バナーが実際にロード/表示された時だけナビを持ち上げる（未表示なら通常レイアウト＝下メニューが浮かない）
     try{A.addListener("bannerAdSizeChanged",(s)=>{const hh=(s&&(s.height||(s.size&&s.size.height)))||0;if(hh>0)document.documentElement.style.setProperty("--ad-h",(hh+6)+"px");document.body.classList.add("has-ad");});}catch(e){}
     try{A.addListener("bannerAdLoaded",()=>{document.body.classList.add("has-ad");});}catch(e){}
     try{A.addListener("bannerAdFailedToLoad",()=>{document.body.classList.remove("has-ad");});}catch(e){}
-    await A.initialize({});try{await A.requestTrackingAuthorization();}catch(e){}this._admobReady=true;await this.admobRefresh();
+    await A.initialize({});this._admobReady=true;await this.admobRefresh();
   }catch(e){}},
   async admobRefresh(){const A=this.admobPlugin();if(!(this.isNative()&&A&&this._admobReady))return;try{
     if(this.isPremium()){try{await A.hideBanner();}catch(e){}try{await A.removeBanner();}catch(e){}document.body.classList.remove("has-ad");}
